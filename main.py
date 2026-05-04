@@ -520,78 +520,31 @@ async def admin_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
     data = query.data.split("_")
-
     if len(data) < 3:
-        return
-
-    uid = data[2]
-
-    db = load_db()
-
+    return
+uid = data[2]
     if data[1] == "reject":
-        await context.bot.send_message(
-            uid,
-            f"{te('error')} سفارش شما رد شد.",
-            parse_mode="HTML"
-        )
-
-        return await query.edit_message_caption(
-            caption=query.message.caption + f"\n\n{te('error')} رد شد.",
-            parse_mode="HTML"
-        )
-
-    if uid not in db["users"] or not db["users"][uid].get("pending_order"):
-        await context.bot.send_message(
-            query.from_user.id,
-            f"{te('error')} سفارش یافت نشد.",
-            parse_mode="HTML"
-        )
-        return
-
+        await context.bot.send_message(uid, f"{te('error')} سفارش شما رد شد.", parse_mode="HTML")
+        return await query.edit_message_caption(caption=query.message.caption + f"\n\n{te('error')} رد شد.", parse_mode="HTML")
+    db = load_db()
+    if not db["users"][uid].get("pending_order"): return await context.bot.send_message(query.from_user.id, f"{te('error')} سفارش یافت نشد.", parse_mode="HTML")
     if data[3] == "new":
         context.user_data["target_uid"] = uid
         context.user_data["pending_info"] = db["users"][uid]["pending_order"]
-
-        await context.bot.send_message(
-            query.from_user.id,
-            f"{te('number')} <b>مرحله 1 از 2</b>\nلطفاً <b>کد اشتراک</b> (مثلاً <code>1006</code>) را وارد کنید:",
-            parse_mode="HTML",
-            reply_markup=back_kb("admin")
-        )
-
+        await context.bot.send_message(query.from_user.id, f"{te('number')} <b>مرحله 1 از 2</b>\nلطفاً <b>کد اشتراک</b> (مثلاً <code>1006</code>) را وارد کنید:", parse_mode="HTML", reply_markup=back_kb("admin"))
         return GET_SUB_ID
-
     elif data[3] == "renew":
         pending = db["users"][uid]["pending_order"]
         svc_idx = pending["service_idx"]
-
-        days = next(
-            (v[1] for k, v in DURATION_MAP.items() if v[0] == pending["duration_txt"]),
-            30
-        )
-
-        db["users"][uid]["services"][svc_idx]["expiry_ts"] = max(
-            db["users"][uid]["services"][svc_idx]["expiry_ts"],
-            datetime.now().timestamp()
-        ) + (days * 86400)
-
+        days = next((v[1] for k, v in DURATION_MAP.items() if v[0] == pending["duration_txt"]), 30)
+        db["users"][uid]["services"][svc_idx]["expiry_ts"] = max(db["users"][uid]["services"][svc_idx]["expiry_ts"], datetime.now().timestamp()) + (days * 86400)
         db["users"][uid]["services"][svc_idx]["notified_5d"] = False
         db["users"][uid]["pending_order"] = None
-
         save_db(db)
+        await context.bot.send_message(uid, f"{te('success')} اشتراک <code>{db['users'][uid]['services'][svc_idx].get('sub_id')}</code> تمدید شد.", parse_mode="HTML")
+        await query.edit_message_caption(caption=query.message.caption + f"\n\n{te('success')} تمدید شد.", parse_mode="HTML")
 
-        await context.bot.send_message(
-            uid,
-            f"{te('success')} اشتراک <code>{db['users'][uid]['services'][svc_idx].get('sub_id')}</code> تمدید شد.",
-            parse_mode="HTML"
-        )
-
-        await query.edit_message_caption(
-            caption=query.message.caption + f"\n\n{te('success')} تمدید شد.",
-            parse_mode="HTML"
-        )
 async def admin_add_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -810,15 +763,18 @@ async def check_expirations(context: ContextTypes.DEFAULT_TYPE):
     async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
     server = update.message.text
 
+    db = load_db()
     db["servers"].append(server)
-    save_db()
+    save_db(db)
 
     await update.message.reply_text("✅ سرور ذخیره شد.")
 
-    async def approve_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
+async def approve_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
+    db = load_db()
 
     uid = query.data.split("_")[1]
 
@@ -840,12 +796,17 @@ async def check_expirations(context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-    save_db()
+    save_db(db)
+
 
 if __name__ == "__main__":
-    if not os.path.exists(DB_FILE): load_db()
+    if not os.path.exists(DB_FILE):
+        load_db()
+
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-    if app.job_queue: app.job_queue.run_repeating(check_expirations, interval=14400, first=60)
+
+    if app.job_queue:
+        app.job_queue.run_repeating(check_expirations, interval=14400, first=60)
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("admin", admin_start))
