@@ -393,7 +393,7 @@ async def show_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await query.message.edit_text(text, reply_markup=keyboard)
 
-    async def accept_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def accept_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
