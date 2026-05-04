@@ -412,28 +412,77 @@ async def accept_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.photo:
-        return await update.message.reply_text(f"{te('error')} لطفاً عکس رسید را ارسال کنید.", reply_markup=back_kb(), parse_mode="HTML") and GET_RECEIPT
+        await update.message.reply_text(
+            f"{te('error')} لطفاً عکس رسید را ارسال کنید.",
+            reply_markup=back_kb(),
+            parse_mode="HTML"
+        )
+        return GET_RECEIPT
+
     uid = str(update.effective_user.id)
     plan = context.user_data.get("buy_plan")
-    exact_amount = context.user_data.get("exact_amount", plan["price"] if plan else 0)
+
+    if not plan:
+        await update.message.reply_text("پلن یافت نشد")
+        return ConversationHandler.END
+
+    exact_amount = context.user_data.get(
+        "exact_amount",
+        plan.get("price", 0)
+    )
+
     db = load_db()
-    db["users"][uid]["pending_order"] = {"type": "new", "plan": plan, "duration_txt": context.user_data.get("buy_duration", ""), "date": str(datetime.now()), "exact_amount": exact_amount}
+
+    # ذخیره سفارش
+    db["users"][uid]["pending_order"] = {
+        "type": "new",
+        "plan": plan,
+        "duration_txt": context.user_data.get("buy_duration", ""),
+        "date": str(datetime.now()),
+        "exact_amount": exact_amount,
+        "photo_id": update.message.photo[-1].file_id
+    }
+
     save_db(db)
+
     admin_markup = InlineKeyboardMarkup([
-        [InlineKeyboardButton("تایید و تنظیم کد", callback_data=f"adm_approve_{uid}_new", style="success", icon_custom_emoji_id=DYN_BTN_EMOJIS["success_btn"])],
-        [InlineKeyboardButton("رد سفارش", callback_data=f"adm_reject_{uid}", style="danger", icon_custom_emoji_id=DYN_BTN_EMOJIS["del_item"])]
+        [
+            InlineKeyboardButton(
+                "تایید",
+                callback_data=f"adm_approve_{uid}_new"
+            ),
+            InlineKeyboardButton(
+                "رد",
+                callback_data=f"adm_reject_{uid}"
+            )
+        ]
     ])
-    await update.message.reply_text(f"{te('success')} رسید شما دریافت شد.\n{te('time')} پس از تایید، کد اشتراک ارسال می‌شود.", reply_markup=main_menu_kb(), parse_mode="HTML")
+
+    await update.message.reply_text(
+        f"{te('success')} رسید دریافت شد",
+        reply_markup=main_menu_kb(),
+        parse_mode="HTML"
+    )
+
     for admin in ADMIN_IDS:
-        try: await context.bot.send_photo(admin, update.message.photo[-1].file_id, caption=f"{te('bell')} <b>سفارش جدید</b>\n{te('profile')} کاربر: <code>{uid}</code>\n{te('box')} پلن: {plan['name']}\n{te('money')} مبلغ واریزی: {exact_amount:,}", parse_mode="HTML", reply_markup=admin_markup)
-        except: pass
+        try:
+            await context.bot.send_photo(
+                admin,
+                update.message.photo[-1].file_id,
+                caption=f"""
+{te('bell')} سفارش جدید
+
+👤 کاربر: {uid}
+📦 پلن: {plan['name']}
+💰 مبلغ: {exact_amount:,}
+""",
+                reply_markup=admin_markup,
+                parse_mode="HTML"
+            )
+        except:
+            pass
+
     return ConversationHandler.END
-    db["pending_receipts"].append({
-    "user": uid,
-    "plan": context.user_data.get("selected_plan"),
-    "photo": file_id
-})
-save_db()
 
 async def renew_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
