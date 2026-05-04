@@ -36,10 +36,10 @@ InlineKeyboardButton.__init__ = _patched_init
 InlineKeyboardButton.to_dict = _patched_to_dict
 
 BOT_TOKEN = ""
-ADMIN_IDS = [1892655576]
+ADMIN_IDS = [81469723]
 DB_FILE = "database.json"
-CARD_NUMBER = ""
-SUPPORT_ID = "@puyaghsmi"
+CARD_NUMBER = "6037697637334522"
+SUPPORT_ID = "@hesamyaghoubii"
 
 MSG_EMOJIS = {
     "welcome": {"id": "5388886459744792797", "char": "👋"},
