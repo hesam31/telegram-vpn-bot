@@ -18,9 +18,9 @@ from telegram.ext import (
     filters
 )
 
-BOT_TOKEN = "PUT_YOUR_BOT_TOKEN"
-ADMIN_IDS = [123456789]
-
+BOT_TOKEN = "8769920545:AAHXd0IvGHnQvu1Hpb_frtR1_gB_N0ZkhfM"
+ADMIN_IDS = [81469723]
+SUPPORT_ID="@hesamyaghoubii"
 logging.basicConfig(level=logging.INFO)
 
 # ================= DATABASE =================
