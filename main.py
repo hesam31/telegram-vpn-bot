@@ -373,8 +373,8 @@ async def buy_handle_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await query.message.edit_text(msg, parse_mode="HTML", reply_markup=payment_invoice_kb(CARD_NUMBER, exact_amount))
     return GET_RECEIPT
-
-    async def show_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    
+async def show_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
@@ -386,7 +386,6 @@ async def buy_handle_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
 3️⃣ در صورت سوء استفاده سرویس مسدود می‌شود  
 4️⃣ خرید به معنی پذیرش قوانین است
 """
-
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("✅ قبول دارم", callback_data="accept_rules")],
         [InlineKeyboardButton("❌ قبول ندارم", callback_data="decline_rules")]
