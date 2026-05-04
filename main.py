@@ -924,20 +924,25 @@ if __name__ == "__main__":
         },
         fallbacks=[CallbackQueryHandler(cancel_callback, pattern="^back_")]
     ))
-    async def show_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def show_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
     text = """
-📜 قوانین استفاده از سرویس
+📜 قوانین استفاده
 
-1️⃣ استفاده غیرقانونی ممنوع است  
-2️⃣ اشتراک قابل انتقال نیست  
-3️⃣ در صورت سوءاستفاده سرویس مسدود می‌شود  
-4️⃣ خرید به معنی پذیرش قوانین است
+1️⃣ غیرقانونی ممنوع
+2️⃣ اشتراک غیرقابل انتقال
+3️⃣ سوءاستفاده = مسدودی
+4️⃣ خرید = پذیرش قوانین
 """
 
-    await query.message.edit_text(text, reply_markup=back_kb())
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("✅ قبول دارم", callback_data="accept_rules")],
+        [InlineKeyboardButton("❌ قبول ندارم", callback_data="decline_rules")]
+    ])
+
+    await query.message.edit_text(text, reply_markup=keyboard)
     app.add_handler(CallbackQueryHandler(show_rules, pattern="^menu_rules$"))
 
     print("--- Premium UI Bot Started ---")
