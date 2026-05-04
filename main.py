@@ -137,6 +137,8 @@ DURATION_MAP = {
 }
 
 def load_db():
+    "servers": [],
+"pending_receipts": [],
     if not os.path.exists(DB_FILE):
         default_data = {"settings": {"channels": [], "test_server": ""}, "users": {}, "plans": [{"name": "یک ماهه (تست)", "price": 10000, "id": 1234}]}
         save_db(default_data)
@@ -169,10 +171,11 @@ def create_btn(config_key, callback_data=None, url=None):
 
 def main_menu_kb():
     return InlineKeyboardMarkup([
-        [create_btn("buy_new", "menu_buy"), create_btn("renew", "menu_renew")],
-        [create_btn("my_services", "menu_services"), create_btn("profile", "menu_profile")],
-        [create_btn("news", "menu_news"), create_btn("support", "menu_support")],
+        [create_btn("buy_new", "menu_buy")],
         [create_btn("test_server", "menu_test")],
+        [create_btn("profile", "menu_profile")],
+        [create_btn("support", "menu_support")],
+        [InlineKeyboardButton("📜 قوانین", callback_data="menu_rules", style="primary")]
     ])
 
 def admin_menu_kb():
@@ -210,7 +213,7 @@ async def check_force_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     if not_joined:
         markup_keys = []
         for ch in channels:
-            markup_keys.append([InlineKeyboardButton(f"عضویت در {ch['username']}", url=ch['link'], style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["channel_join"])])
+            markup_keys.append([InlineKeyboardButton(f"عضویت در {ch['@sedoranet']}", url=ch['t.me/sedoranet'], style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["channel_join"])])
         markup_keys.append([InlineKeyboardButton("بررسی عضویت", callback_data="check_join_btn", style="success", icon_custom_emoji_id=DYN_BTN_EMOJIS["check_join"])])
         msg = f"{te('error')} برای استفاده از ربات، لطفاً ابتدا در تمامی کانال‌های زیر عضو شوید:"
         if update.message: await update.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(markup_keys), parse_mode="HTML")
@@ -373,6 +376,42 @@ async def buy_handle_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.edit_text(msg, parse_mode="HTML", reply_markup=payment_invoice_kb(CARD_NUMBER, exact_amount))
     return GET_RECEIPT
 
+    async def show_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    text = """
+📜 قوانین استفاده از سرویس
+
+1️⃣ استفاده غیرقانونی ممنوع  
+2️⃣ اشتراک قابل انتقال نیست  
+3️⃣ در صورت سوء استفاده سرویس مسدود می‌شود  
+4️⃣ خرید به معنی پذیرش قوانین است
+"""
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("✅ قبول دارم", callback_data="accept_rules")],
+        [InlineKeyboardButton("❌ قبول ندارم", callback_data="decline_rules")]
+    ])
+
+    await query.message.edit_text(text, reply_markup=keyboard)
+
+    async def accept_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    text = f"""
+{te('card')} برای پرداخت مبلغ را به کارت زیر واریز کنید:
+
+`{CARD_NUMBER}`
+
+پس از پرداخت، رسید را ارسال کنید.
+"""
+
+    await query.message.edit_text(text, parse_mode="Markdown")
+
+    return GET_RECEIPT
+
 async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.photo:
         return await update.message.reply_text(f"{te('error')} لطفاً عکس رسید را ارسال کنید.", reply_markup=back_kb(), parse_mode="HTML") and GET_RECEIPT
@@ -391,6 +430,12 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try: await context.bot.send_photo(admin, update.message.photo[-1].file_id, caption=f"{te('bell')} <b>سفارش جدید</b>\n{te('profile')} کاربر: <code>{uid}</code>\n{te('box')} پلن: {plan['name']}\n{te('money')} مبلغ واریزی: {exact_amount:,}", parse_mode="HTML", reply_markup=admin_markup)
         except: pass
     return ConversationHandler.END
+    db["pending_receipts"].append({
+    "user": uid,
+    "plan": context.user_data.get("selected_plan"),
+    "photo": file_id
+})
+save_db()
 
 async def renew_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -479,7 +524,9 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
     query = update.callback_query
     await query.answer()
     data = query.data.split("_")
-    uid = data[2]
+    if len(data) < 3:
+    return
+uid = data[2]
     if data[1] == "reject":
         await context.bot.send_message(uid, f"{te('error')} سفارش شما رد شد.", parse_mode="HTML")
         return await query.edit_message_caption(caption=query.message.caption + f"\n\n{te('error')} رد شد.", parse_mode="HTML")
@@ -580,7 +627,8 @@ async def admin_dm_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def admin_dm_get_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = load_db()
-    if update.message.text not in db["users"]: return await update.message.reply_text(f"{te('error')} کاربری یافت نشد. مجدداً وارد کنید:", reply_markup=back_kb("admin"), parse_mode="HTML") and GET_DM_USER_ID
+    if update.message.text not in db["users"]: await update.message.reply_text(f"{te('error')} کاربری یافت نشد. مجدداً وارد کنید:", reply_markup=back_kb("admin"), parse_mode="HTML") 
+    return GET_DM_USER_ID
     context.user_data["dm_target_id"] = update.message.text
     await update.message.reply_text(f"{te('success')} کاربر پیدا شد: <b>{db['users'][update.message.text].get('name')}</b>\n\n✍️ حالا پیام خود را بنویسید:", parse_mode="HTML", reply_markup=back_kb("admin"))
     return GET_DM_MESSAGE
@@ -694,6 +742,62 @@ async def check_expirations(context: ContextTypes.DEFAULT_TYPE):
                 s["notified_5d"] = True; changed = True
     if changed: save_db(db)
 
+    async def admin_receipts(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    if not db["pending_receipts"]:
+        await update.message.reply_text("رسیدی وجود ندارد.")
+        return
+
+    for r in db["pending_receipts"]:
+
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("✅ تایید", callback_data=f"approve_{r['user']}"),
+                InlineKeyboardButton("❌ رد", callback_data=f"reject_{r['user']}")
+            ]
+        ])
+
+        await context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo=r["photo"],
+            caption=f"رسید کاربر {r['user']}",
+            reply_markup=keyboard
+        )
+    async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    server = update.message.text
+
+    db["servers"].append(server)
+    save_db()
+
+    await update.message.reply_text("✅ سرور ذخیره شد.")
+
+    async def approve_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    query = update.callback_query
+    await query.answer()
+
+    uid = query.data.split("_")[1]
+
+    if not db["servers"]:
+        await query.message.reply_text("سروری در مخزن وجود ندارد.")
+        return
+
+    server = db["servers"].pop(0)
+
+    await context.bot.send_message(
+        chat_id=int(uid),
+        text=f"""
+✅ پرداخت شما تایید شد
+
+🔐 سرور شما:
+
+`{server}`
+""",
+        parse_mode="Markdown"
+    )
+
+    save_db()
+
 if __name__ == "__main__":
     if not os.path.exists(DB_FILE): load_db()
     app = ApplicationBuilder().token(BOT_TOKEN).build()
@@ -753,6 +857,25 @@ if __name__ == "__main__":
         },
         fallbacks=[CallbackQueryHandler(cancel_callback, pattern="^back_")]
     ))
+    async def show_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    text = """
+📜 قوانین استفاده از سرویس
+
+1️⃣ استفاده غیرقانونی ممنوع است  
+2️⃣ اشتراک قابل انتقال نیست  
+3️⃣ در صورت سوءاستفاده سرویس مسدود می‌شود  
+4️⃣ خرید به معنی پذیرش قوانین است
+"""
+
+    await query.message.edit_text(text, reply_markup=back_kb())
+    app.add_handler(CallbackQueryHandler(show_rules, pattern="^menu_rules$"))
 
     print("--- Premium UI Bot Started ---")
     app.run_polling()
+    
+    app.add_handler(CallbackQueryHandler(show_rules, pattern="menu_rules"))
+app.add_handler(CallbackQueryHandler(accept_rules, pattern="accept_rules"))
+app.add_handler(CallbackQueryHandler(approve_payment, pattern="approve_"))
