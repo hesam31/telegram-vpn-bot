@@ -35,7 +35,7 @@ def _patched_to_dict(self, *args, **kwargs):
 InlineKeyboardButton.__init__ = _patched_init
 InlineKeyboardButton.to_dict = _patched_to_dict
 
-BOT_TOKEN = "8769920545:AAHXd0IvGHnQvu1Hpb_frtR1_gB_N0ZkhfM"
+BOT_TOKEN = "8769920545:AAF4UrVKHZFqX1Pz-7A0VEmZEjHLqdeRgPo"
 ADMIN_IDS = [81469723]
 DB_FILE = "database.json"
 CARD_NUMBER = "6037697637334522"
@@ -999,7 +999,7 @@ async def show_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
   
 if __name__ == "__main__":
-    app = ApplicationBuilder().token("8769920545:AAHXd0IvGHnQvu1Hpb_frtR1_gB_N0ZkhfM").build()
+    app = ApplicationBuilder().token("8769920545:AAF4UrVKHZFqX1Pz-7A0VEmZEjHLqdeRgPo").build()
 
     app.add_handler(CallbackQueryHandler(show_rules, pattern="^menu_rules$"))
     app.add_handler(CallbackQueryHandler(accept_rules, pattern="^accept_rules$"))
