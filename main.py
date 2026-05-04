@@ -137,10 +137,8 @@ DURATION_MAP = {
 }
 
 def load_db():
-    "servers": [],
-"pending_receipts": [],
     if not os.path.exists(DB_FILE):
-        default_data = {"settings": {"channels": [], "test_server": ""}, "users": {}, "plans": [{"name": "یک ماهه (تست)", "price": 10000, "id": 1234}]}
+        default_data = {"settings": {"channels": [], "test_server": ""},"servers":{}, "pending_receipts": [], "users": {}, "plans": [{"name": "یک ماهه (تست)", "price": 10000, "id": 1234}]}
         save_db(default_data)
         return default_data
     with open(DB_FILE, "r", encoding="utf-8") as f:
