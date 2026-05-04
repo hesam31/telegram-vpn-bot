@@ -379,13 +379,14 @@ async def show_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     text = """
-📜 قوانین استفاده از سرویس
+📜 قوانین استفاده
 
-1️⃣ استفاده غیرقانونی ممنوع  
-2️⃣ اشتراک قابل انتقال نیست  
-3️⃣ در صورت سوء استفاده سرویس مسدود می‌شود  
-4️⃣ خرید به معنی پذیرش قوانین است
+1️⃣ غیرقانونی ممنوع
+2️⃣ اشتراک غیرقابل انتقال
+3️⃣ سوءاستفاده = مسدودی
+4️⃣ خرید = پذیرش قوانین
 """
+
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("✅ قبول دارم", callback_data="accept_rules")],
         [InlineKeyboardButton("❌ قبول ندارم", callback_data="decline_rules")]
@@ -527,7 +528,6 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
         return
 
     uid = data[2]
-
     db = load_db()
 
     if data[1] == "reject":
@@ -537,10 +537,11 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
             parse_mode="HTML"
         )
 
-        return await query.edit_message_caption(
+        await query.edit_message_caption(
             caption=query.message.caption + f"\n\n{te('error')} رد شد.",
             parse_mode="HTML"
         )
+        return
 
     if uid not in db["users"] or not db["users"][uid].get("pending_order"):
         await context.bot.send_message(
@@ -556,21 +557,18 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
 
         await context.bot.send_message(
             query.from_user.id,
-            f"{te('number')} <b>مرحله 1 از 2</b>\nلطفاً <b>کد اشتراک</b> (مثلاً <code>1006</code>) را وارد کنید:",
+            f"{te('number')} <b>مرحله 1 از 2</b>\nکد اشتراک را وارد کنید:",
             parse_mode="HTML",
             reply_markup=back_kb("admin")
         )
-
         return GET_SUB_ID
 
     elif data[3] == "renew":
         pending = db["users"][uid]["pending_order"]
         svc_idx = pending["service_idx"]
 
-        days = next(
-            (v[1] for k, v in DURATION_MAP.items() if v[0] == pending["duration_txt"]),
-            30
-        )
+        days = next((v[1] for k, v in DURATION_MAP.items()
+                     if v[0] == pending["duration_txt"]), 30)
 
         db["users"][uid]["services"][svc_idx]["expiry_ts"] = max(
             db["users"][uid]["services"][svc_idx]["expiry_ts"],
@@ -579,12 +577,11 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
 
         db["users"][uid]["services"][svc_idx]["notified_5d"] = False
         db["users"][uid]["pending_order"] = None
-
         save_db(db)
 
         await context.bot.send_message(
             uid,
-            f"{te('success')} اشتراک <code>{db['users'][uid]['services'][svc_idx].get('sub_id')}</code> تمدید شد.",
+            f"{te('success')} اشتراک تمدید شد.",
             parse_mode="HTML"
         )
 
@@ -778,23 +775,38 @@ async def admin_get_qr_photo(update: Update, context: ContextTypes.DEFAULT_TYPE)
     return ConversationHandler.END
 
 async def check_expirations(context: ContextTypes.DEFAULT_TYPE):
-    db = load_db(); now = datetime.now().timestamp(); changed = False
+    db = load_db()
+    now = datetime.now().timestamp()
+    changed = False
+
     for uid, u in db["users"].items():
         for s in u["services"]:
-            if isinstance(s, dict) and 4 < (s['expiry_ts'] - now) / 86400 <= 5 and not s.get("notified_5d"):
-                try: await context.bot.send_message(uid, f"{te('warning')} اشتراک <code>{s.get('sub_id','')}</code> شما 5 روز دیگر تمام می‌شود.", parse_mode="HTML")
-                except: pass
-                s["notified_5d"] = True; changed = True
-    if changed: save_db(db)
+            if isinstance(s, dict):
+                remaining_days = (s["expiry_ts"] - now) / 86400
 
-    async def admin_receipts(update: Update, context: ContextTypes.DEFAULT_TYPE):
+                if 4 < remaining_days <= 5 and not s.get("notified_5d"):
+                    try:
+                        await context.bot.send_message(
+                            uid,
+                            f"{te('warning')} اشتراک {s.get('sub_id','')} 5 روز دیگر منقضی می‌شود.",
+                            parse_mode="HTML"
+                        )
+                    except:
+                        pass
+                    s["notified_5d"] = True
+                    changed = True
 
-    if not db["pending_receipts"]:
+    if changed:
+        save_db(db)
+
+async def admin_receipts(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    db = load_db()
+
+    if not db.get("pending_receipts"):
         await update.message.reply_text("رسیدی وجود ندارد.")
         return
 
     for r in db["pending_receipts"]:
-
         keyboard = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton("✅ تایید", callback_data=f"approve_{r['user']}"),
@@ -808,10 +820,12 @@ async def check_expirations(context: ContextTypes.DEFAULT_TYPE):
             caption=f"رسید کاربر {r['user']}",
             reply_markup=keyboard
         )
-    async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
     server = update.message.text
 
     db = load_db()
+    db.setdefault("servers", [])
+
     db["servers"].append(server)
     save_db(db)
 
@@ -823,26 +837,26 @@ async def approve_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     db = load_db()
-
     uid = query.data.split("_")[1]
 
-    if not db["servers"]:
-        await query.message.reply_text("سروری در مخزن وجود ندارد.")
+    if not db.get("servers"):
+        await query.message.reply_text("سروری وجود ندارد.")
         return
 
     server = db["servers"].pop(0)
+    save_db(db)
 
     await context.bot.send_message(
         chat_id=int(uid),
         text=f"""
-✅ پرداخت شما تایید شد
+✅ پرداخت تایید شد
 
 🔐 سرور شما:
 
 `{server}`
 """,
         parse_mode="Markdown"
-    )
+    )  
 
     save_db(db)
 
@@ -929,6 +943,7 @@ if __name__ == "__main__":
     print("--- Premium UI Bot Started ---")
     app.run_polling()
     
-    app.add_handler(CallbackQueryHandler(show_rules, pattern="menu_rules"))
-app.add_handler(CallbackQueryHandler(accept_rules, pattern="accept_rules"))
-app.add_handler(CallbackQueryHandler(approve_payment, pattern="approve_"))
+  
+ app.add_handler(CallbackQueryHandler(show_rules, pattern="^menu_rules$"))
+ app.add_handler(CallbackQueryHandler(accept_rules, pattern="^accept_rules$"))
+ app.add_handler(CallbackQueryHandler(approve_payment, pattern="^approve_"))  
