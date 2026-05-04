@@ -949,6 +949,12 @@ async def show_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     app.run_polling()
     
   
- app.add_handler(CallbackQueryHandler(show_rules, pattern="^menu_rules$"))
- app.add_handler(CallbackQueryHandler(accept_rules, pattern="^accept_rules$"))
- app.add_handler(CallbackQueryHandler(approve_payment, pattern="^approve_"))  
+if __name__ == "__main__":
+    app = ApplicationBuilder().token("8769920545:AAHXd0IvGHnQvu1Hpb_frtR1_gB_N0ZkhfM").build()
+
+    app.add_handler(CallbackQueryHandler(show_rules, pattern="^menu_rules$"))
+    app.add_handler(CallbackQueryHandler(accept_rules, pattern="^accept_rules$"))
+    app.add_handler(CallbackQueryHandler(approve_payment, pattern="^approve_"))
+
+    print("Bot running...")
+    app.run_polling()
