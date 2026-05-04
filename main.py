@@ -880,6 +880,9 @@ async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("✅ سرور ذخیره شد.")
 
+async def decline_rules(update, context):
+    await update.callback_query.message.edit_text("شما قوانین را نپذیرفتید.")
+
 
 async def approve_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -915,6 +918,9 @@ if __name__ == "__main__":
         load_db()
 
     app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(CallbackQueryHandler(show_rules, pattern="^menu_rules$"))
+    app.add_handler(CallbackQueryHandler(accept_rules, pattern="^accept_rules$"))
+    app.add_handler(CallbackQueryHandler(approve_payment, pattern="^approve_"))
 
     if app.job_queue:
         app.job_queue.run_repeating(check_expirations, interval=14400, first=60)
@@ -995,15 +1001,4 @@ async def show_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     app.add_handler(CallbackQueryHandler(show_rules, pattern="^menu_rules$"))
 
     print("--- Premium UI Bot Started ---")
-    app.run_polling()
-    
-  
-if __name__ == "__main__":
-    app = ApplicationBuilder().token("8769920545:AAF4UrVKHZFqX1Pz-7A0VEmZEjHLqdeRgPo").build()
-
-    app.add_handler(CallbackQueryHandler(show_rules, pattern="^menu_rules$"))
-    app.add_handler(CallbackQueryHandler(accept_rules, pattern="^accept_rules$"))
-    app.add_handler(CallbackQueryHandler(approve_payment, pattern="^approve_"))
-
-    print("Bot running...")
     app.run_polling()
