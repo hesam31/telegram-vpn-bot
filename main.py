@@ -483,81 +483,83 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
     data = query.data.split("_")
     uid = data[2]
 
+    db = load_db()
+
     if data[1] == "reject":
         await context.bot.send_message(uid, f"{te('error')} سفارش شما رد شد.", parse_mode="HTML")
-        return await query.edit_message_caption(caption=query.message.caption + f"\n\n{te('error')} رد شد.", parse_mode="HTML")
+        return await query.edit_message_caption(
+            caption=query.message.caption + f"\n\n{te('error')} رد شد.",
+            parse_mode="HTML"
+        )
 
-    db = load_db()
+    if not db["users"][uid].get("pending_order"):
+        return await context.bot.send_message(
+            query.from_user.id,
+            f"{te('error')} سفارش یافت نشد.",
+            parse_mode="HTML"
+        )
+
     pending = db["users"][uid]["pending_order"]
 
+    # گرفتن لیست سرورها
     servers = db["settings"].get("servers", [])
 
     if not servers:
-        await context.bot.send_message(query.from_user.id, "هیچ سروری در لیست وجود ندارد")
+        await context.bot.send_message(query.from_user.id, "هیچ سروری موجود نیست")
         return
 
     config = servers.pop(0)
 
-    db["users"][uid]["services"].append({
-        "sub_id": config,
-        "name": pending["plan"]["name"],
-        "expiry_ts": datetime.now().timestamp() + (30 * 86400),
-        "start_ts": datetime.now().timestamp(),
-        "notified_5d": False
-    })
-
-    db["users"][uid]["pending_order"] = None
-    save_db(db)
-
-    await context.bot.send_message(
-        uid,
-        f"✅ اشتراک شما فعال شد\n\n<code>{config}</code>",
-        parse_mode="HTML"
-    )
-    
-    if not db["users"][uid].get("pending_order"): return await context.bot.send_message(query.from_user.id, f"{te('error')} سفارش یافت نشد.", parse_mode="HTML")
+    # سفارش جدید
     if data[3] == "new":
 
-    servers = db["settings"].get("servers", [])
+        db["users"][uid]["services"].append({
+            "sub_id": config,
+            "name": pending["plan"]["name"],
+            "expiry_ts": datetime.now().timestamp() + (30 * 86400),
+            "start_ts": datetime.now().timestamp(),
+            "notified_5d": False
+        })
 
-    if not servers:
-        await context.bot.send_message(query.from_user.id,"هیچ سروری موجود نیست")
-        return
-
-    config = servers.pop(0)
-
-    db["users"][uid]["services"].append({
-        "sub_id": config,
-        "name": pending["plan"]["name"],
-        "expiry_ts": datetime.now().timestamp() + (30 * 86400),
-        "start_ts": datetime.now().timestamp(),
-        "notified_5d": False
-    })
-
-    db["users"][uid]["pending_order"] = None
-    save_db(db)
-
-    await context.bot.send_message(
-        uid,
-        f"{te('success')} اشتراک شما فعال شد\n\n<code>{config}</code>",
-        parse_mode="HTML"
-    )
-    elif data[3] == "renew":
-        pending = db["users"][uid]["pending_order"]
-        servers = db["settings"].get("servers", [])
-    if not servers:
-        await context.bot.send_message(query.from_user.id,"هیچ سروری موجود نیست")
-        return
-    config = servers.pop(0)
-        svc_idx = pending["service_idx"]
-        days = next((v[1] for k, v in DURATION_MAP.items() if v[0] == pending["duration_txt"]), 30)
-        db["users"][uid]["services"][svc_idx]["expiry_ts"] = max(db["users"][uid]["services"][svc_idx]["expiry_ts"], datetime.now().timestamp()) + (days * 86400)
-        db["users"][uid]["services"][svc_idx]["notified_5d"] = False
         db["users"][uid]["pending_order"] = None
         save_db(db)
-        await context.bot.send_message(uid, f"{te('success')} اشتراک <code>{db['users'][uid]['services'][svc_idx].get('sub_id')}</code> تمدید شد.", parse_mode="HTML")
-        await query.edit_message_caption(caption=query.message.caption + f"\n\n{te('success')} تمدید شد.", parse_mode="HTML")
 
+        await context.bot.send_message(
+            uid,
+            f"{te('success')} اشتراک شما فعال شد\n\n<code>{config}</code>",
+            parse_mode="HTML"
+        )
+
+    # تمدید اشتراک
+    elif data[3] == "renew":
+
+        svc_idx = pending["service_idx"]
+
+        days = next(
+            (v[1] for k, v in DURATION_MAP.items() if v[0] == pending["duration_txt"]),
+            30
+        )
+
+        db["users"][uid]["services"][svc_idx]["expiry_ts"] = max(
+            db["users"][uid]["services"][svc_idx]["expiry_ts"],
+            datetime.now().timestamp()
+        ) + (days * 86400)
+
+        db["users"][uid]["services"][svc_idx]["notified_5d"] = False
+        db["users"][uid]["pending_order"] = None
+
+        save_db(db)
+
+        await context.bot.send_message(
+            uid,
+            f"{te('success')} اشتراک <code>{db['users'][uid]['services'][svc_idx].get('sub_id')}</code> تمدید شد.",
+            parse_mode="HTML"
+        )
+
+        await query.edit_message_caption(
+            caption=query.message.caption + f"\n\n{te('success')} تمدید شد.",
+            parse_mode="HTML"
+        )
 async def admin_add_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
