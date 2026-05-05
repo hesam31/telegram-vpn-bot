@@ -35,7 +35,7 @@ def _patched_to_dict(self, *args, **kwargs):
 InlineKeyboardButton.__init__ = _patched_init
 InlineKeyboardButton.to_dict = _patched_to_dict
 
-BOT_TOKEN = "8769920545:AAF4UrVKHZFqX1Pz-7A0VEmZEjHLqdeRgPo"
+BOT_TOKEN = "8580604744:AAHRY7Dpo0imsfsCY6_rrnR-iLSb5DXcBFQ"
 ADMIN_IDS = [81469723]
 DB_FILE = "database.json"
 CARD_NUMBER = "6037697637334522"
