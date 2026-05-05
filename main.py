@@ -42,16 +42,16 @@ CARD_NUMBER = "6037697637334522"
 SUPPORT_ID = "@hesamyaghoubii"
 
 MSG_EMOJIS = {
-    "welcome": {"id": "5388886459744792797", "char": "👋"},
+    "welcome": {"id": "6316501178368663573", "char": "👋"},
     "error":   {"id": "4958526153955476488", "char": "❌"},
     "success": {"id": "4958725487682650920", "char": "✅"},
     "rocket":  {"id": "4958725487682650920", "char": "🚀"},
     "active":  {"id": "4956720180337050608", "char": "🟢"},
     "expired": {"id": "4956582500865410174", "char": "🔴"},
     "id_tag":  {"id": "4958686613933655185", "char": "🆔"},
-    "box":     {"id": "5409380072291316349", "char": "📦"},
+    "box":     {"id": "6023639019290630537", "char": "📦"},
     "time":    {"id": "4958686613933655185", "char": "⏳"},
-    "profile": {"id": "4956387556594811916", "char": "👤"},
+    "profile": {"id": "5350619413533958825", "char": "👤"},
     "book":    {"id": "4956436416142771580", "char": "📚"},
     "card":    {"id": "4956719506027185156", "char": "💳"},
     "money":   {"id": "4956269706987177066", "char": "💰"},
@@ -61,13 +61,13 @@ MSG_EMOJIS = {
     "name":    {"id": "5972072533833289156", "char": "📛"},
     "list":    {"id": "5974235702701853774", "char": "📋"},
     "speaker": {"id": "5972240522889138094", "char": "📢"},
-    "mail":    {"id": "5852830669599674051", "char": "📬"},
+    "mail":    {"id": "5839394345450477191", "char": "📬"},
     "link":    {"id": "4992622834166530981", "char": "🔗"},
     "number":  {"id": "4992684226429059932", "char": "🔢"},
     "camera":  {"id": "4992254300202730194", "char": "📷"},
     "warning": {"id": "4956611513369494230", "char": "⚠️"},
     "trash":   {"id": "4956475826762679249", "char": "🗑"},
-    "diamond": {"id": "4956232383721374836", "char": "💎"},
+    "diamond": {"id": "5345905193005371012", "char": "💎"},
     "bullet":  {"id": "4958489311726011319", "char": "🔹"},
     "test":    {"id": "4958725487682650920", "char": "🎁"},
 }
@@ -79,12 +79,12 @@ def te(key):
     return e["char"] if e else ""
 
 BTN_CFG = {
-    "buy_new":          {"text": "خرید اشتراک جدید",    "style": "primary",  "emoji_id": "4956232383721374836"},
-    "renew":            {"text": "تمدید اشتراک",        "style": "primary",  "emoji_id": "4956418939920843885"},
-    "my_services":      {"text": "سرویس‌های من",       "style": "primary",  "emoji_id": "5409380072291316349"},
-    "profile":          {"text": "پروفایل من",          "style": "primary",  "emoji_id": "4956387556594811916"},
-    "news":             {"text": "آموزش و اخبار",       "style": "primary",  "emoji_id": "4956436416142771580"},
-    "support":          {"text": "پشتیبانی",            "style": "primary",  "emoji_id": "5852830669599674051"},
+    "buy_new":          {"text": "خرید اشتراک جدید",    "style": "primary",  "emoji_id": "5345905193005371012"},
+    #"renew":            {"text": "تمدید اشتراک",        "style": "primary",  "emoji_id": "4956418939920843885"},
+    "my_services":      {"text": "سرویس‌های من",       "style": "primary",  "emoji_id": "6023639019290630537"},
+    "profile":          {"text": "پروفایل من",          "style": "primary",  "emoji_id": "5350619413533958825"},
+    #"news":             {"text": "آموزش و اخبار",       "style": "primary",  "emoji_id": "4956436416142771580"},
+    "support":          {"text": "پشتیبانی",            "style": "primary",  "emoji_id": "5839394345450477191"},
     "back":             {"text": "بازگشت",              "style": "primary",  "emoji_id": "4958526153955476488"},
     "test_server":      {"text": "سرور تست رایگان",    "style": "success",  "emoji_id": "4958725487682650920"},
     "admin_add_plan":   {"text": "افزودن پلن",          "style": "primary",  "emoji_id": "4956232383721374836"},
@@ -128,13 +128,13 @@ DYN_BTN_EMOJIS = {
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
-DURATION_MAP = {
+#DURATION_MAP = {
     "1m": ("یک ماهه", 30),
     "2m": ("دو ماهه", 60),
     "3m": ("سه ماهه", 90),
     "6m": ("شش ماهه", 180),
-    "12m": ("یک ساله", 365)
-}
+    "12m": ("یک ساله", 365)}
+
 
 def load_db():
     if not os.path.exists(DB_FILE):
@@ -210,7 +210,7 @@ async def check_force_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     if not_joined:
         markup_keys = []
         for ch in channels:
-            markup_keys.append([InlineKeyboardButton(f"عضویت در {ch['@sedoranet']}", url=ch['t.me/sedoranet'], style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["channel_join"])])
+            markup_keys.append([InlineKeyboardButton(f"عضویت در {ch['username']}", url=ch['id'], style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["channel_join"])])
         markup_keys.append([InlineKeyboardButton("بررسی عضویت", callback_data="check_join_btn", style="success", icon_custom_emoji_id=DYN_BTN_EMOJIS["check_join"])])
         msg = f"{te('error')} برای استفاده از ربات، لطفاً ابتدا در تمامی کانال‌های زیر عضو شوید:"
         if update.message: await update.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(markup_keys), parse_mode="HTML")
