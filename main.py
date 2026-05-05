@@ -123,7 +123,7 @@ DYN_BTN_EMOJIS = {
     ADD_CHANNEL_LINK,
     DEL_CHANNEL_INDEX,
     SET_TEST_SERVER,
-) = range(14)
+) = range(12)
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
