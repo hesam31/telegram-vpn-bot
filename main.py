@@ -330,16 +330,24 @@ async def test_server_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def buy_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
     if not load_db()["plans"]:
-        await query.message.edit_text(f"{te('error')} فعلا هیچ محصولی موجود نیست.", reply_markup=back_kb(), parse_mode="HTML")
+        await query.message.edit_text("فعلا هیچ محصولی موجود نیست.", reply_markup=back_kb(), parse_mode="HTML")
         return ConversationHandler.END
+
     btns = [
-        [InlineKeyboardButton("VIP", callback_data="vip", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["month"]), InlineKeyboardButton("دو ماهه", callback_data="buy_dur_2m", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["month"])],
-        [InlineKeyboardButton("سه ماهه", callback_data="buy_dur_3m", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["month"]), InlineKeyboardButton("شش ماهه", callback_data="buy_dur_6m", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["month"])],
+        [InlineKeyboardButton("⭐ PRIME", callback_data="buy_prime", style="primary")],
         [create_btn("back", "back_main")]
     ]
-    await query.message.edit_text(f"{te('time')} مدت زمان اشتراک را انتخاب کنید:", reply_markup=InlineKeyboardMarkup(btns), parse_mode="HTML")
+
+    await query.message.edit_text(
+        "پلن PRIME را انتخاب کنید:",
+        reply_markup=InlineKeyboardMarkup(btns),
+        parse_mode="HTML"
+    )
+
     return GET_RECEIPT
+
 
 async def buy_handle_duration(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -373,6 +381,31 @@ async def buy_handle_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"پس از واریز، <b>عکس رسید</b> را همینجا ارسال کنید."
     )
     await query.message.edit_text(msg, parse_mode="HTML", reply_markup=payment_invoice_kb(CARD_NUMBER, exact_amount))
+    return GET_RECEIPT
+    async def buy_prime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    plan = load_db()["plans"][0]  # یا هر پلن PRIME که داری
+    context.user_data["buy_plan"] = plan
+
+    exact_amount = plan["price"] + random.randint(100, 999)
+    context.user_data["exact_amount"] = exact_amount
+
+    msg = (
+        f"💳 <b>فاکتور PRIME</b>\n\n"
+        f"💎 سرویس: PRIME\n"
+        f"💰 مبلغ: <code>{exact_amount:,}</code> تومان\n\n"
+        f"شماره کارت:\n<code>{CARD_NUMBER}</code>\n\n"
+        "بعد از پرداخت، رسید را ارسال کنید."
+    )
+
+    await query.message.edit_text(
+        msg,
+        parse_mode="HTML",
+        reply_markup=payment_invoice_kb(CARD_NUMBER, exact_amount)
+    )
+
     return GET_RECEIPT
 
 async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -770,6 +803,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(perform_del_plan, pattern="^delp_"))
     app.add_handler(CallbackQueryHandler(admin_manage_channels, pattern="^admin_channels$"))
     app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_IDS), admin_add_server))
+    app.add_handler(CallbackQueryHandler(buy_prime, pattern="^buy_prime$"))
 
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
