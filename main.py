@@ -128,14 +128,6 @@ DYN_BTN_EMOJIS = {
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
-#DURATION_MAP = {
-    "1m": ("یک ماهه", 30),
-    "2m": ("دو ماهه", 60),
-    "3m": ("سه ماهه", 90),
-    "6m": ("شش ماهه", 180),
-    "12m": ("یک ساله", 365)}
-
-
 def load_db():
     if not os.path.exists(DB_FILE):
         default_data = {"settings": {"channels": [], "test_server": ""}, "users": {}, "plans": [{"name": "یک ماهه (تست)", "price": 10000, "id": 1234}]}
