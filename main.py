@@ -334,7 +334,7 @@ async def buy_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text(f"{te('error')} فعلا هیچ محصولی موجود نیست.", reply_markup=back_kb(), parse_mode="HTML")
         return ConversationHandler.END
     btns = [
-        [InlineKeyboardButton("یک ماهه", callback_data="buy_dur_1m", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["month"]), InlineKeyboardButton("دو ماهه", callback_data="buy_dur_2m", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["month"])],
+        [InlineKeyboardButton("VIP", callback_data="vip", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["month"]), InlineKeyboardButton("دو ماهه", callback_data="buy_dur_2m", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["month"])],
         [InlineKeyboardButton("سه ماهه", callback_data="buy_dur_3m", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["month"]), InlineKeyboardButton("شش ماهه", callback_data="buy_dur_6m", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["month"])],
         [create_btn("back", "back_main")]
     ]
