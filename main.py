@@ -95,6 +95,7 @@ BTN_CFG = {
     "admin_dm":         {"text": "پیام به کاربر",       "style": "primary",  "emoji_id": "5852830669599674051"},
     "admin_channels":   {"text": "مدیریت کانال‌ها",   "style": "primary",  "emoji_id": "4992622834166530981"},
     "admin_set_test":   {"text": "تنظیم سرور تست",     "style": "primary",  "emoji_id": "4958725487682650920"},
+    "admin_add_server": {"text": "افزودن سرور", "style": "primary", "emoji_id": "4958725487682650920"},
 }
 
 DYN_BTN_EMOJIS = {
@@ -115,8 +116,6 @@ DYN_BTN_EMOJIS = {
     ADD_NAME,
     ADD_PRICE,
     BROADCAST_STATE,
-    GET_SUB_ID,
-    GET_QR_PHOTO,
     GET_DM_USER_ID,
     GET_DM_MESSAGE,
     MANAGE_CHANNELS,
@@ -129,23 +128,21 @@ DYN_BTN_EMOJIS = {
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
 DURATION_MAP = {
-    "1m": ("یک ماهه", 30),
-    "2m": ("دو ماهه", 60),
-    "3m": ("سه ماهه", 90),
-    "6m": ("شش ماهه", 180),
-    "12m": ("یک ساله", 365)
+    "vip": ("=vip ", 30),
+    "prime": ("prime ", 60)
 }
 
 def load_db():
     if not os.path.exists(DB_FILE):
-        default_data = {"settings": {"channels": [], "test_server": ""}, "users": {}, "plans": [{"name": "یک ماهه (تست)", "price": 10000, "id": 1234}]}
+        default_data = {"settings": {"channels": [], "test_servers": [], "servers": []}, "users": {}, "plans": [{"name": "تست رایگان", "price": 0, "id": 1234}]}
         save_db(default_data)
         return default_data
     with open(DB_FILE, "r", encoding="utf-8") as f:
         try:
             db = json.load(f)
             db.setdefault("settings", {"channels": [], "test_server": ""})
-            db["settings"].setdefault("test_server", "")
+            db["settings"].setdefault("test_servers", [])
+            db["settings"].setdefault("servers", [])
             if "gift_volume" in db["settings"]: del db["settings"]["gift_volume"]
             db.setdefault("plans", [])
             db.setdefault("users", {})
@@ -181,6 +178,7 @@ def admin_menu_kb():
         [create_btn("admin_users", "admin_users"), create_btn("admin_products", "admin_products")],
         [create_btn("admin_broadcast", "admin_broadcast"), create_btn("admin_dm", "admin_dm")],
         [create_btn("admin_channels", "admin_channels"), create_btn("admin_set_test", "admin_set_test")],
+        [create_btn("admin_add_server", "admin_add_server")],
     ])
 
 def back_kb(target="main"):
@@ -313,14 +311,18 @@ async def test_server_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
     if db["users"].get(uid, {}).get("has_test"):
         await query.message.edit_text(f"{te('error')} <b>شما قبلاً سرور تست دریافت کرده‌اید.</b>\n\nهر کاربر فقط یک بار می‌تواند سرور تست رایگان دریافت کند.", parse_mode="HTML", reply_markup=back_kb())
         return
-    test_config = db["settings"].get("test_server", "")
-    if not test_config:
+    test_servers = db["settings"].get("test_servers", [])
+    if not test_servers:
         await query.message.edit_text(f"{te('warning')} <b>سرور تست در حال حاضر در دسترس نیست.</b>\n\nلطفاً بعداً مراجعه کنید یا با پشتیبانی تماس بگیرید.", parse_mode="HTML", reply_markup=back_kb())
         return
+
+    config = test_servers.pop(0) 
+    save_db(db) 
+
     db["users"][uid]["has_test"] = True
     save_db(db)
     await query.message.edit_text(
-        f"{te('test')} <b>سرور تست رایگان شما:</b>\n\n<code>{test_config}</code>\n\n{te('warning')} این سرور فقط برای تست است و دارای محدودیت می‌باشد.",
+        f"{te('test')} <b>سرور تست رایگان شما:</b>\n\n<code>{config}</code>\n\n{te('warning')} این سرور فقط برای تست است و دارای محدودیت می‌باشد.",
         parse_mode="HTML",
         reply_markup=back_kb()
     )
@@ -480,18 +482,73 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
     await query.answer()
     data = query.data.split("_")
     uid = data[2]
+
     if data[1] == "reject":
         await context.bot.send_message(uid, f"{te('error')} سفارش شما رد شد.", parse_mode="HTML")
         return await query.edit_message_caption(caption=query.message.caption + f"\n\n{te('error')} رد شد.", parse_mode="HTML")
+
     db = load_db()
+    pending = db["users"][uid]["pending_order"]
+
+    servers = db["settings"].get("servers", [])
+
+    if not servers:
+        await context.bot.send_message(query.from_user.id, "هیچ سروری در لیست وجود ندارد")
+        return
+
+    config = servers.pop(0)
+
+    db["users"][uid]["services"].append({
+        "sub_id": config,
+        "name": pending["plan"]["name"],
+        "expiry_ts": datetime.now().timestamp() + (30 * 86400),
+        "start_ts": datetime.now().timestamp(),
+        "notified_5d": False
+    })
+
+    db["users"][uid]["pending_order"] = None
+    save_db(db)
+
+    await context.bot.send_message(
+        uid,
+        f"✅ اشتراک شما فعال شد\n\n<code>{config}</code>",
+        parse_mode="HTML"
+    )
+    
     if not db["users"][uid].get("pending_order"): return await context.bot.send_message(query.from_user.id, f"{te('error')} سفارش یافت نشد.", parse_mode="HTML")
     if data[3] == "new":
-        context.user_data["target_uid"] = uid
-        context.user_data["pending_info"] = db["users"][uid]["pending_order"]
-        await context.bot.send_message(query.from_user.id, f"{te('number')} <b>مرحله 1 از 2</b>\nلطفاً <b>کد اشتراک</b> (مثلاً <code>1006</code>) را وارد کنید:", parse_mode="HTML", reply_markup=back_kb("admin"))
-        return GET_SUB_ID
+
+    servers = db["settings"].get("servers", [])
+
+    if not servers:
+        await context.bot.send_message(query.from_user.id,"هیچ سروری موجود نیست")
+        return
+
+    config = servers.pop(0)
+
+    db["users"][uid]["services"].append({
+        "sub_id": config,
+        "name": pending["plan"]["name"],
+        "expiry_ts": datetime.now().timestamp() + (30 * 86400),
+        "start_ts": datetime.now().timestamp(),
+        "notified_5d": False
+    })
+
+    db["users"][uid]["pending_order"] = None
+    save_db(db)
+
+    await context.bot.send_message(
+        uid,
+        f"{te('success')} اشتراک شما فعال شد\n\n<code>{config}</code>",
+        parse_mode="HTML"
+    )
     elif data[3] == "renew":
         pending = db["users"][uid]["pending_order"]
+        servers = db["settings"].get("servers", [])
+    if not servers:
+        await context.bot.send_message(query.from_user.id,"هیچ سروری موجود نیست")
+        return
+    config = servers.pop(0)
         svc_idx = pending["service_idx"]
         days = next((v[1] for k, v in DURATION_MAP.items() if v[0] == pending["duration_txt"]), 30)
         db["users"][uid]["services"][svc_idx]["expiry_ts"] = max(db["users"][uid]["services"][svc_idx]["expiry_ts"], datetime.now().timestamp()) + (days * 86400)
@@ -644,6 +701,17 @@ async def admin_del_channel_save(update: Update, context: ContextTypes.DEFAULT_T
         else: await update.message.reply_text(f"{te('error')} شماره اشتباه است.", reply_markup=admin_menu_kb(), parse_mode="HTML")
     except: await update.message.reply_text(f"{te('error')} فقط عدد وارد کنید.", reply_markup=admin_menu_kb(), parse_mode="HTML")
     return ConversationHandler.END
+    
+    async def admin_add_server_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    await query.message.edit_text(
+        "کانفیگ سرور را ارسال کنید:",
+        reply_markup=back_kb("admin")
+    )
+
+    return SET_TEST_SERVER
 
 async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -655,33 +723,17 @@ async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYP
     )
     return SET_TEST_SERVER
 
+async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    db = load_db()
+    db["settings"].setdefault("servers", []).append(update.message.text.strip())
+    save_db(db)
+    await update.message.reply_text("سرور با موفقیت اضافه شد.")
+    
 async def admin_save_test_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = load_db()
-    db["settings"]["test_server"] = update.message.text.strip()
+    db["settings"].setdefault("test_servers", []).append(update.message.text.strip())
     save_db(db)
     await update.message.reply_text(f"{te('success')} سرور تست با موفقیت ذخیره شد.", reply_markup=admin_menu_kb(), parse_mode="HTML")
-    return ConversationHandler.END
-
-async def admin_get_sub_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["new_sub_id"] = update.message.text
-    await update.message.reply_text(f"{te('success')} کد <code>{update.message.text}</code> ثبت شد.\n\n{te('camera')} <b>مرحله 2 از 2</b>\nحالا <b>عکس QR</b> را بفرستید:", parse_mode="HTML", reply_markup=back_kb("admin"))
-    return GET_QR_PHOTO
-
-async def admin_get_qr_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message.photo: return await update.message.reply_text(f"{te('error')} عکس ارسال کنید.", reply_markup=back_kb("admin"), parse_mode="HTML") and GET_QR_PHOTO
-    uid = context.user_data["target_uid"]
-    days = next((v[1] for k, v in DURATION_MAP.items() if v[0] == context.user_data["pending_info"]["duration_txt"]), 30)
-    db = load_db()
-    db["users"][uid]["services"].append({
-        "sub_id": context.user_data["new_sub_id"], "name": context.user_data["pending_info"]["plan"]["name"], "photo_id": update.message.photo[-1].file_id,
-        "expiry_ts": datetime.now().timestamp() + (days * 86400), "start_ts": datetime.now().timestamp(), "notified_5d": False
-    })
-    db["users"][uid]["pending_order"] = None
-    save_db(db)
-    try:
-        await context.bot.send_photo(uid, update.message.photo[-1].file_id, caption=f"{te('success')} سفارش فعال شد.\n{te('id_tag')} کد اشتراک: <code>{context.user_data['new_sub_id']}</code>\n{te('time')} اعتبار: {days} روز", parse_mode="HTML")
-        await update.message.reply_text(f"{te('success')} ارسال شد.", reply_markup=admin_menu_kb(), parse_mode="HTML")
-    except Exception as e: await update.message.reply_text(f"{te('error')} خطا: {e}", parse_mode="HTML")
     return ConversationHandler.END
 
 async def check_expirations(context: ContextTypes.DEFAULT_TYPE):
@@ -715,6 +767,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(del_plan_prompt, pattern="^admin_del_plan$"))
     app.add_handler(CallbackQueryHandler(perform_del_plan, pattern="^delp_"))
     app.add_handler(CallbackQueryHandler(admin_manage_channels, pattern="^admin_channels$"))
+    app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_IDS), admin_add_server))
 
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
@@ -737,10 +790,9 @@ if __name__ == "__main__":
             CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
             CallbackQueryHandler(admin_del_channel_prompt, pattern="^del_ch$"),
             CallbackQueryHandler(admin_set_test_start, pattern="^admin_set_test$"),
+            CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"),
         ],
         states={
-            GET_SUB_ID: [MessageHandler(filters.TEXT, admin_get_sub_id)],
-            GET_QR_PHOTO: [MessageHandler(filters.PHOTO, admin_get_qr_photo)],
             ADD_NAME: [MessageHandler(filters.TEXT, admin_save_plan_name)],
             ADD_PRICE: [MessageHandler(filters.TEXT, admin_save_plan_price)],
             BROADCAST_STATE: [MessageHandler(filters.ALL, admin_broadcast_send)],
@@ -750,6 +802,7 @@ if __name__ == "__main__":
             ADD_CHANNEL_LINK: [MessageHandler(filters.TEXT, admin_save_channel_link)],
             DEL_CHANNEL_INDEX: [MessageHandler(filters.TEXT, admin_del_channel_save)],
             SET_TEST_SERVER: [MessageHandler(filters.TEXT, admin_save_test_server)],
+            SET_TEST_SERVER: [MessageHandler(filters.TEXT, admin_add_server)],
         },
         fallbacks=[CallbackQueryHandler(cancel_callback, pattern="^back_")]
     ))
