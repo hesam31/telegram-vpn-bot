@@ -382,7 +382,8 @@ async def buy_handle_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await query.message.edit_text(msg, parse_mode="HTML", reply_markup=payment_invoice_kb(CARD_NUMBER, exact_amount))
     return GET_RECEIPT
-    async def buy_prime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+async def buy_prime(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
