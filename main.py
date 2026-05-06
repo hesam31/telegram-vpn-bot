@@ -359,7 +359,7 @@ async def buy_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return BUY_SELECT_PLAN
 
-async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
@@ -380,6 +380,31 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     return BUY_SELECT_VOLUME
+
+ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    data = query.data  # مثل buy_vol_1
+
+    volume_map = {
+        "buy_vol_1": ("1GB", 330),
+        "buy_vol_3": ("3GB", 120000),
+        "buy_vol_5": ("5GB", 180000),
+        "buy_vol_10": ("10GB", 300000),
+    }
+
+    volume, price = volume_map.get(data, ("نامشخص", 0))
+
+    context.user_data["volume"] = volume
+    context.user_data["price"] = price
+
+    await query.message.edit_text(
+        "لطفاً تعداد را وارد کنید:",
+        reply_markup=back_kb("main")
+    )
+
+    return BUY_GET_COUNT
 
 async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
