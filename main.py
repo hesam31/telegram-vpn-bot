@@ -123,11 +123,12 @@ DYN_BTN_EMOJIS = {
     ADD_CHANNEL_LINK,
     DEL_CHANNEL_INDEX,
     SET_TEST_SERVER,
+    SET_SERVER,
     BUY_SELECT_PLAN,
     BUY_SELECT_VOLUME,
     BUY_GET_COUNT,
     BUY_CONFIRM_RULES
-) = range(16)
+) = range(17)
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
@@ -455,18 +456,6 @@ async def buy_confirm_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return GET_RECEIPT
 
-#async def buy_handle_duration(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    #query = update.callback_query
-    #await query.answer()
-    #duration_text = DURATION_MAP.get(query.data.split("_")[2], ("نامشخص", 0))[0]
-    #context.user_data["buy_duration"] = duration_text
-    #filtered = [p for p in load_db()["plans"] if duration_text in p["name"]]
-    #if not filtered:
-     #   await query.message.edit_text(f"{te('error')} پلنی برای این مدت تعریف نشده است.", reply_markup=back_kb(), parse_mode="HTML")
-    #    return ConversationHandler.END
-   # btns = [[InlineKeyboardButton(f"{p['name']} - {p['price']:,} T", callback_data=f"buy_plan_{p['id']}", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["plan_item"])] for p in filtered]
-    #btns.append([create_btn("back", "back_main")])
-   # await query.message.edit_text(f"{te('diamond')} پلن مورد نظر را انتخاب کنید:", reply_markup=InlineKeyboardMarkup(btns), parse_mode="HTML")
 
 async def buy_handle_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -920,7 +909,7 @@ async def admin_add_server_start(update: Update, context: ContextTypes.DEFAULT_T
     reply_markup=back_kb("admin")
     )
 
-    return SET_TEST_SERVER
+    return SET_SERVER
 
 async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -937,6 +926,7 @@ async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db["settings"].setdefault("servers", []).append(update.message.text.strip())
     save_db(db)
     await update.message.reply_text("سرور با موفقیت اضافه شد.")
+    return ConversationHandler.END
     
 async def admin_save_test_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = load_db()
@@ -981,12 +971,6 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(profile_show, pattern="^menu_profile$"))
     app.add_handler(CallbackQueryHandler(profile_info, pattern="^profile_info$"))
     app.add_handler(CallbackQueryHandler(profile_referral, pattern="^profile_referral$"))
-    app.add_handler(ConversationHandler(
-        entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
-        states={GET_RECEIPT: [CallbackQueryHandler(buy_handle_duration, pattern="^buy_dur_"), CallbackQueryHandler(buy_handle_plan, pattern="^buy_plan_"), MessageHandler(filters.PHOTO, buy_receipt)]},
-        fallbacks=[CallbackQueryHandler(cancel_callback, pattern="^back_")]
-    ))
-
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
         states={
@@ -1034,8 +1018,7 @@ if __name__ == "__main__":
             ADD_CHANNEL_LINK: [MessageHandler(filters.TEXT, admin_save_channel_link)],
             DEL_CHANNEL_INDEX: [MessageHandler(filters.TEXT, admin_del_channel_save)],
             SET_TEST_SERVER: [MessageHandler(filters.TEXT, admin_save_test_server)],
-            SET_TEST_SERVER: [MessageHandler(filters.TEXT, admin_add_server)],
-        },
+            SET_SERVER: [MessageHandler(filters.TEXT, admin_add_server)],
         fallbacks=[CallbackQueryHandler(cancel_callback, pattern="^back_")]
     ))
 
