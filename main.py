@@ -3,6 +3,7 @@ import json
 import os
 import random
 from datetime import datetime
+import re
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -197,7 +198,17 @@ def payment_invoice_kb(card: str, amount: int):
         ],
         [create_btn("back", "back_main")],
     ])
+import re
 
+def extract_number(text: str):
+    if not text:
+        return None
+
+    text = text.replace("۰","0").replace("۱","1").replace("۲","2").replace("۳","3").replace("۴","4").replace("۵","5").replace("۶","6").replace("۷","7").replace("۸","8").replace("۹","9")
+
+    cleaned = re.sub(r"[^\d]", "", text)
+
+    return int(cleaned) if cleaned else None
 async def check_force_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     user_id = update.effective_user.id
     if user_id in ADMIN_IDS: return True
@@ -393,12 +404,11 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     return BUY_GET_COUNT
+    
 
 async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        count = int(update.message.text)
-    except:
-        return await update.message.reply_text("فقط عدد وارد کنید.")
+    if count is None:
+    return await update.message.reply_text("فقط عدد وارد کنید.")
 
     context.user_data["count"] = count
 
