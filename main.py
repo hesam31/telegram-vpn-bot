@@ -508,8 +508,22 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db["users"][uid]["pending_order"] = {"type": "new", "plan": plan, "duration_txt": context.user_data.get("buy_duration", ""), "date": str(datetime.now()), "exact_amount": exact_amount}
     save_db(db)
     admin_markup = InlineKeyboardMarkup([
-        [("تایید و تنظیم کد", callback_data=f"adm_approve_{uid}_new", style="success", icon_custom_emoji_id=DYN_BTN_EMOJIS["success_btn"])],
-        [InlineKeyboardButton("رد سفارش", callback_data=f"adm_reject_{uid}", style="danger", icon_custom_emoji_id=DYN_BTN_EMOJIS["del_item"])]
+        [
+            InlineKeyboardButton(
+                "تایید و تنظیم کد",
+                callback_data=f"adm_approve_{uid}_new",
+                style="success",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["success_btn"]
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "رد سفارش",
+                callback_data=f"adm_reject_{uid}",
+                style="danger",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["del_item"]
+            )
+        ]
     ])
     await update.message.reply_text(f"{te('success')} رسید شما دریافت شد.\n{te('time')} پس از تایید، کد اشتراک ارسال می‌شود.", reply_markup=main_menu_kb(), parse_mode="HTML")
     for admin in ADMIN_IDS:
