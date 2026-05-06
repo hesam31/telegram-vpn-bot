@@ -39,7 +39,7 @@ InlineKeyboardButton.to_dict = _patched_to_dict
 BOT_TOKEN = "8580604744:AAHRY7Dpo0imsfsCY6_rrnR-iLSb5DXcBFQ"
 ADMIN_IDS = [81469723]
 DB_FILE = "database.json"
-CARD_NUMBER = ""
+CARD_NUMBER = "6037697637334522"
 SUPPORT_ID = "@hesamyaghoubii"
 
 MSG_EMOJIS = {
@@ -194,7 +194,7 @@ def payment_invoice_kb(card: str, amount: int):
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton("📋 کپی شماره کارت", callback_data="noop_card", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["copy_btn"], copy_text=card),
-            InlineKeyboardButton("💰 کپی مبلغ", callback_data="noop_amount", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["copy_btn"], copy_text=str(amount)),
+            InlineKeyboardButton("💰 کپی مبلغ", callback_data="noop_amount", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["copy_btn"], copy_text=str(int(amount)),
         ],
         [create_btn("back", "back_main")],
     ])
@@ -382,30 +382,6 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return BUY_SELECT_VOLUME
 
-async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    volume_map = {
-        "buy_vol_1": ("1GB", 50000),
-        "buy_vol_3": ("3GB", 120000),
-        "buy_vol_5": ("5GB", 180000),
-        "buy_vol_10": ("10GB", 300000),
-    }
-
-    vol, price = volume_map[query.data]
-
-    context.user_data["volume"] = vol
-    context.user_data["price"] = price
-
-    await query.message.edit_text(
-        f"{te('number')} تعداد مورد نظر را وارد کنید:",
-        reply_markup=back_kb()
-    )
-
-    return BUY_GET_COUNT
-    
-
 async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         count = int(update.message.text)
@@ -415,12 +391,37 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data["count"] = count
 
-    total = context.user_data["price"] * count
+    base_price = context.user_data["price"]
+
+    total = base_price * count
+
+    # نوسان منطقی برای جلوگیری از مبلغ ثابت
+    variation = random.randint(100, 999) / 10
+    total = round(total + variation, 1)
+
     context.user_data["total"] = total
 
     buttons = [
         [InlineKeyboardButton("✅ قوانین را میپذیرم", callback_data="accept_rules")],
         [create_btn("back", "back_main")]
+    ]
+
+    text = (
+        f"{te('warning')} قبل از خرید قوانین را تایید کنید.\n\n"
+        f"• اشتراک قابل عودت نیست\n"
+        f"• مسئولیت استفاده با کاربر است"
+    )
+
+    await update.message.reply_text(
+        text,
+        reply_markup=InlineKeyboardMarkup(buttons),
+        parse_mode="HTML"
+    )
+
+    return BUY_CONFIRM_RULES
+    buttons = [
+        [InlineKeyboardButton("✅ قوانین را میپذیرم", callback_data="accept_rules")],
+        [create_btn("back", "back_main")]total 
     ]
 
     text = (
@@ -527,7 +528,7 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db["users"][uid]["pending_order"] = {"type": "new", "plan": plan, "duration_txt": context.user_data.get("buy_duration", ""), "date": str(datetime.now()), "exact_amount": exact_amount}
     save_db(db)
     admin_markup = InlineKeyboardMarkup([
-        [InlineKeyboardButton("تایید و تنظیم کد", callback_data=f"adm_approve_{uid}_new", style="success", icon_custom_emoji_id=DYN_BTN_EMOJIS["success_btn"])],
+        [("تایید و تنظیم کد", callback_data=f"adm_approve_{uid}_new", style="success", icon_custom_emoji_id=DYN_BTN_EMOJIS["success_btn"])],
         [InlineKeyboardButton("رد سفارش", callback_data=f"adm_reject_{uid}", style="danger", icon_custom_emoji_id=DYN_BTN_EMOJIS["del_item"])]
     ])
     await update.message.reply_text(f"{te('success')} رسید شما دریافت شد.\n{te('time')} پس از تایید، کد اشتراک ارسال می‌شود.", reply_markup=main_menu_kb(), parse_mode="HTML")
