@@ -407,8 +407,11 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
 
 async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if count is None:
-    return await update.message.reply_text("فقط عدد وارد کنید.")
+    try:
+        count = int(update.message.text)
+    except ValueError:
+        await update.message.reply_text("فقط عدد وارد کنید.")
+        return BUY_GET_COUNT
 
     context.user_data["count"] = count
 
@@ -416,7 +419,7 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["total"] = total
 
     buttons = [
-        [InlineKeyboardButton("✅ قوانین را میپذیرم", callback_data="accept_rules", style="success")],
+        [InlineKeyboardButton("✅ قوانین را میپذیرم", callback_data="accept_rules")],
         [create_btn("back", "back_main")]
     ]
 
