@@ -995,7 +995,7 @@ if __name__ == "__main__":
             ],
             },
         fallbacks=[CallbackQueryHandler(cancel_callback, pattern="^back_")]
-            allow_reentry=True
+            allow_reentry=True,
 
             ))
 
