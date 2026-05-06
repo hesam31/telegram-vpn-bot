@@ -194,12 +194,10 @@ def payment_invoice_kb(card: str, amount: int):
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton("📋 کپی شماره کارت", callback_data="noop_card", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["copy_btn"], copy_text=card),
-            InlineKeyboardButton("💰 کپی مبلغ", callback_data="noop_amount", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["copy_btn"], copy_text=str(int(amount)),
+            InlineKeyboardButton("💰 کپی مبلغ", callback_data="noop_amount", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["copy_btn"], copy_text=str(int(amount))),
         ],
         [create_btn("back", "back_main")],
     ])
-import re
-
 def extract_number(text: str):
     if not text:
         return None
@@ -209,6 +207,7 @@ def extract_number(text: str):
     cleaned = re.sub(r"[^\d]", "", text)
 
     return int(cleaned) if cleaned else None
+
 async def check_force_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     user_id = update.effective_user.id
     if user_id in ADMIN_IDS: return True
