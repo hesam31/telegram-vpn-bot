@@ -994,8 +994,8 @@ if __name__ == "__main__":
                 MessageHandler(filters.PHOTO, buy_receipt)
             ],
             },
-        fallbacks=[CallbackQueryHandler(cancel_callback, pattern="^back_")]
-            allow_reentry=True,
+        fallbacks=[CallbackQueryHandler(cancel_callback, pattern="^back_")],
+        allow_reentry=True,
 
             ))
 
