@@ -381,7 +381,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return BUY_SELECT_VOLUME
 
- async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
