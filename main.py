@@ -1019,8 +1019,8 @@ if __name__ == "__main__":
             DEL_CHANNEL_INDEX: [MessageHandler(filters.TEXT, admin_del_channel_save)],
             SET_TEST_SERVER: [MessageHandler(filters.TEXT, admin_save_test_server)],
             SET_SERVER: [MessageHandler(filters.TEXT, admin_add_server)],
+            },
         fallbacks=[CallbackQueryHandler(cancel_callback, pattern="^back_")]
-        }
     ))
 
     print("--- Premium UI Bot Started ---")
