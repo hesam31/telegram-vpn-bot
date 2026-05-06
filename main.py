@@ -123,7 +123,11 @@ DYN_BTN_EMOJIS = {
     ADD_CHANNEL_LINK,
     DEL_CHANNEL_INDEX,
     SET_TEST_SERVER,
-) = range(12)
+    BUY_SELECT_PLAN
+    BUY_SELECT_VOLUME
+    BUY_GET_COUNT
+    BUY_CONFIRM_RULES
+) = range(16)
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
@@ -166,10 +170,10 @@ def create_btn(config_key, callback_data=None, url=None):
 
 def main_menu_kb():
     return InlineKeyboardMarkup([
-        [create_btn("buy_new", "menu_buy"), create_btn("renew", "menu_renew")],
-        [create_btn("my_services", "menu_services"), create_btn("profile", "menu_profile")],
-        [create_btn("news", "menu_news"), create_btn("support", "menu_support")],
+        [create_btn("buy_new", "menu_buy")],
         [create_btn("test_server", "menu_test")],
+        [create_btn("profile", "menu_profile")],
+        [create_btn("support", "menu_support")],
     ])
 
 def admin_menu_kb():
@@ -331,36 +335,138 @@ async def buy_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    if not load_db()["plans"]:
-        await query.message.edit_text("فعلا هیچ محصولی موجود نیست.", reply_markup=back_kb(), parse_mode="HTML")
-        return ConversationHandler.END
-
-    btns = [
-        [InlineKeyboardButton("⭐ PRIME", callback_data="buy_prime", style="primary")],
+    buttons = [
+        [InlineKeyboardButton("PRIME", callback_data="buy_plan_prime", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["plan_item"])],
         [create_btn("back", "back_main")]
     ]
 
     await query.message.edit_text(
-        "پلن PRIME را انتخاب کنید:",
-        reply_markup=InlineKeyboardMarkup(btns),
+        f"{te('diamond')} پلن مورد نظر را انتخاب کنید:",
+        reply_markup=InlineKeyboardMarkup(buttons),
         parse_mode="HTML"
+    )
+
+    return BUY_SELECT_PLAN
+
+async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    context.user_data["plan"] = "PRIME"
+
+    buttons = [
+        [InlineKeyboardButton("1GB - 330", callback_data="buy_vol_1")],
+        [InlineKeyboardButton("3GB - 120,000", callback_data="buy_vol_3")],
+        [InlineKeyboardButton("5GB - 180,000", callback_data="buy_vol_5")],
+        [InlineKeyboardButton("10GB - 300,000", callback_data="buy_vol_10")],
+        [create_btn("back", "back_main")]
+    ]
+
+    await query.message.edit_text(
+        f"{te('box')} حجم مورد نظر را انتخاب کنید:",
+        reply_markup=InlineKeyboardMarkup(buttons),
+        parse_mode="HTML"
+    )
+
+    return BUY_SELECT_VOLUME
+
+async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    volume_map = {
+        "buy_vol_1": ("1GB", 50000),
+        "buy_vol_3": ("3GB", 120000),
+        "buy_vol_5": ("5GB", 180000),
+        "buy_vol_10": ("10GB", 300000),
+    }
+
+    vol, price = volume_map[query.data]
+
+    context.user_data["volume"] = vol
+    context.user_data["price"] = price
+
+    await query.message.edit_text(
+        f"{te('number')} تعداد مورد نظر را وارد کنید:",
+        reply_markup=back_kb()
+    )
+
+    return BUY_GET_COUNT
+
+async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        count = int(update.message.text)
+    except:
+        return await update.message.reply_text("فقط عدد وارد کنید.")
+
+    context.user_data["count"] = count
+
+    total = context.user_data["price"] * count
+    context.user_data["total"] = total
+
+    buttons = [
+        [InlineKeyboardButton("✅ قوانین را میپذیرم", callback_data="accept_rules", style="success")],
+        [create_btn("back", "back_main")]
+    ]
+
+    text = (
+        f"{te('warning')} قبل از خرید قوانین را تایید کنید.\n\n"
+        f"• اشتراک قابل عودت نیست\n"
+        f"• مسئولیت استفاده با کاربر است"
+    )
+
+    await update.message.reply_text(
+        text,
+        reply_markup=InlineKeyboardMarkup(buttons),
+        parse_mode="HTML"
+    )
+
+    return BUY_CONFIRM_RULES
+
+async def buy_confirm_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    plan = context.user_data["plan"]
+    volume = context.user_data["volume"]
+    count = context.user_data["count"]
+    total = context.user_data["total"]
+
+    exact_amount = total + random.randint(100, 999)
+    context.user_data["exact_amount"] = exact_amount
+
+    msg = (
+        f"{te('card')} <b>فاکتور پرداخت</b>\n\n"
+        f"{te('diamond')} پلن: {plan}\n"
+        f"{te('box')} حجم: {volume}\n"
+        f"{te('number')} تعداد: {count}\n\n"
+        f"{te('money')} مبلغ قابل پرداخت:\n"
+        f"<code>{exact_amount:,}</code> تومان\n\n"
+        f"{te('card')} شماره کارت:\n"
+        f"<code>{CARD_NUMBER}</code>\n\n"
+        f"پس از واریز، عکس رسید را ارسال کنید."
+    )
+
+    await query.message.edit_text(
+        msg,
+        parse_mode="HTML",
+        reply_markup=payment_invoice_kb(CARD_NUMBER, exact_amount)
     )
 
     return GET_RECEIPT
 
-
-async def buy_handle_duration(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    duration_text = DURATION_MAP.get(query.data.split("_")[2], ("نامشخص", 0))[0]
-    context.user_data["buy_duration"] = duration_text
-    filtered = [p for p in load_db()["plans"] if duration_text in p["name"]]
-    if not filtered:
-        await query.message.edit_text(f"{te('error')} پلنی برای این مدت تعریف نشده است.", reply_markup=back_kb(), parse_mode="HTML")
-        return ConversationHandler.END
-    btns = [[InlineKeyboardButton(f"{p['name']} - {p['price']:,} T", callback_data=f"buy_plan_{p['id']}", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["plan_item"])] for p in filtered]
-    btns.append([create_btn("back", "back_main")])
-    await query.message.edit_text(f"{te('diamond')} پلن مورد نظر را انتخاب کنید:", reply_markup=InlineKeyboardMarkup(btns), parse_mode="HTML")
+#async def buy_handle_duration(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    #query = update.callback_query
+    #await query.answer()
+    #duration_text = DURATION_MAP.get(query.data.split("_")[2], ("نامشخص", 0))[0]
+    #context.user_data["buy_duration"] = duration_text
+    #filtered = [p for p in load_db()["plans"] if duration_text in p["name"]]
+    #if not filtered:
+     #   await query.message.edit_text(f"{te('error')} پلنی برای این مدت تعریف نشده است.", reply_markup=back_kb(), parse_mode="HTML")
+    #    return ConversationHandler.END
+   # btns = [[InlineKeyboardButton(f"{p['name']} - {p['price']:,} T", callback_data=f"buy_plan_{p['id']}", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["plan_item"])] for p in filtered]
+    #btns.append([create_btn("back", "back_main")])
+   # await query.message.edit_text(f"{te('diamond')} پلن مورد نظر را انتخاب کنید:", reply_markup=InlineKeyboardMarkup(btns), parse_mode="HTML")
 
 async def buy_handle_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -427,6 +533,73 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try: await context.bot.send_photo(admin, update.message.photo[-1].file_id, caption=f"{te('bell')} <b>سفارش جدید</b>\n{te('profile')} کاربر: <code>{uid}</code>\n{te('box')} پلن: {plan['name']}\n{te('money')} مبلغ واریزی: {exact_amount:,}", parse_mode="HTML", reply_markup=admin_markup)
         except: pass
     return ConversationHandler.END
+
+async def profile_show(update, context):
+    query = update.callback_query
+    await query.answer()
+
+    keyboard = [
+        [InlineKeyboardButton("📊 اطلاعات حساب", callback_data="profile_info")],
+        [InlineKeyboardButton("👥 سیستم رفرال", callback_data="profile_referral")],
+        [InlineKeyboardButton("🧾 تاریخچه خرید", callback_data="profile_orders")],
+        [InlineKeyboardButton("🖥 سرورهای من", callback_data="profile_servers")],
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_main")]
+    ]
+
+    await query.message.edit_text(
+        "👤 پنل کاربری شما\n\nیکی از گزینه‌ها را انتخاب کنید:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )    
+
+async def profile_referral(update, context):
+    query = update.callback_query
+    await query.answer()
+
+    user_id = query.from_user.id
+    bot_username = (await context.bot.get_me()).username
+
+    referral_link = f"https://t.me/{bot_username}?start=ref_{user_id}"
+
+    invited_count = get_invited_count(user_id)  # از دیتابیس
+    invited_buy = get_invited_buy_count(user_id)
+
+    text = f"""
+👥 سیستم دعوت دوستان
+
+🔗 لینک دعوت شما:
+{referral_link}
+
+👤 تعداد دعوت‌ها: {invited_count}
+💰 تعداد خرید دعوتی‌ها: {invited_buy}
+
+با ارسال لینک بالا به دوستان خود می‌توانید پاداش دریافت کنید.
+"""
+
+    keyboard = [[InlineKeyboardButton("🔙 بازگشت", callback_data="menu_profile")]]
+
+    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+
+async def profile_info(update, context):
+    query = update.callback_query
+    await query.answer()
+
+    user_id = query.from_user.id
+
+    buy_count = get_user_buy_count(user_id)
+    active_servers = get_active_servers(user_id)
+
+    text = f"""
+📊 اطلاعات حساب شما
+
+👤 آیدی کاربر: {user_id}
+
+🛒 تعداد خریدها: {buy_count}
+🖥 سرورهای فعال: {active_servers}
+"""
+
+    keyboard = [[InlineKeyboardButton("🔙 بازگشت", callback_data="menu_profile")]]
+
+    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))        
 
 async def renew_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -805,7 +978,9 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_manage_channels, pattern="^admin_channels$"))
     app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_IDS), admin_add_server))
     app.add_handler(CallbackQueryHandler(buy_prime, pattern="^buy_prime$"))
-
+    app.add_handler(CallbackQueryHandler(profile_show, pattern="^menu_profile$"))
+    app.add_handler(CallbackQueryHandler(profile_info, pattern="^profile_info$"))
+    app.add_handler(CallbackQueryHandler(profile_referral, pattern="^profile_referral$"))
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
         states={GET_RECEIPT: [CallbackQueryHandler(buy_handle_duration, pattern="^buy_dur_"), CallbackQueryHandler(buy_handle_plan, pattern="^buy_plan_"), MessageHandler(filters.PHOTO, buy_receipt)]},
@@ -813,10 +988,30 @@ if __name__ == "__main__":
     ))
 
     app.add_handler(ConversationHandler(
-        entry_points=[CallbackQueryHandler(renew_start, pattern="^menu_renew$")],
-        states={RENEW_GET_RECEIPT: [CallbackQueryHandler(renew_select_duration, pattern="^ren_svc_"), CallbackQueryHandler(renew_process_payment, pattern="^ren_dur_"), MessageHandler(filters.PHOTO, renew_receipt)]},
+        entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
+        states={
+            BUY_SELECT_PLAN: [
+                CallbackQueryHandler(buy_select_plan, pattern="^buy_plan_")
+            ],
+
+            BUY_SELECT_VOLUME: [
+                CallbackQueryHandler(buy_select_volume, pattern="^buy_vol_")
+            ],
+
+            BUY_GET_COUNT: [
+                MessageHandler(filters.TEXT, buy_get_count)
+            ],
+
+            BUY_CONFIRM_RULES: [
+                CallbackQueryHandler(buy_confirm_rules, pattern="^accept_rules$")
+            ],
+
+            GET_RECEIPT: [
+                MessageHandler(filters.PHOTO, buy_receipt)
+            ],
+            },
         fallbacks=[CallbackQueryHandler(cancel_callback, pattern="^back_")]
-    ))
+            ))
 
     app.add_handler(ConversationHandler(
         entry_points=[
