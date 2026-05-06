@@ -394,7 +394,6 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     total = base_price * count
 
-    # نوسان منطقی برای جلوگیری از مبلغ ثابت
     variation = random.randint(100, 999) / 10
     total = round(total + variation, 1)
 
@@ -403,24 +402,6 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons = [
         [InlineKeyboardButton("✅ قوانین را میپذیرم", callback_data="accept_rules")],
         [create_btn("back", "back_main")]
-    ]
-
-    text = (
-        f"{te('warning')} قبل از خرید قوانین را تایید کنید.\n\n"
-        f"• اشتراک قابل عودت نیست\n"
-        f"• مسئولیت استفاده با کاربر است"
-    )
-
-    await update.message.reply_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(buttons),
-        parse_mode="HTML"
-    )
-
-    return BUY_CONFIRM_RULES
-    buttons = [
-        [InlineKeyboardButton("✅ قوانین را میپذیرم", callback_data="accept_rules")],
-        [create_btn("back", "back_main")]total 
     ]
 
     text = (
