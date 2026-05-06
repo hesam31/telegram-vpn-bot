@@ -359,7 +359,7 @@ async def buy_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return BUY_SELECT_PLAN
 
-async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
@@ -390,7 +390,7 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data["count"] = count
 
-    base_price = context.user_data["price"]
+    base_price = context.user_data["price",0]
 
     total = base_price * count
 
