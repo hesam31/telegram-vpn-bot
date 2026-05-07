@@ -165,11 +165,19 @@ def save_db(data):
 def create_btn(config_key, callback_data=None, url=None):
     cfg = BTN_CFG[config_key]
     kwargs = {"text": cfg["text"], "style": cfg.get("style", "primary")}
-    if cfg.get("emoji_id"): kwargs["icon_custom_emoji_id"] = cfg["emoji_id"]
-    if url: kwargs["url"] = url
-    else: kwargs["callback_data"] = callback_data
+
+    if cfg.get("emoji_id"):
+        kwargs["icon_custom_emoji_id"] = cfg["emoji_id"]
+
+    if url:
+        kwargs["url"] = url
+    else:
+        kwargs["callback_data"] = callback_data
+
     return InlineKeyboardButton(**kwargs)
-    def get_invited_count(user_id):
+
+
+def get_invited_count(user_id):
     db = load_db()
     count = 0
 
