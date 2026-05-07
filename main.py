@@ -381,31 +381,6 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return BUY_SELECT_VOLUME
 
-async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    data = query.data  # مثل buy_vol_1
-
-    volume_map = {
-        "buy_vol_1": ("1GB", 330),
-        "buy_vol_3": ("3GB", 120000),
-        "buy_vol_5": ("5GB", 180000),
-        "buy_vol_10": ("10GB", 300000),
-    }
-
-    volume, price = volume_map.get(data, ("نامشخص", 0))
-
-    context.user_data["volume"] = volume
-    context.user_data["price"] = price
-
-    await query.message.edit_text(
-        "لطفاً تعداد را وارد کنید:",
-        reply_markup=back_kb("main")
-    )
-
-    return BUY_GET_COUNT
-
 async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         count = int(update.message.text)
@@ -415,8 +390,7 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data["count"] = count
 
-    base_price = context.user_data["price",0]
-
+    base_price = context.user_data.get("price", 0)
     total = base_price * count
 
     variation = random.randint(100, 999) / 10
@@ -431,8 +405,8 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         f"{te('warning')} قبل از خرید قوانین را تایید کنید.\n\n"
-        f"• اشتراک قابل عودت نیست\n"
-        f"• مسئولیت استفاده با کاربر است"
+        "• اشتراک قابل عودت نیست\n"
+        "• مسئولیت استفاده با کاربر است"
     )
 
     await update.message.reply_text(
