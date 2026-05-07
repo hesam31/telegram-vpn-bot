@@ -169,6 +169,46 @@ def create_btn(config_key, callback_data=None, url=None):
     if url: kwargs["url"] = url
     else: kwargs["callback_data"] = callback_data
     return InlineKeyboardButton(**kwargs)
+    def get_invited_count(user_id):
+    db = load_db()
+    count = 0
+
+    for uid, user in db["users"].items():
+        if user.get("inviter") == str(user_id):
+            count += 1
+
+    return count
+
+
+def get_invited_buy_count(user_id):
+    db = load_db()
+    count = 0
+
+    for uid, user in db["users"].items():
+        if user.get("inviter") == str(user_id) and user.get("services"):
+            count += 1
+
+    return count
+
+
+def get_user_buy_count(user_id):
+    db = load_db()
+    user = db["users"].get(str(user_id), {})
+    return len(user.get("services", []))
+
+
+def get_active_servers(user_id):
+    db = load_db()
+    services = db["users"].get(str(user_id), {}).get("services", [])
+
+    active = 0
+    now = datetime.now().timestamp()
+
+    for s in services:
+        if isinstance(s, dict) and s.get("expiry_ts", 0) > now:
+            active += 1
+
+    return active
 
 def main_menu_kb():
     return InlineKeyboardMarkup([
@@ -206,7 +246,7 @@ def extract_number(text: str):
 
     cleaned = re.sub(r"[^\d]", "", text)
 
-    return int(cleaned) if cleaned else None
+    return int(cleaned) if cleaned else None    
 
 async def check_force_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     user_id = update.effective_user.id
@@ -254,8 +294,28 @@ async def check_join_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = load_db()
     uid = str(update.effective_user.id)
+    if context.args:
+        ref = context.args[0]
+        if ref.startswith("ref_"):
+            inviter = ref.split("_")[1]
     if uid not in db["users"]:
-        db["users"][uid] = {"name": update.effective_user.first_name, "username": update.effective_user.username, "services": [], "pending_order": None, "has_test": False}
+
+        inviter = None
+
+        if context.args:
+            ref = context.args[0]
+            if ref.startswith("ref_"):
+                inviter = ref.split("_")[1]
+
+        db["users"][uid] = {
+            "name": update.effective_user.first_name,
+            "username": update.effective_user.username,
+            "services": [],
+            "pending_order": None,
+            "has_test": False,
+            "inviter": inviter
+        }
+
         save_db(db)
     if not await check_force_join(update, context): return ConversationHandler.END
     msg = f"{te('welcome')} <b>به ربات خوش آمدید</b>\n\nگزینه مورد نظر را انتخاب کنید:"
@@ -386,7 +446,7 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     volume_map = {
-        "buy_vol_1": ("1GB", 33000),
+        "buy_vol_1": ("1GB", 330000),
         "buy_vol_3": ("3GB", 120000),
         "buy_vol_5": ("5GB", 180000),
         "buy_vol_10": ("10GB", 300000),
@@ -552,7 +612,7 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except: pass
     return ConversationHandler.END
 
-async def profile_show(update, context):
+async def profile_menu(update, context):
     query = update.callback_query
     await query.answer()
 
@@ -567,7 +627,7 @@ async def profile_show(update, context):
     await query.message.edit_text(
         "👤 پنل کاربری شما\n\nیکی از گزینه‌ها را انتخاب کنید:",
         reply_markup=InlineKeyboardMarkup(keyboard)
-    )    
+    )
 
 async def profile_referral(update, context):
     query = update.callback_query
@@ -985,7 +1045,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(start, pattern="^back_main$"))
     app.add_handler(CallbackQueryHandler(admin_start, pattern="^back_admin$"))
     app.add_handler(CallbackQueryHandler(my_services, pattern="^menu_services$"))
-    app.add_handler(CallbackQueryHandler(user_profile, pattern="^menu_profile$"))
+    app.add_handler(CallbackQueryHandler(profile_menu, pattern="^menu_profile$"))
     app.add_handler(CallbackQueryHandler(show_channels_text, pattern="^menu_news$"))
     app.add_handler(CallbackQueryHandler(test_server_handler, pattern="^menu_test$"))
     app.add_handler(CallbackQueryHandler(lambda u, c: u.callback_query.answer(), pattern="^noop_"))
@@ -1038,6 +1098,8 @@ if __name__ == "__main__":
             CallbackQueryHandler(admin_del_channel_prompt, pattern="^del_ch$"),
             CallbackQueryHandler(admin_set_test_start, pattern="^admin_set_test$"),
             CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"),
+            CallbackQueryHandler(profile_referral, pattern="profile_referral"),
+            CallbackQueryHandler(profile_info, pattern="profile_info"),
         ],
         states={
             ADD_NAME: [MessageHandler(filters.TEXT, admin_save_plan_name)],
