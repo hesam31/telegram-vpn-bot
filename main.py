@@ -1065,7 +1065,6 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_manage_channels, pattern="^admin_channels$"))
     app.add_handler(MessageHandler(filters.TEXT & filters.User(ADMIN_IDS), admin_add_server))
     app.add_handler(CallbackQueryHandler(buy_prime, pattern="^buy_prime$"))
-    app.add_handler(CallbackQueryHandler(profile_show, pattern="^menu_profile$"))
     app.add_handler(CallbackQueryHandler(profile_info, pattern="^profile_info$"))
     app.add_handler(CallbackQueryHandler(profile_referral, pattern="^profile_referral$"))
     app.add_handler(ConversationHandler(
