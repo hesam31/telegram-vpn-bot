@@ -43,7 +43,7 @@ CARD_NUMBER = "6037697637334522"
 SUPPORT_ID = "@hesamyaghoubii"
 
 MSG_EMOJIS = {
-    "welcome": {"id": "5388886459744792797", "char": "👋"},
+    "welcome": {"id": "6316501178368663573", "char": "🦅"},
     "error":   {"id": "4958526153955476488", "char": "❌"},
     "success": {"id": "4958725487682650920", "char": "✅"},
     "rocket":  {"id": "4958725487682650920", "char": "🚀"},
@@ -64,7 +64,6 @@ MSG_EMOJIS = {
     "speaker": {"id": "5972240522889138094", "char": "📢"},
     "mail":    {"id": "5852830669599674051", "char": "📬"},
     "link":    {"id": "4992622834166530981", "char": "🔗"},
-    #"number":  {"id": "4992684226429059932", "char": "🔢"},
     "camera":  {"id": "4992254300202730194", "char": "📷"},
     "warning": {"id": "4956611513369494230", "char": "⚠️"},
     "trash":   {"id": "4956475826762679249", "char": "🗑"},
@@ -340,6 +339,26 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.callback_query.message.edit_text(msg, reply_markup=main_menu_kb(), parse_mode="HTML")
         context.user_data["last_menu_msg_id"] = update.callback_query.message.message_id
     return ConversationHandler.END
+
+async def support_handler(update, context):
+    query = update.callback_query
+    await query.answer()
+
+    keyboard = [
+        [InlineKeyboardButton("💬 ارتباط با پشتیبانی", url="https://t.me/hesamyaghoubii")],
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_main")]
+    ]
+
+    text = (
+        "📞 پشتیبانی\n\n"
+        "برای ارتباط با پشتیبانی روی دکمه زیر کلیک کنید "
+        "تا مستقیماً وارد گفتگوی تلگرام شوید."
+    )
+
+    await query.message.edit_text(
+        text,
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )    
 
 async def cancel_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -685,7 +704,49 @@ async def profile_info(update, context):
 
     keyboard = [[InlineKeyboardButton("🔙 بازگشت", callback_data="menu_profile")]]
 
-    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))        
+    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))    
+
+async def profile_orders(update, context):
+    query = update.callback_query
+    await query.answer()
+
+    user_id = str(query.from_user.id)
+    db = load_db()
+
+    services = db["users"].get(user_id, {}).get("services", [])
+
+    if not services:
+        text = "🧾 شما هنوز خریدی ثبت نکرده‌اید."
+    else:
+        text = "🧾 تاریخچه خرید شما:\n\n"
+        for s in services:
+            if isinstance(s, dict):
+                text += f"• {s.get('name')} | کد: {s.get('sub_id','---')}\n"
+
+    keyboard = [[InlineKeyboardButton("🔙 بازگشت", callback_data="menu_profile")]]
+
+    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+
+async def profile_servers(update, context):
+    query = update.callback_query
+    await query.answer()
+
+    user_id = str(query.from_user.id)
+    db = load_db()
+
+    services = db["users"].get(user_id, {}).get("services", [])
+
+    if not services:
+        text = "🖥 شما سرور فعالی ندارید."
+    else:
+        text = "🖥 سرورهای شما:\n\n"
+        for s in services:
+            if isinstance(s, dict):
+                text += f"🔹 {s.get('sub_id','---')}\n"
+
+    keyboard = [[InlineKeyboardButton("🔙 بازگشت", callback_data="menu_profile")]]
+
+    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))           
 
 async def renew_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -1067,6 +1128,9 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(buy_prime, pattern="^buy_prime$"))
     app.add_handler(CallbackQueryHandler(profile_info, pattern="^profile_info$"))
     app.add_handler(CallbackQueryHandler(profile_referral, pattern="^profile_referral$"))
+    app.add_handler(CallbackQueryHandler(profile_orders, pattern="^profile_orders$"))
+    app.add_handler(CallbackQueryHandler(profile_servers, pattern="^profile_servers$"))
+    app.add_handler(CallbackQueryHandler(support_handler, pattern="^menu_support$"))
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
         states={
