@@ -366,7 +366,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["plan"] = "PRIME"
 
     buttons = [
-        [InlineKeyboardButton("1GB - 330", callback_data="buy_vol_1")],
+        [InlineKeyboardButton("1GB - 330,000", callback_data="buy_vol_1")],
         [InlineKeyboardButton("3GB - 120,000", callback_data="buy_vol_3")],
         [InlineKeyboardButton("5GB - 180,000", callback_data="buy_vol_5")],
         [InlineKeyboardButton("10GB - 300,000", callback_data="buy_vol_10")],
@@ -381,6 +381,32 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return BUY_SELECT_VOLUME
 
+async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    volume_map = {
+        "buy_vol_1": ("1GB", 33000),
+        "buy_vol_3": ("3GB", 120000),
+        "buy_vol_5": ("5GB", 180000),
+        "buy_vol_10": ("10GB", 300000),
+    }
+
+    volume, price = volume_map.get(query.data, ("نامشخص", 0))
+
+    context.user_data["volume"] = volume
+    context.user_data["price"] = price
+
+    await query.message.edit_text(
+        f"{te('box')} حجم انتخاب شد: {volume}\n\n"
+        f"{te('money')} قیمت هر عدد: {price:,} تومان\n\n"
+        "تعداد اکانت مورد نظر را وارد کنید:",
+        parse_mode="HTML",
+        reply_markup=back_kb()
+    )
+
+    return BUY_GET_COUNT    
+
 async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         count = int(update.message.text)
@@ -392,10 +418,6 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     base_price = context.user_data.get("price", 0)
     total = base_price * count
-
-    variation = random.randint(100, 999) / 10
-    total = round(total + variation, 1)
-
     context.user_data["total"] = total
 
     buttons = [
