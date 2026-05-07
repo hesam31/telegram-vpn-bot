@@ -1118,7 +1118,6 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(show_channels_text, pattern="^menu_news$"))
     app.add_handler(CallbackQueryHandler(test_server_handler, pattern="^menu_test$"))
     app.add_handler(CallbackQueryHandler(lambda u, c: u.callback_query.answer(), pattern="^noop_"))
-    app.add_handler(CallbackQueryHandler(lambda u, c: u.callback_query.answer() or u.callback_query.message.edit_text(f"{te('admin')} پشتیبانی: {SUPPORT_ID}", reply_markup=back_kb(), parse_mode="HTML"), pattern="^menu_support$"))
     app.add_handler(CallbackQueryHandler(list_users, pattern="^admin_users$"))
     app.add_handler(CallbackQueryHandler(list_plans, pattern="^admin_products$"))
     app.add_handler(CallbackQueryHandler(del_plan_prompt, pattern="^admin_del_plan$"))
