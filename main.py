@@ -611,12 +611,14 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not update.message.photo:
         return await update.message.reply_text(
-            "❌ لطفا عکس رسید پرداخت را ارسال کنید."
+            f"{te('error')} لطفا عکس رسید پرداخت را ارسال کنید."
         )
 
     uid = str(update.effective_user.id)
 
-    plan = context.user_data.get("buy_plan")
+    plan = context.user_data.get("plan", "نامشخص")
+    volume = context.user_data.get("volume", "نامشخص")
+    count = context.user_data.get("count", 1)
     exact_amount = context.user_data.get("exact_amount", 0)
 
     db = load_db()
@@ -627,60 +629,70 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db["users"][uid]["pending_order"] = {
         "type": "new",
         "plan": plan,
+        "volume": volume,
+        "count": count,
         "date": str(datetime.now()),
         "exact_amount": exact_amount
     }
 
     save_db(db)
-    # پیام به کاربر
+
     await update.message.reply_text(
-        f"""{sedora} <b>رسید شما دریافت شد</b>
+        f"""{te('sedora')} <b>رسید شما دریافت شد</b>
 
-سفارش شما ثبت شد و در انتظار تایید ادمین است.
+{te('time')} سفارش شما در انتظار تایید ادمین است.
 
-پس از تایید، اطلاعات سرور به صورت خودکار برای شما ارسال خواهد شد.""",
+پس از تایید، اطلاعات سرور به صورت خودکار ارسال خواهد شد.""",
         parse_mode="HTML"
     )
 
-    # دکمه های ادمین
     admin_markup = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                "✅ تایید و ارسال سرور",
-                callback_data=f"adm_approve_{uid}_new"
+                "تایید و ارسال سرور",
+                callback_data=f"adm_approve_{uid}_new",
+                style="success",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["success_btn"]
             )
         ],
         [
             InlineKeyboardButton(
-                "❌ رد سفارش",
-                callback_data=f"adm_reject_{uid}"
+                "رد سفارش",
+                callback_data=f"adm_reject_{uid}",
+                style="danger",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["del_item"]
             )
         ]
     ])
 
-    # ارسال رسید برای ادمین ها
     for admin in ADMIN_IDS:
         try:
             await context.bot.send_photo(
-                admin,
-                update.message.photo[-1].file_id,
+                chat_id=admin,
+                photo=update.message.photo[-1].file_id,
                 caption=f"""
-📥 <b>سفارش جدید</b>
+{te('mail')} <b>سفارش جدید</b>
 
-{USER_EMOJI} کاربر:
+{te('profile')} کاربر
 <code>{uid}</code>
 
-{MONEY_EMOJI} مبلغ پرداختی:
-<code>{exact_amount:,}</code> تومان
+{te('diamond')} پلن
+<code>{plan}</code>
 
-{PACKAGE_EMOJI} پلن:
-<code>{plan['name'] if plan else 'نامشخص'}</code>
+{te('box')} حجم
+<code>{volume}</code>
+
+{te('number')} تعداد
+<code>{count}</code>
+
+{te('money')} مبلغ
+<code>{exact_amount:,}</code> تومان
 """,
                 parse_mode="HTML",
                 reply_markup=admin_markup
             )
-        except:
-            pass
+        except Exception as e:
+            print("ADMIN SEND ERROR:", e)
 
     return ConversationHandler.END
 async def profile_menu(update, context):
