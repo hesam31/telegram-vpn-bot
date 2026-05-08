@@ -97,6 +97,8 @@ BTN_CFG = {
     "admin_channels":   {"text": "مدیریت کانال‌ها",   "style": "primary",  "emoji_id": "4992622834166530981"},
     "admin_set_test":   {"text": "تنظیم سرور تست",     "style": "primary",  "emoji_id": "4958725487682650920"},
     "admin_add_server": {"text": "افزودن سرور", "style": "primary", "emoji_id": "4958725487682650920"},
+    "admin_server_stats":{"text": "آمار سرورها","style": "primary", "emoji_id": "5409380072291316349"},
+    "admin_receipts":{"text": "رسید های واریزی","style": "primary","emoji_id": "5350697092184944245"},
 }
 
 DYN_BTN_EMOJIS = {
@@ -233,6 +235,8 @@ def admin_menu_kb():
         [create_btn("admin_broadcast", "admin_broadcast"), create_btn("admin_dm", "admin_dm")],
         [create_btn("admin_channels", "admin_channels"), create_btn("admin_set_test", "admin_set_test")],
         [create_btn("admin_add_server", "admin_add_server")],
+        [create_btn("admin_server_stats", "admin_server_stats")],
+        [create_btn("admin_receipts", "admin_receipts")],
     ])
 
 def back_kb(target="main"):
@@ -634,6 +638,12 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "date": str(datetime.now()),
         "exact_amount": exact_amount
     }
+    db["receipts"].append({
+    "user_id": uid,
+    "photo": file_id,
+    "date": str(datetime.now()),
+    "status": "pending"
+})
 
     save_db(db)
 
@@ -695,6 +705,135 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print("ADMIN SEND ERROR:", e)
 
     return ConversationHandler.END
+
+async def admin_receipts(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    db = load_db()
+
+    receipts = [r for r in db.get("receipts", []) if r["status"] == "pending"]
+
+    if not receipts:
+        await query.message.edit_text(
+            "هیچ رسیدی برای بررسی وجود ندارد",
+            reply_markup=back_kb("admin")
+        )
+        return
+
+    text = f"📥 رسید های واریزی\n\nتعداد: {len(receipts)}"
+
+    kb = []
+
+    for i, r in enumerate(receipts):
+        kb.append([
+            InlineKeyboardButton(
+                f"رسید {i+1}",
+                callback_data=f"view_receipt_{i}"
+            )
+        ])
+
+    kb.append([InlineKeyboardButton("بازگشت", callback_data="admin")])
+
+    await query.message.edit_text(
+        text,
+        reply_markup=InlineKeyboardMarkup(kb)
+    )
+
+async def view_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    index = int(query.data.split("_")[-1])
+
+    db = load_db()
+    receipt = db["receipts"][index]
+
+    uid = receipt["user_id"]
+
+    kb = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("تایید", callback_data=f"approve_receipt_{index}"),
+            InlineKeyboardButton("رد", callback_data=f"reject_receipt_{index}")
+        ]
+    ])
+
+    await context.bot.send_photo(
+        chat_id=query.message.chat_id,
+        photo=receipt["photo"],
+        caption=f"رسید کاربر:\n{uid}",
+        reply_markup=kb
+    )
+
+
+async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    index = int(query.data.split("_")[-1])
+
+    db = load_db()
+    receipt = db["receipts"][index]
+
+    uid = receipt["user_id"]
+
+    user = db["users"].get(str(uid))
+    pending = user.get("pending_order")
+
+    if not pending:
+        await query.message.edit_caption("❌ سفارش پیدا نشد")
+        return
+
+    servers = db["settings"].get("servers", [])
+
+    if not servers:
+        await query.message.edit_caption("❌ سروری در لیست نیست")
+        return
+
+    config = servers.pop(0)
+
+    user["services"].append({
+        "sub_id": config,
+        "name": pending["plan"],
+        "start_ts": datetime.now().timestamp(),
+        "expiry_ts": datetime.now().timestamp() + (30 * 86400)
+    })
+
+    user["pending_order"] = None
+
+    db["receipts"][index]["status"] = "approved"
+
+    save_db(db)
+
+    await context.bot.send_message(
+        chat_id=uid,
+        text=f"""
+✅ سفارش شما تایید شد
+
+🔐 کانفیگ شما:
+
+{config}
+"""
+    )
+
+    await query.message.edit_caption("✅ رسید تایید شد و سرور ارسال شد")
+
+
+async def reject_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    index = int(query.data.split("_")[-1])
+
+    db = load_db()
+    db["receipts"][index]["status"] = "rejected"
+
+    save_db(db)
+
+    await query.message.edit_caption(
+        "❌ رسید رد شد"
+    )            
+
 async def profile_menu(update, context):
     query = update.callback_query
     await query.answer()
@@ -887,6 +1026,37 @@ async def admin_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["last_menu_msg_id"] = update.callback_query.message.message_id
     return ConversationHandler.END
 
+async def admin_server_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    db = load_db()
+
+    remaining = len(db["settings"].get("servers", []))
+
+    sent = 0
+    for uid, user in db["users"].items():
+        services = user.get("services", [])
+        for s in services:
+            if isinstance(s, dict):
+                sent += 1
+
+    text = f"""
+📊 آمار سرورها
+
+🟢 ارسال شده: {sent}
+
+📦 باقی مانده در لیست: {remaining}
+
+📊 مجموع کل:
+{sent + remaining}
+"""
+
+    await query.message.edit_text(
+        text,
+        reply_markup=back_kb("admin")
+    )    
+
 async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -919,13 +1089,14 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
         return
 
     config = servers.pop(0)
+    save_db(db)
 
     # سفارش جدید
     if data[3] == "new":
 
         db["users"][uid]["services"].append({
             "sub_id": config,
-            "name": pending["plan"]["name"],
+            "name": pending["plan"],
             "expiry_ts": datetime.now().timestamp() + (30 * 86400),
             "start_ts": datetime.now().timestamp(),
             "notified_5d": False
@@ -1225,6 +1396,11 @@ if __name__ == "__main__":
             CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"),
             CallbackQueryHandler(profile_referral, pattern="profile_referral"),
             CallbackQueryHandler(profile_info, pattern="profile_info"),
+            CallbackQueryHandler(admin_server_stats, pattern="admin_server_stats"),
+            CallbackQueryHandler(admin_receipts, pattern="admin_receipts"),
+            CallbackQueryHandler(view_receipt, pattern="view_receipt_"),
+            CallbackQueryHandler(approve_receipt, pattern="approve_receipt_"),
+            CallbackQueryHandler(reject_receipt, pattern="reject_receipt_"),
         ],
         states={
             ADD_NAME: [MessageHandler(filters.TEXT, admin_save_plan_name)],
