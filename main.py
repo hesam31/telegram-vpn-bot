@@ -1065,7 +1065,7 @@ async def admin_server_stats(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
-    return
+        return
     query = update.callback_query
     await query.answer()
     data = query.data.split("_")
