@@ -142,12 +142,17 @@ DURATION_MAP = {
 
 def load_db():
     if not os.path.exists(DB_FILE):
-        default_data = {"settings": {"channels": [], "test_servers": [], "servers": []}, "users": {}, "plans": [{"name": "تست رایگان", "price": 0, "id": 1234}]}
-        save_db(default_data)
+        default_data = {
+    "settings": {"channels": [], "test_servers": [], "servers": []},
+    "users": {},
+    "plans": [{"name": "تست رایگان", "price": 0, "id": 1234}],
+    "receipts": []
+}
         return default_data
     with open(DB_FILE, "r", encoding="utf-8") as f:
         try:
             db = json.load(f)
+            db.setdefault("receipts", [])
             db.setdefault("settings", {"channels": [], "test_server": ""})
             db["settings"].setdefault("test_servers", [])
             db["settings"].setdefault("servers", [])
@@ -617,6 +622,7 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return await update.message.reply_text(
             f"{te('error')} لطفا عکس رسید پرداخت را ارسال کنید."
         )
+    file_id = update.message.photo[-1].file_id
 
     uid = str(update.effective_user.id)
 
@@ -1058,6 +1064,8 @@ async def admin_server_stats(update: Update, context: ContextTypes.DEFAULT_TYPE)
     )    
 
 async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+    return
     query = update.callback_query
     await query.answer()
     data = query.data.split("_")
