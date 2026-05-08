@@ -70,6 +70,7 @@ MSG_EMOJIS = {
     "diamond": {"id": "4956232383721374836", "char": "💎"},
     "bullet":  {"id": "4958489311726011319", "char": "🔹"},
     "test":    {"id": "4958725487682650920", "char": "🎁"},
+    "sedora":  {"id":"6316422138085514606",  "char": "🦅"},
 }
 
 def te(key):
@@ -607,38 +608,81 @@ async def buy_prime(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return GET_RECEIPT
 
 async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     if not update.message.photo:
-        return await update.message.reply_text(f"{te('error')} لطفاً عکس رسید را ارسال کنید.", reply_markup=back_kb(), parse_mode="HTML") and GET_RECEIPT
+        return await update.message.reply_text(
+            "❌ لطفا عکس رسید پرداخت را ارسال کنید."
+        )
+
     uid = str(update.effective_user.id)
+
     plan = context.user_data.get("buy_plan")
-    exact_amount = context.user_data.get("exact_amount", plan["price"] if plan else 0)
+    exact_amount = context.user_data.get("exact_amount", 0)
+
     db = load_db()
-    db["users"][uid]["pending_order"] = {"type": "new", "plan": plan, "duration_txt": context.user_data.get("buy_duration", ""), "date": str(datetime.now()), "exact_amount": exact_amount}
+
+    if uid not in db["users"]:
+        db["users"][uid] = {}
+
+    db["users"][uid]["pending_order"] = {
+        "type": "new",
+        "plan": plan,
+        "date": str(datetime.now()),
+        "exact_amount": exact_amount
+    }
+
     save_db(db)
+    # پیام به کاربر
+    await update.message.reply_text(
+        f"""{sedora} <b>رسید شما دریافت شد</b>
+
+سفارش شما ثبت شد و در انتظار تایید ادمین است.
+
+پس از تایید، اطلاعات سرور به صورت خودکار برای شما ارسال خواهد شد.""",
+        parse_mode="HTML"
+    )
+
+    # دکمه های ادمین
     admin_markup = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                "تایید و تنظیم کد",
-                callback_data=f"adm_approve_{uid}_new",
-                style="success",
-                icon_custom_emoji_id=DYN_BTN_EMOJIS["success_btn"]
+                "✅ تایید و ارسال سرور",
+                callback_data=f"adm_approve_{uid}_new"
             )
         ],
         [
             InlineKeyboardButton(
-                "رد سفارش",
-                callback_data=f"adm_reject_{uid}",
-                style="danger",
-                icon_custom_emoji_id=DYN_BTN_EMOJIS["del_item"]
+                "❌ رد سفارش",
+                callback_data=f"adm_reject_{uid}"
             )
         ]
     ])
-    await update.message.reply_text(f"{te('success')} رسید شما دریافت شد.\n{te('time')} پس از تایید، کد اشتراک ارسال می‌شود.", reply_markup=main_menu_kb(), parse_mode="HTML")
-    for admin in ADMIN_IDS:
-        try: await context.bot.send_photo(admin, update.message.photo[-1].file_id, caption=f"{te('bell')} <b>سفارش جدید</b>\n{te('profile')} کاربر: <code>{uid}</code>\n{te('box')} پلن: {plan['name']}\n{te('money')} مبلغ واریزی: {exact_amount:,}", parse_mode="HTML", reply_markup=admin_markup)
-        except: pass
-    return ConversationHandler.END
 
+    # ارسال رسید برای ادمین ها
+    for admin in ADMIN_IDS:
+        try:
+            await context.bot.send_photo(
+                admin,
+                update.message.photo[-1].file_id,
+                caption=f"""
+📥 <b>سفارش جدید</b>
+
+{USER_EMOJI} کاربر:
+<code>{uid}</code>
+
+{MONEY_EMOJI} مبلغ پرداختی:
+<code>{exact_amount:,}</code> تومان
+
+{PACKAGE_EMOJI} پلن:
+<code>{plan['name'] if plan else 'نامشخص'}</code>
+""",
+                parse_mode="HTML",
+                reply_markup=admin_markup
+            )
+        except:
+            pass
+
+    return ConversationHandler.END
 async def profile_menu(update, context):
     query = update.callback_query
     await query.answer()
