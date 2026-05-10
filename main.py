@@ -513,12 +513,12 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["price"] = price
 
     await query.message.edit_text(
-        f"{te('box')} حجم انتخاب شد: {volume}\n\n"
-        f"{te('money')} قیمت هر عدد: {price:,} تومان\n\n"
-         f"{te('NUMBER')} تعداد اکانت مورد نظر را وارد کنید:\n\n"
-        parse_mode="HTML",
-        reply_markup=back_kb()
-    )
+    f"{te('box')} حجم انتخاب شد: {volume}\n\n"
+    f"{te('money')} قیمت هر عدد: {price:,} تومان\n\n"
+    f"{te('number')} تعداد اکانت مورد نظر را وارد کنید:",
+    parse_mode="HTML",
+    reply_markup=back_kb()
+)
 
     return BUY_GET_COUNT    
 
