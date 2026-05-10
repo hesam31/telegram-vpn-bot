@@ -69,7 +69,7 @@ MSG_EMOJIS = {
     "warning": {"id": "4956611513369494230", "char": "⚠️"},
     "trash":   {"id": "4956475826762679249", "char": "🗑"},
     "diamond": {"id": "4956232383721374836", "char": "💎"},
-    "bullet":  {"id": "5987786071117665665", "char": "⬇️"},
+    "bullet":  {"id": "6316584638173159314", "char": "🦅"},
     "test":    {"id": "4958725487682650920", "char": "🎁"},
     "sedora":  {"id":"6316422138085514606",  "char": "🦅"},
 }
@@ -345,7 +345,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         save_db(db)
     if not await check_force_join(update, context): return ConversationHandler.END
-    msg = f"{te('welcome')} <b>به صدورا بات خوش آمدید</b>\n\n{te('bullet')}برای ادامه گزینه مورد نظر خود را انتخاب کنید"
+    msg = f"{te('welcome')} <b>به صدورا بات خوش آمدید</b>\n\n{te('bullet')}برای ادامه گزینه مورد نظر را انتخاب کنید"
     last_id = context.user_data.get("last_menu_msg_id")
     if last_id and update.message:
         try: await context.bot.delete_message(update.effective_chat.id, last_id)
