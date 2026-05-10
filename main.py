@@ -82,6 +82,7 @@ def te(key):
 BTN_CFG = {
     "buy_new":          {"text": "خرید اشتراک جدید",    "style": "primary",  "emoji_id": "4956232383721374836"},
     "renew":            {"text": "تمدید اشتراک",        "style": "primary",  "emoji_id": "4956418939920843885"},
+    "referral": {"text": "رفرال", "style": "primary", "emoji_id": "4956232383721374836"},
     "my_services":      {"text": "سرویس‌های من",       "style": "primary",  "emoji_id": "5409380072291316349"},
     "profile":          {"text": "پروفایل من",          "style": "primary",  "emoji_id": "4956387556594811916"},
     "news":             {"text": "آموزش و اخبار",       "style": "primary",  "emoji_id": "4956436416142771580"},
@@ -229,8 +230,11 @@ def main_menu_kb():
     return InlineKeyboardMarkup([
         [create_btn("buy_new", "menu_buy")],
         [create_btn("test_server", "menu_test")],
-        [create_btn("profile", "menu_profile")],
-        [create_btn("support", "menu_support")],
+        [create_btn("referral", "profile_referral")],
+        [
+            create_btn("profile", "menu_profile"),
+            create_btn("support", "menu_support")
+        ],
     ])
 
 def admin_menu_kb():
@@ -645,9 +649,13 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "exact_amount": exact_amount
     }
     db["receipts"].append({
-    "user_id": uid,
-    "photo": file_id,
-    "date": str(datetime.now()),
+    "user_id": user.id,
+    "username": user.username,
+    "server": selected_server,
+    "volume": selected_volume,
+    "count": count,
+    "price": price,
+    "photo": photo_id,
     "status": "pending"
 })
 
@@ -713,38 +721,101 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 async def admin_receipts(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     query = update.callback_query
     await query.answer()
 
     db = load_db()
 
-    receipts = [r for r in db.get("receipts", []) if r["status"] == "pending"]
+    receipts = [
+        (i, r) for i, r in enumerate(db["receipts"])
+        if r["status"] == "pending"
+    ]
 
-    if not receipts:
-        await query.message.edit_text(
-            "هیچ رسیدی برای بررسی وجود ندارد",
-            reply_markup=back_kb("admin")
-        )
-        return
+    page = int(context.user_data.get("receipt_page", 0))
 
-    text = f"📥 رسید های واریزی\n\nتعداد: {len(receipts)}"
+    per_page = 10
+    start = page * per_page
+    end = start + per_page
+
+    page_items = receipts[start:end]
 
     kb = []
 
-    for i, r in enumerate(receipts):
+    for i, r in page_items:
         kb.append([
             InlineKeyboardButton(
-                f"رسید {i+1}",
+                f"رسید کاربر {r['user_id']}",
                 callback_data=f"view_receipt_{i}"
             )
         ])
 
-    kb.append([InlineKeyboardButton("بازگشت", callback_data="admin")])
+    nav = []
+
+    if page > 0:
+        nav.append(
+            InlineKeyboardButton(
+                "⬅️ قبلی",
+                callback_data="receipt_prev"
+            )
+        )
+
+    if end < len(receipts):
+        nav.append(
+            InlineKeyboardButton(
+                "➡️ بعدی",
+                callback_data="receipt_next"
+            )
+        )
+
+    if nav:
+        kb.append(nav)
+
+    kb.append([
+        InlineKeyboardButton(
+            "بازگشت",
+            callback_data="admin"
+        )
+    ])
+
+    total_pages = (len(receipts) + per_page - 1) // per_page
+
+    text = f"""
+📥 رسید های واریزی
+
+تعداد در انتظار: {len(receipts)}
+
+صفحه {page+1} از {max(total_pages,1)}
+"""
 
     await query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup(kb)
+        context.user_data["receipt_page"] = 0
     )
+    
+async def receipt_next(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    query = update.callback_query
+    await query.answer()
+
+    page = context.user_data.get("receipt_page", 0)
+    context.user_data["receipt_page"] = page + 1
+
+    await admin_receipts(update, context)    
+
+
+async def receipt_prev(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    query = update.callback_query
+    await query.answer()
+
+    page = context.user_data.get("receipt_page", 0)
+
+    if page > 0:
+        context.user_data["receipt_page"] = page - 1
+
+    await admin_receipts(update, context)    
 
 async def view_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -757,19 +828,38 @@ async def view_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     uid = receipt["user_id"]
 
-    kb = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("تایید", callback_data=f"approve_receipt_{index}"),
-            InlineKeyboardButton("رد", callback_data=f"reject_receipt_{index}")
-        ]
-    ])
+    text = f"""
+📥 سفارش جدید
 
-    await context.bot.send_photo(
-        chat_id=query.message.chat_id,
-        photo=receipt["photo"],
-        caption=f"رسید کاربر:\n{uid}",
-        reply_markup=kb
-    )
+👤 کاربر: {user.id}
+🔗 یوزرنیم: @{user.username}
+
+🌐 سرور: {selected_server}
+📦 حجم: {selected_volume}
+🔢 تعداد: {count}
+
+💰 مبلغ: {price} تومان
+"""
+
+kb = InlineKeyboardMarkup([
+    [
+        InlineKeyboardButton(
+            "✅ تایید",
+            callback_data=f"approve_receipt_{index}"
+        ),
+        InlineKeyboardButton(
+            "❌ رد",
+            callback_data=f"reject_receipt_{index}"
+        )
+    ]
+])
+
+await context.bot.send_photo(
+    ADMIN_ID,
+    photo=photo_id,
+    caption=text,
+    reply_markup=kb
+)
 
 
 async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -807,21 +897,21 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user["pending_order"] = None
 
-    db["receipts"][index]["status"] = "approved"
+    db["receipts"].pop(index)"
 
     save_db(db)
 
     await context.bot.send_message(
-        chat_id=uid,
-        text=f"""
-✅ سفارش شما تایید شد
+    receipt["user_id"],
+    f"""
+✅ پرداخت شما تایید شد
 
-🔐 کانفیگ شما:
+🌐 سرور: {receipt['server']}
+📦 حجم: {receipt['volume']}
+🔢 تعداد: {receipt['count']}
 
-{config}
 """
-    )
-
+)
     await query.message.edit_caption("✅ رسید تایید شد و سرور ارسال شد")
 
 
@@ -1364,6 +1454,9 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(profile_orders, pattern="^profile_orders$"))
     app.add_handler(CallbackQueryHandler(profile_servers, pattern="^profile_servers$"))
     app.add_handler(CallbackQueryHandler(support_handler, pattern="^menu_support$"))
+    app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
+    app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
+    app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
         states={
@@ -1402,13 +1495,13 @@ if __name__ == "__main__":
             CallbackQueryHandler(admin_del_channel_prompt, pattern="^del_ch$"),
             CallbackQueryHandler(admin_set_test_start, pattern="^admin_set_test$"),
             CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"),
-            CallbackQueryHandler(profile_referral, pattern="profile_referral"),
             CallbackQueryHandler(profile_info, pattern="profile_info"),
             CallbackQueryHandler(admin_server_stats, pattern="admin_server_stats"),
             CallbackQueryHandler(admin_receipts, pattern="admin_receipts"),
-            CallbackQueryHandler(view_receipt, pattern="view_receipt_"),
-            CallbackQueryHandler(approve_receipt, pattern="approve_receipt_"),
-            CallbackQueryHandler(reject_receipt, pattern="reject_receipt_"),
+            CallbackQueryHandler(approve_receipt, pattern="^approve_receipt_"),
+            CallbackQueryHandler(reject_receipt, pattern="^reject_receipt_"),
+            CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
+            CallbackQueryHandler(profile_referral, pattern="^profile_referral$"),
         ],
         states={
             ADD_NAME: [MessageHandler(filters.TEXT, admin_save_plan_name)],
