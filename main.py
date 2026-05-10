@@ -1544,7 +1544,7 @@ if __name__ == "__main__":
     async def setup_menu():
         await app.bot.set_my_commands([
             ("start", "شروع مجدد"),
-            ("admin", "پنل ادمین")
+           # ("admin", "پنل ادمین")
         ])
 
         await app.bot.set_chat_menu_button(
