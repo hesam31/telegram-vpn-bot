@@ -1539,7 +1539,6 @@ if __name__ == "__main__":
 
     print("--- Premium UI Bot Started ---")
 
-    import asyncio
 
     async def setup_menu():
         await app.bot.set_my_commands([
@@ -1550,7 +1549,4 @@ if __name__ == "__main__":
         await app.bot.set_chat_menu_button(
             menu_button=MenuButtonCommands()
         )
-
-    asyncio.run(setup_menu())
-
     app.run_polling()
