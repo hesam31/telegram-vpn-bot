@@ -1525,16 +1525,5 @@ if __name__ == "__main__":
         allow_reentry=True
 
     ))
-
-    print("--- Premium UI Bot Started ---")
-if __name__ == "__main__":
-    if not os.path.exists(DB_FILE):
-        load_db()
-
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
-
-    if app.job_queue:
-        app.job_queue.run_repeating(check_expirations, interval=14400, first=60)
-
     print("--- Premium UI Bot Started ---")
     app.run_polling()
