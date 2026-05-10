@@ -790,11 +790,10 @@ async def admin_receipts(update: Update, context: ContextTypes.DEFAULT_TYPE):
 """
 
     await query.message.edit_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(kb)
-        context.user_data["receipt_page"] = 0
-    )
-    
+    text=text,
+    parse_mode="HTML",
+    reply_markup=InlineKeyboardMarkup(kb)
+)
 async def receipt_next(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     query = update.callback_query
