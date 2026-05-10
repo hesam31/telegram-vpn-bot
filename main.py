@@ -5,7 +5,7 @@ import random
 from datetime import datetime
 import re
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram import MenuButtonCommands, MenuButtonWebApp, MenuButton
+from telegram import MenuButtonCommands
 from telegram.ext import (
     ApplicationBuilder,
     ContextTypes,
@@ -1528,4 +1528,18 @@ if __name__ == "__main__":
     ))
 
     print("--- Premium UI Bot Started ---")
+async def setup_menu():
+    await app.bot.set_my_commands([
+        ("start", "شروع مجدد"),
+        #("admin", "پنل ادمین")
+    ])
+
+    await app.bot.set_chat_menu_button(
+        menu_button=MenuButtonCommands()
+    )
+
+# اجرای تنظیمات
+import asyncio
+asyncio.get_event_loop().run_until_complete(setup_menu())
+
     app.run_polling()
