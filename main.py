@@ -5,6 +5,7 @@ import random
 from datetime import datetime
 import re
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import MenuButtonCommands, MenuButtonWebApp, MenuButton
 from telegram.ext import (
     ApplicationBuilder,
     ContextTypes,
@@ -268,7 +269,12 @@ def extract_number(text: str):
     cleaned = re.sub(r"[^\d]", "", text)
 
     return int(cleaned) if cleaned else None    
-
+    
+async def set_menu_button(app):
+    await app.bot.set_chat_menu_button(
+        menu_button=MenuButtonCommands()
+    )
+    
 async def check_force_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     user_id = update.effective_user.id
     if user_id in ADMIN_IDS: return True
@@ -972,7 +978,7 @@ async def profile_referral(update, context):
 با ارسال لینک بالا به دوستان خود می‌توانید پاداش دریافت کنید.
 """
 
-    keyboard = [[InlineKeyboardButton("🔙 بازگشت", callback_data="menu_profile")]]
+    keyboard = [[InlineKeyboardButton("🔙 بازگشت", callback_data="back_main")]]
 
     await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
 
