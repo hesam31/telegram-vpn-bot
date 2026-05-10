@@ -345,7 +345,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         save_db(db)
     if not await check_force_join(update, context): return ConversationHandler.END
-    msg = f"{te('welcome')} <b>به ربات خوش آمدید</b>\n\nگزینه مورد نظر را انتخاب کنید:"
+    msg = f"{te('welcome')} <b>به صدورا بات خوش آمدید</b>\n\n{te('bullet')}برای ادامه گزینه مورد نظر خود را انتخاب کنید"
     last_id = context.user_data.get("last_menu_msg_id")
     if last_id and update.message:
         try: await context.bot.delete_message(update.effective_chat.id, last_id)
