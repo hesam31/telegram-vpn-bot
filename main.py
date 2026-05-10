@@ -1528,18 +1528,29 @@ if __name__ == "__main__":
     ))
 
     print("--- Premium UI Bot Started ---")
-async def setup_menu():
-    await app.bot.set_my_commands([
-        ("start", "شروع مجدد"),
-        #("admin", "پنل ادمین")
-    ])
+if __name__ == "__main__":
+    if not os.path.exists(DB_FILE):
+        load_db()
 
-    await app.bot.set_chat_menu_button(
-        menu_button=MenuButtonCommands()
-    )
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-# اجرای تنظیمات
-import asyncio
-asyncio.get_event_loop().run_until_complete(setup_menu())
+    if app.job_queue:
+        app.job_queue.run_repeating(check_expirations, interval=14400, first=60)
+
+    print("--- Premium UI Bot Started ---")
+
+    import asyncio
+
+    async def setup_menu():
+        await app.bot.set_my_commands([
+            ("start", "شروع مجدد"),
+            ("admin", "پنل ادمین")
+        ])
+
+        await app.bot.set_chat_menu_button(
+            menu_button=MenuButtonCommands()
+        )
+
+    asyncio.run(setup_menu())
 
     app.run_polling()
