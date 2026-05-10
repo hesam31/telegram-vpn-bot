@@ -867,54 +867,53 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    index = int(query.data.split("_")[-1])
+    index = int(query.data.replace("approve_receipt_", ""))
 
     db = load_db()
+
+    if index >= len(db["receipts"]):
+        await query.message.reply_text("رسید پیدا نشد")
+        return
+
     receipt = db["receipts"][index]
+    uid = str(receipt["user_id"])
 
-    uid = receipt["user_id"]
+    user = db["users"].get(uid)
+    if not user:
+        await query.message.reply_text("کاربر پیدا نشد")
+        return
 
-    user = db["users"].get(str(uid))
     pending = user.get("pending_order")
-
     if not pending:
-        await query.message.edit_caption("❌ سفارش پیدا نشد")
+        await query.message.reply_text("pending_order وجود ندارد")
         return
 
     servers = db["settings"].get("servers", [])
-
     if not servers:
-        await query.message.edit_caption("❌ سروری در لیست نیست")
+        await query.message.reply_text("سرور نداریم")
         return
 
     config = servers.pop(0)
 
-    user["services"].append({
+    user.setdefault("services", []).append({
         "sub_id": config,
-        "name": pending["plan"],
+        "name": pending.get("plan", "unknown"),
         "start_ts": datetime.now().timestamp(),
-        "expiry_ts": datetime.now().timestamp() + (30 * 86400)
+        "expiry_ts": datetime.now().timestamp() + 30 * 86400
     })
 
     user["pending_order"] = None
 
     db["receipts"].pop(index)
-
     save_db(db)
 
     await context.bot.send_message(
-    receipt["user_id"],
-    f"""
-✅ پرداخت شما تایید شد
+        uid,
+        f"✅ پرداخت تایید شد\n\n<code>{config}</code>",
+        parse_mode="HTML"
+    )
 
-📦 پلن: {receipt.get('plan')}
-📦 حجم: {receipt.get('volume')}
-🔢 تعداد: {receipt.get('count')}
-
-🌐 سرویس شما فعال شد.
-"""
-)
-    await query.message.edit_caption("✅ رسید تایید شد و سرور ارسال شد")
+    await query.message.edit_caption("✅ ارسال شد")
 
 
 async def reject_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
