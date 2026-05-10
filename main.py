@@ -45,7 +45,7 @@ SUPPORT_ID = "@hesamyaghoubii"
 
 MSG_EMOJIS = {
     "welcome": {"id": "6316501178368663573", "char": "🦅"},
-    "error":   {"id": "4958526153955476488", "char": "❌"},
+    "error":   {"id": "5348514879558926674", "char": "❌"},
     "success": {"id": "4958725487682650920", "char": "✅"},
     "rocket":  {"id": "4958725487682650920", "char": "🚀"},
     "active":  {"id": "4956720180337050608", "char": "🟢"},
@@ -56,7 +56,7 @@ MSG_EMOJIS = {
     "profile": {"id": "4956387556594811916", "char": "👤"},
     "book":    {"id": "4956436416142771580", "char": "📚"},
     "card":    {"id": "4956719506027185156", "char": "💳"},
-    "money":   {"id": "4956269706987177066", "char": "💰"},
+    "money":   {"id": "5956324890213619515", "char": "💸"},
     "bell":    {"id": "4956368164817470478", "char": "🔔"},
     "refresh": {"id": "4956418939920843885", "char": "🔄"},
     "admin":   {"id": "5971818172985117571", "char": "🛠"},
@@ -68,10 +68,17 @@ MSG_EMOJIS = {
     "camera":  {"id": "4992254300202730194", "char": "📷"},
     "warning": {"id": "4956611513369494230", "char": "⚠️"},
     "trash":   {"id": "4956475826762679249", "char": "🗑"},
-    "diamond": {"id": "4956232383721374836", "char": "💎"},
-    "bullet":  {"id": "6316584638173159314", "char": "🦅"},
+    "diamond": {"id": "5348270285466385224", "char": "🆕"},
+    "bullet":  {"id": "5350572310627632617", "char": "✅"},
     "test":    {"id": "4958725487682650920", "char": "🎁"},
     "sedora":  {"id":"6316422138085514606",  "char": "🦅"},
+    "pin":  {"id":"5348498060466996739",  "char": "📌"},
+    "PRIME":  {"id":"5350618807943576963",  "char": "⚡️"},
+    "NUMBER":  {"id":"5350477112677515642",  "char": "⚠️"},
+
+    
+
+    
 }
 
 def te(key):
@@ -81,14 +88,14 @@ def te(key):
     return e["char"] if e else ""
 
 BTN_CFG = {
-    "buy_new":          {"text": "خرید اشتراک جدید",    "style": "primary",  "emoji_id": "4956232383721374836"},
+    "buy_new":          {"text": "خرید اشتراک جدید",    "style": "primary",  "emoji_id": "5348270285466385224"},
     "renew":            {"text": "تمدید اشتراک",        "style": "primary",  "emoji_id": "4956418939920843885"},
     "referral": {"text": "رفرال", "style": "primary", "emoji_id": "4956232383721374836"},
     "my_services":      {"text": "سرویس‌های من",       "style": "primary",  "emoji_id": "5409380072291316349"},
     "profile":          {"text": "پروفایل من",          "style": "primary",  "emoji_id": "4956387556594811916"},
     "news":             {"text": "آموزش و اخبار",       "style": "primary",  "emoji_id": "4956436416142771580"},
     "support":          {"text": "پشتیبانی",            "style": "primary",  "emoji_id": "5852830669599674051"},
-    "back":             {"text": "بازگشت",              "style": "primary",  "emoji_id": "4958526153955476488"},
+    "back":             {"text": "بازگشت",              "style": "primary",  "emoji_id": "5348514879558926674"},
     "test_server":      {"text": "سرور تست رایگان",    "style": "success",  "emoji_id": "4958725487682650920"},
     "admin_add_plan":   {"text": "افزودن پلن",          "style": "primary",  "emoji_id": "4956232383721374836"},
     "admin_del_plan":   {"text": "حذف پلن",             "style": "primary",  "emoji_id": "4956475826762679249"},
@@ -455,12 +462,12 @@ async def buy_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     buttons = [
-        [InlineKeyboardButton("PRIME", callback_data="buy_plan_prime", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["plan_item"])],
+        [InlineKeyboardButton("PRIME", callback_data="buy_plan_prime", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"])],
         [create_btn("back", "back_main")]
     ]
 
     await query.message.edit_text(
-        f"{te('diamond')} پلن مورد نظر را انتخاب کنید:",
+        f"{te('pin')} پلن مورد نظر را انتخاب کنید:",
         reply_markup=InlineKeyboardMarkup(buttons),
         parse_mode="HTML"
     )
@@ -474,7 +481,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["plan"] = "PRIME"
 
     buttons = [
-        [InlineKeyboardButton("1GB - 390,000", callback_data="buy_vol_1")],
+        [InlineKeyboardButton("1GB - 290,000", callback_data="buy_vol_1")],
         #[InlineKeyboardButton("3GB - 120,000", callback_data="buy_vol_3")],
         #[InlineKeyboardButton("5GB - 180,000", callback_data="buy_vol_5")],
         #[InlineKeyboardButton("10GB - 300,000", callback_data="buy_vol_10")],
@@ -509,6 +516,8 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"{te('box')} حجم انتخاب شد: {volume}\n\n"
         f"{te('money')} قیمت هر عدد: {price:,} تومان\n\n"
         "تعداد اکانت مورد نظر را وارد کنید:",
+         f"{te('NUMBER')} تعداد اکانت مورد نظر را وارد کنید:\n\n"
+
         parse_mode="HTML",
         reply_markup=back_kb()
     )
