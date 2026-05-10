@@ -69,7 +69,7 @@ MSG_EMOJIS = {
     "warning": {"id": "4956611513369494230", "char": "⚠️"},
     "trash":   {"id": "4956475826762679249", "char": "🗑"},
     "diamond": {"id": "4956232383721374836", "char": "💎"},
-    "bullet":  {"id": "4958489311726011319", "char": "🔹"},
+    "bullet":  {"id": "5987786071117665665", "char": "⬇️"},
     "test":    {"id": "4958725487682650920", "char": "🎁"},
     "sedora":  {"id":"6316422138085514606",  "char": "🦅"},
 }
@@ -316,7 +316,7 @@ async def check_join_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     else:
         await query.answer("عضویت شما تایید شد!", show_alert=True)
         await query.message.delete()
-        await context.bot.send_message(user_id, f"{te('welcome')} <b>به ربات خوش آمدید</b>\n\n{te('bullet')} گزینه مورد نظر را انتخاب کنید:", reply_markup=main_menu_kb(), parse_mode="HTML")
+        await context.bot.send_message(user_id, f"{te('welcome')} <b>به صدورا بات خوش آمدید</b>\n\n{te('bullet')}برای ادامه گزینه مورد نظر خود را انتخاب کنید", reply_markup=main_menu_kb(), parse_mode="HTML")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = load_db()
