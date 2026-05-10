@@ -649,13 +649,13 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "exact_amount": exact_amount
     }
     db["receipts"].append({
-    "user_id": user.id,
-    "username": user.username,
-    "server": selected_server,
-    "volume": selected_volume,
+    "user_id": uid,
+    "username": update.effective_user.username,
+    "plan": plan,
+    "volume": volume,
     "count": count,
-    "price": price,
-    "photo": photo_id,
+    "price": exact_amount,
+    "photo": file_id,
     "status": "pending"
 })
 
@@ -826,19 +826,20 @@ async def view_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = load_db()
     receipt = db["receipts"][index]
 
-    uid = receipt["user_id"]
+uid = receipt["user_id"]
+user_data = db["users"].get(str(uid), {})
 
-    text = f"""
+text = f"""
 📥 سفارش جدید
 
-👤 کاربر: {user.id}
-🔗 یوزرنیم: @{user.username}
+👤 کاربر: {uid}
+🔗 یوزرنیم: @{receipt.get('username', '---')}
 
-🌐 سرور: {selected_server}
-📦 حجم: {selected_volume}
-🔢 تعداد: {count}
+📦 پلن: {receipt.get('plan', '---')}
+📦 حجم: {receipt.get('volume', '---')}
+🔢 تعداد: {receipt.get('count', '---')}
 
-💰 مبلغ: {price} تومان
+💰 مبلغ: {receipt.get('price', 0):,} تومان
 """
 
 kb = InlineKeyboardMarkup([
@@ -897,7 +898,7 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user["pending_order"] = None
 
-    db["receipts"].pop(index)"
+    db["receipts"].pop(index)
 
     save_db(db)
 
@@ -906,10 +907,11 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     f"""
 ✅ پرداخت شما تایید شد
 
-🌐 سرور: {receipt['server']}
-📦 حجم: {receipt['volume']}
-🔢 تعداد: {receipt['count']}
+📦 پلن: {receipt.get('plan')}
+📦 حجم: {receipt.get('volume')}
+🔢 تعداد: {receipt.get('count')}
 
+🌐 سرویس شما فعال شد.
 """
 )
     await query.message.edit_caption("✅ رسید تایید شد و سرور ارسال شد")
@@ -935,11 +937,11 @@ async def profile_menu(update, context):
     await query.answer()
 
     keyboard = [
-        [InlineKeyboardButton("📊 اطلاعات حساب", callback_data="profile_info")],
-        [InlineKeyboardButton("👥 سیستم رفرال", callback_data="profile_referral")],
-        [InlineKeyboardButton("🧾 تاریخچه خرید", callback_data="profile_orders")],
-        [InlineKeyboardButton("🖥 سرورهای من", callback_data="profile_servers")],
-        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_main")]
+        [InlineKeyboardButton(" اطلاعات حساب", callback_data="profile_info")],
+        #[InlineKeyboardButton(" سیستم رفرال", callback_data="profile_referral")],
+        [InlineKeyboardButton(" تاریخچه خرید", callback_data="profile_orders")],
+        [InlineKeyboardButton(" سرورهای من", callback_data="profile_servers")],
+        [InlineKeyboardButton(" بازگشت", callback_data="back_main")]
     ]
 
     await query.message.edit_text(
