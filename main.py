@@ -468,11 +468,11 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["plan"] = "PRIME"
 
     buttons = [
-        [InlineKeyboardButton("1GB - 330,000", callback_data="buy_vol_1")],
-        [InlineKeyboardButton("3GB - 120,000", callback_data="buy_vol_3")],
-        [InlineKeyboardButton("5GB - 180,000", callback_data="buy_vol_5")],
-        [InlineKeyboardButton("10GB - 300,000", callback_data="buy_vol_10")],
-        [create_btn("back", "back_main")]
+        [InlineKeyboardButton("1GB - 390,000", callback_data="buy_vol_1")],
+        #[InlineKeyboardButton("3GB - 120,000", callback_data="buy_vol_3")],
+        #[InlineKeyboardButton("5GB - 180,000", callback_data="buy_vol_5")],
+        #[InlineKeyboardButton("10GB - 300,000", callback_data="buy_vol_10")],
+        #[create_btn("back", "back_main")]
     ]
 
     await query.message.edit_text(
@@ -488,10 +488,10 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     volume_map = {
-        "buy_vol_1": ("1GB", 330000),
-        "buy_vol_3": ("3GB", 120000),
-        "buy_vol_5": ("5GB", 180000),
-        "buy_vol_10": ("10GB", 300000),
+        "buy_vol_1": ("1GB", 290000),
+        #"buy_vol_3": ("3GB", 120000),
+        #"buy_vol_5": ("5GB", 180000),
+        #"buy_vol_10": ("10GB", 300000),
     }
 
     volume, price = volume_map.get(query.data, ("نامشخص", 0))
@@ -826,10 +826,10 @@ async def view_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = load_db()
     receipt = db["receipts"][index]
 
-uid = receipt["user_id"]
-user_data = db["users"].get(str(uid), {})
+    uid = receipt["user_id"]
+    user_data = db["users"].get(str(uid), {})
 
-text = f"""
+    text = f"""
 📥 سفارش جدید
 
 👤 کاربر: {uid}
@@ -842,25 +842,25 @@ text = f"""
 💰 مبلغ: {receipt.get('price', 0):,} تومان
 """
 
-kb = InlineKeyboardMarkup([
-    [
-        InlineKeyboardButton(
-            "✅ تایید",
-            callback_data=f"approve_receipt_{index}"
-        ),
-        InlineKeyboardButton(
-            "❌ رد",
-            callback_data=f"reject_receipt_{index}"
-        )
-    ]
-])
+    kb = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "✅ تایید",
+                callback_data=f"approve_receipt_{index}"
+            ),
+            InlineKeyboardButton(
+                "❌ رد",
+                callback_data=f"reject_receipt_{index}"
+            )
+        ]
+    ])
 
-await context.bot.send_photo(
-    ADMIN_ID,
-    photo=photo_id,
-    caption=text,
-    reply_markup=kb
-)
+    await context.bot.send_photo(
+        chat_id=ADMIN_IDS[0],
+        photo=receipt["photo"],
+        caption=text,
+        reply_markup=kb
+    )
 
 
 async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
