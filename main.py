@@ -1441,7 +1441,6 @@ if __name__ == "__main__":
     if app.job_queue: app.job_queue.run_repeating(check_expirations, interval=14400, first=60)
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("admin", admin_start))
     app.add_handler(CallbackQueryHandler(check_join_callback, pattern="^check_join_btn$"))
     app.add_handler(CallbackQueryHandler(start, pattern="^back_main$"))
     app.add_handler(CallbackQueryHandler(admin_start, pattern="^back_admin$"))
