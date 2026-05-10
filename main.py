@@ -370,9 +370,10 @@ async def support_handler(update, context):
     )
 
     await query.message.edit_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )    
+    text,
+    parse_mode="HTML",
+    reply_markup=InlineKeyboardMarkup(kb)
+)   
 
 async def cancel_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
