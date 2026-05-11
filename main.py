@@ -386,7 +386,7 @@ async def support_handler(update, context):
     await query.message.edit_text(
     text,
     parse_mode="HTML",
-    reply_markup=InlineKeyboardMarkup(kb)
+    reply_markup=InlineKeyboardMarkup(keyboard)
 )   
 
 async def cancel_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1470,11 +1470,12 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))
+    application.add_handler(CallbackQueryHandler(buy_select_plan, pattern="buy_plan_prime"))
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
         states={
             BUY_SELECT_PLAN: [
-                CallbackQueryHandler(buy_select_plan, pattern="^buy_prime$")
+                CallbackQueryHandler(buy_select_plan, pattern="buy_plan_prime")
 
             ],
 
