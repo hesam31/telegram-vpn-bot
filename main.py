@@ -118,6 +118,7 @@ DYN_BTN_EMOJIS = {
     "del_item":      "4956475826762679249",
     "add_item":      "4958725487682650920",
     "success_btn":   "4958725487682650920",
+    "PRIME": "5350618807943576963",
     "month":         "4958686613933655185",
     "copy_btn":      "4992684226429059932",
 }
@@ -385,7 +386,7 @@ async def support_handler(update, context):
     await query.message.edit_text(
     text,
     parse_mode="HTML",
-    reply_markup=InlineKeyboardMarkup(keyboard)
+    reply_markup=InlineKeyboardMarkup(kb)
 )   
 
 async def cancel_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1473,7 +1474,8 @@ if __name__ == "__main__":
         entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
         states={
             BUY_SELECT_PLAN: [
-                CallbackQueryHandler(buy_select_plan, pattern="^buy_plan_")
+                CallbackQueryHandler(buy_select_plan, pattern="^buy_prime$")
+
             ],
 
             BUY_SELECT_VOLUME: [
