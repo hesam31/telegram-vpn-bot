@@ -45,7 +45,7 @@ SUPPORT_ID = "@hesamyaghoubii"
 
 MSG_EMOJIS = {
     "welcome": {"id": "6316501178368663573", "char": "🦅"},
-    "error":   {"id": "5348514879558926674", "char": "❌"},
+    "error":   {"id": "5348132683304156113", "char": "❌"},
     "success": {"id": "4958725487682650920", "char": "✅"},
     "rocket":  {"id": "4958725487682650920", "char": "🚀"},
     "active":  {"id": "4956720180337050608", "char": "🟢"},
@@ -110,7 +110,7 @@ BTN_CFG = {
     "profile":          {"text": "پروفایل من",          "style": "primary",  "emoji_id": "4956387556594811916"},
     "news":             {"text": "آموزش و اخبار",       "style": "primary",  "emoji_id": "4956436416142771580"},
     "support":          {"text": "پشتیبانی",            "style": "primary",  "emoji_id": "5979065840102810733"},
-    "back":             {"text": "بازگشت",              "style": "primary",  "emoji_id": "5348514879558926674"},
+    "back":             {"text": "بازگشت",              "style": "primary",  "emoji_id": "5972120066236357644"},
     "test_server":      {"text": "سرور تست رایگان",    "style": "success",  "emoji_id": "5348440533675031854"},
     "admin_add_plan":   {"text": "افزودن پلن",          "style": "primary",  "emoji_id": "4956232383721374836"},
     "admin_del_plan":   {"text": "حذف پلن",             "style": "primary",  "emoji_id": "4956475826762679249"},
