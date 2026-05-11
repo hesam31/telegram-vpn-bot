@@ -385,7 +385,7 @@ async def support_handler(update, context):
     await query.message.edit_text(
     text,
     parse_mode="HTML",
-    reply_markup=InlineKeyboardMarkup(kb)
+    reply_markup=InlineKeyboardMarkup(keyboard)
 )   
 
 async def cancel_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -519,7 +519,6 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     parse_mode="HTML",
     reply_markup=back_kb()
 )
-
     return BUY_GET_COUNT    
 
 async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -805,7 +804,7 @@ async def admin_receipts(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.edit_text(
     text=text,
     parse_mode="HTML",
-    reply_markup=InlineKeyboardMarkup(kb)
+    reply_markup=InlineKeyboardMarkup(keyboard)
 )
 async def receipt_next(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
