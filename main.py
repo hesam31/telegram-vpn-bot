@@ -81,6 +81,7 @@ MSG_EMOJIS = {
     "support":  {"id":"5979065840102810733",  "char": "👩‍💻"},
     "orders":  {"id":"5989933370082071285",  "char": "🕐"},
     "paein":  {"id":"5350700390847365132",  "char": "⏬"},
+    "back":  {"id":"5348514879558926674",  "char": "❌"},
 
 
 
@@ -388,10 +389,21 @@ async def support_handler(update, context):
     await query.answer()
 
     keyboard = [
-        [InlineKeyboardButton(" ارتباط با پشتیبانی", url="https://t.me/hesamyaghoubii"), icon_custom_emoji_id=DYN_BTN_EMOJIS["support"]],
-        [InlineKeyboardButton(" بازگشت", callback_data="back_main")
-        icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]]
+    [
+        InlineKeyboardButton(
+            " ارتباط با پشتیبانی",
+            url="https://t.me/hesamyaghoubii",
+            icon_custom_emoji_id=DYN_BTN_EMOJIS["support"]
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            " بازگشت",
+            callback_data="back_main",
+            icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
+        )
     ]
+]
 
     text = (
         "برای ارتباط با پشتیبانی روی دکمه زیر کلیک کنید "
