@@ -1017,7 +1017,11 @@ async def profile_referral(update, context):
 
     keyboard = [[InlineKeyboardButton(" بازگشت", callback_data="back_main")]]
 
-    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.message.edit_text(
+    text,
+    reply_markup=InlineKeyboardMarkup(keyboard),
+    parse_mode="HTML"
+)
 
 async def profile_info(update, context):
     query = update.callback_query
