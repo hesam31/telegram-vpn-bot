@@ -53,7 +53,7 @@ MSG_EMOJIS = {
     "id_tag":  {"id": "4958686613933655185", "char": "🆔"},
     "box":     {"id": "5409380072291316349", "char": "📦"},
     "time":    {"id": "5350773074578916842", "char": "⏳"},
-    "profile": {"id": "4956387556594811916", "char": "👤"},
+    "profile": {"id": "5348136664738839786", "char": "👤"},
     "book":    {"id": "4956436416142771580", "char": "📚"},
     "card":    {"id": "5940563313720037057", "char": "🔥"},
     "money":   {"id": "5956324890213619515", "char": "💸"},
@@ -64,7 +64,6 @@ MSG_EMOJIS = {
     "list":    {"id": "5974235702701853774", "char": "📋"},
     "speaker": {"id": "5972240522889138094", "char": "📢"},
     "mail":    {"id": "5852830669599674051", "char": "📬"},
-    "link":    {"id": "4992622834166530981", "char": "🔗"},
     "camera":  {"id": "4992254300202730194", "char": "📷"},
     "warning": {"id": "5350470691701407492", "char": "⚠️"},
     "trash":   {"id": "4956475826762679249", "char": "🗑"},
@@ -76,6 +75,19 @@ MSG_EMOJIS = {
     "PRIME":  {"id":"5350618807943576963",  "char": "⚡️"},
     "NUMBER":  {"id":"5350477112677515642",  "char": "⚠️"},
     "accept":  {"id":"5348404473129614535",  "char": "✅"},
+    "hand":  {"id":"5990225492282709220",  "char": "🫱"},
+    "link":  {"id":"5841171023096976223",  "char": "🔥"},
+    "invite":  {"id":"5348438459205831716",  "char": "🐾"},
+    "support":  {"id":"5979065840102810733",  "char": "👩‍💻"},
+    "orders":  {"id":"5989933370082071285",  "char": "🕐"},
+    "paein":  {"id":"5350700390847365132",  "char": "⏬"},
+
+
+
+
+
+
+
 
 
     
@@ -96,7 +108,7 @@ BTN_CFG = {
     "my_services":      {"text": "سرویس‌های من",       "style": "primary",  "emoji_id": "5409380072291316349"},
     "profile":          {"text": "پروفایل من",          "style": "primary",  "emoji_id": "4956387556594811916"},
     "news":             {"text": "آموزش و اخبار",       "style": "primary",  "emoji_id": "4956436416142771580"},
-    "support":          {"text": "پشتیبانی",            "style": "primary",  "emoji_id": "5852830669599674051"},
+    "support":          {"text": "پشتیبانی",            "style": "primary",  "emoji_id": "5979065840102810733"},
     "back":             {"text": "بازگشت",              "style": "primary",  "emoji_id": "5348514879558926674"},
     "test_server":      {"text": "سرور تست رایگان",    "style": "success",  "emoji_id": "5348440533675031854"},
     "admin_add_plan":   {"text": "افزودن پلن",          "style": "primary",  "emoji_id": "4956232383721374836"},
@@ -376,12 +388,12 @@ async def support_handler(update, context):
     await query.answer()
 
     keyboard = [
-        [InlineKeyboardButton("💬 ارتباط با پشتیبانی", url="https://t.me/hesamyaghoubii")],
-        [InlineKeyboardButton("🔙 بازگشت", callback_data="back_main")]
+        [InlineKeyboardButton(" ارتباط با پشتیبانی", url="https://t.me/hesamyaghoubii"), icon_custom_emoji_id=DYN_BTN_EMOJIS["support"]],
+        [InlineKeyboardButton(" بازگشت", callback_data="back_main")
+        icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]]
     ]
 
     text = (
-        "📞 پشتیبانی\n\n"
         "برای ارتباط با پشتیبانی روی دکمه زیر کلیک کنید "
         "تا مستقیماً وارد گفتگوی تلگرام شوید."
     )
@@ -952,17 +964,19 @@ async def profile_menu(update, context):
     await query.answer()
 
     keyboard = [
-        [InlineKeyboardButton(" اطلاعات حساب", callback_data="profile_info")],
-        #[InlineKeyboardButton(" سیستم رفرال", callback_data="profile_referral")],
-        [InlineKeyboardButton(" تاریخچه خرید", callback_data="profile_orders")],
-        [InlineKeyboardButton(" سرورهای من", callback_data="profile_servers")],
-        [InlineKeyboardButton(" بازگشت", callback_data="back_main")]
-    ]
+    [InlineKeyboardButton(f"{te('profile')} اطلاعات حساب", callback_data="profile_info")],
+    #[InlineKeyboardButton(f"{te('referral')} سیستم رفرال", callback_data="profile_referral")],
+    [InlineKeyboardButton(f"{te('orders')} تاریخچه خرید", callback_data="profile_orders")],
+    [InlineKeyboardButton(f"{te('servers')} سرورهای من", callback_data="profile_servers")],
+    [InlineKeyboardButton(f"{te('link')} بازگشت", callback_data="back_main")]
+]
 
     await query.message.edit_text(
-        "👤 پنل کاربری شما\n\nیکی از گزینه‌ها را انتخاب کنید:",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    f"{te('profile')} پنل کاربری شما\n\n"
+    f"{te('paein')} یکی از گزینه‌ها را انتخاب کنید:",
+    reply_markup=InlineKeyboardMarkup(keyboard),
+    parse_mode="HTML"
+)
 
 async def profile_referral(update, context):
     query = update.callback_query
@@ -977,12 +991,15 @@ async def profile_referral(update, context):
     invited_buy = get_invited_buy_count(user_id)
 
     text = f"""
-    {te('card')} <b>سیستم دعوت دوستان/b>\n\n
-    {te('card')} <b> لینک دعوت شما:
+{te('hand')} <b>سیستم دعوت دوستان</b>
+
+{te('link')} <b>لینک دعوت شما:</b>
 {referral_link}
-/b>\n\n
-    {te('card')} <b>تعداد دعوت‌ها: {invited_count}/b>\n\n
-    {te('card')} <b>تعداد خرید دعوتی‌ها: {invited_buy}/b>\n\n
+
+{te('invite')} <b>تعداد دعوت‌ها:</b> {invited_count}
+
+{te('card')} <b>تعداد خرید دعوتی‌ها:</b> {invited_buy}
+
 با ارسال لینک بالا به دوستان خود می‌توانید پاداش دریافت کنید.
 """
 
