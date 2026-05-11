@@ -463,7 +463,7 @@ async def buy_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     buttons = [
-        [InlineKeyboardButton("PRIME", callback_data="buy_plan_prime", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"])],
+        [InlineKeyboardButton("PRIME", callback_data="buy_prime", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"])],
         [create_btn("back", "back_main")]
     ]
 
@@ -1470,12 +1470,11 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))
-    application.add_handler(CallbackQueryHandler(buy_select_plan, pattern="buy_plan_prime"))
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
         states={
             BUY_SELECT_PLAN: [
-                CallbackQueryHandler(buy_select_plan, pattern="buy_plan_prime")
+                CallbackQueryHandler(buy_select_plan, pattern="buy_prime")
 
             ],
 
