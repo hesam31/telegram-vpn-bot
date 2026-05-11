@@ -52,10 +52,10 @@ MSG_EMOJIS = {
     "expired": {"id": "4956582500865410174", "char": "🔴"},
     "id_tag":  {"id": "4958686613933655185", "char": "🆔"},
     "box":     {"id": "5409380072291316349", "char": "📦"},
-    "time":    {"id": "4958686613933655185", "char": "⏳"},
+    "time":    {"id": "5350773074578916842", "char": "⏳"},
     "profile": {"id": "4956387556594811916", "char": "👤"},
     "book":    {"id": "4956436416142771580", "char": "📚"},
-    "card":    {"id": "4956719506027185156", "char": "💳"},
+    "card":    {"id": "5940563313720037057", "char": "🔥"},
     "money":   {"id": "5956324890213619515", "char": "💸"},
     "bell":    {"id": "4956368164817470478", "char": "🔔"},
     "refresh": {"id": "4956418939920843885", "char": "🔄"},
@@ -111,16 +111,16 @@ BTN_CFG = {
 }
 
 DYN_BTN_EMOJIS = {
-    "channel_join":  "5972240522889138094",
-    "check_join":    "4958725487682650920",
+    "channel_join":  "5350356823528455446",
+    "check_join":    "5350773074578916842",
     "plan_item":     "4956232383721374836",
     "renew_item":    "4956418939920843885",
     "del_item":      "4956475826762679249",
     "add_item":      "4958725487682650920",
-    "success_btn":   "4958725487682650920",
+    "success_btn":   "6316422138085514606",
     "PRIME": "5350618807943576963",
     "month":         "4958686613933655185",
-    "copy_btn":      "4992684226429059932",
+    "copy_btn":      "5987636855363867398",
 }
 
 (
@@ -263,8 +263,8 @@ def back_kb(target="main"):
 def payment_invoice_kb(card: str, amount: int):
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("📋 کپی شماره کارت", callback_data="noop_card", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["copy_btn"], copy_text=card),
-            InlineKeyboardButton("💰 کپی مبلغ", callback_data="noop_amount", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["copy_btn"], copy_text=str(int(amount))),
+            InlineKeyboardButton(" کپی شماره کارت", callback_data="noop_card", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["copy_btn"], copy_text=card),
+            InlineKeyboardButton(" کپی مبلغ", callback_data="noop_amount", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["copy_btn"], copy_text=str(int(amount))),
         ],
         [create_btn("back", "back_main")],
     ])
@@ -568,9 +568,9 @@ async def buy_confirm_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     msg = (
         f"{te('card')} <b>فاکتور پرداخت</b>\n\n"
-        f"{te('diamond')} پلن: {plan}\n"
+        f"{te('diamond')} پلن: {plan}\n\n"
         f"{te('box')} حجم: {volume}\n"
-        f"{te('number')} تعداد: {count}\n\n"
+        f"{te('NUMBER')} تعداد: {count}\n\n"
         f"{te('money')} مبلغ قابل پرداخت:\n"
         f"<code>{exact_amount:,}</code> تومان\n\n"
         f"{te('card')} شماره کارت:\n"
