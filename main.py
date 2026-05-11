@@ -81,19 +81,7 @@ MSG_EMOJIS = {
     "support":  {"id":"5979065840102810733",  "char": "👩‍💻"},
     "orders":  {"id":"5989933370082071285",  "char": "🕐"},
     "paein":  {"id":"5350700390847365132",  "char": "⏬"},
-    "back":  {"id":"5348514879558926674",  "char": "❌"},
-
-
-
-
-
-
-
-
-
-    
-
-    
+    "back":  {"id":"5348514879558926674",  "char": "❌"},    
 }
 
 def te(key):
@@ -389,32 +377,33 @@ async def support_handler(update, context):
     await query.answer()
 
     keyboard = [
-    [
-        InlineKeyboardButton(
-            " ارتباط با پشتیبانی",
-            url="https://t.me/hesamyaghoubii",
-            icon_custom_emoji_id=DYN_BTN_EMOJIS["support"]
-        )
-    ],
-    [
-        InlineKeyboardButton(
-            " بازگشت",
-            callback_data="back_main",
-            icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
-        )
+        [
+            InlineKeyboardButton(
+                "ارتباط با پشتیبانی",
+                url="https://t.me/hesamyaghoubii",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["support"]
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "بازگشت",
+                callback_data="back_main",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
+            )
+        ]
     ]
-]
 
-    text = (
-        "برای ارتباط با پشتیبانی روی دکمه زیر کلیک کنید "
-        "تا مستقیماً وارد گفتگوی تلگرام شوید."
-    )
-
-    await query.message.edit_text(
-    text,
-    parse_mode="HTML",
-    reply_markup=InlineKeyboardMarkup(keyboard)
-)   
+    try:
+        await query.message.edit_text(
+            "برای ارتباط با پشتیبانی روی دکمه زیر کلیک کنید.",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+    except:
+        await context.bot.send_message(
+            query.from_user.id,
+            "برای ارتباط با پشتیبانی:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
 
 async def cancel_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -563,9 +552,9 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["total"] = total
 
     buttons = [
-        [InlineKeyboardButton(f"{te('accept')} <b>قوانین را میپذیرم </b>\n\n", callback_data="accept_rules")],
-        [create_btn("back", "back_main")]
-    ]
+    [InlineKeyboardButton(f"{te('accept')} قوانین را میپذیرم", callback_data="accept_rules")],
+    [create_btn("back", "back_main")]
+]
 
     text = (
         f"{te('warning')} قبل از خرید قوانین را تایید کنید.\n\n"
@@ -665,8 +654,9 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not update.message.photo:
         return await update.message.reply_text(
-            f"{te('error')} لطفا عکس رسید پرداخت را ارسال کنید."
-        )
+            f"{te('error')} لطفا عکس رسید پرداخت را ارسال کنید.",
+            parse_mode="HTML"
+)
     file_id = update.message.photo[-1].file_id
 
     uid = str(update.effective_user.id)
@@ -1557,7 +1547,6 @@ if __name__ == "__main__":
             CallbackQueryHandler(approve_receipt, pattern="^approve_receipt_"),
             CallbackQueryHandler(reject_receipt, pattern="^reject_receipt_"),
             CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
-            CallbackQueryHandler(profile_referral, pattern="^profile_referral$"),
         ],
         states={
             ADD_NAME: [MessageHandler(filters.TEXT, admin_save_plan_name)],
