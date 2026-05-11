@@ -981,6 +981,8 @@ async def profile_menu(update, context):
     [InlineKeyboardButton(f"{te('orders')} تاریخچه خرید", callback_data="profile_orders")],
     [InlineKeyboardButton(f"{te('servers')} سرورهای من", callback_data="profile_servers")],
     [InlineKeyboardButton(f"{te('link')} بازگشت", callback_data="back_main")]
+    parse_mode="HTML"
+
 ]
 
     await query.message.edit_text(
@@ -1015,7 +1017,15 @@ async def profile_referral(update, context):
 با ارسال لینک بالا به دوستان خود می‌توانید پاداش دریافت کنید.
 """
 
-    keyboard = [[InlineKeyboardButton(" بازگشت", callback_data="back_main")]]
+    keyboard = [
+    [
+        InlineKeyboardButton(
+            " بازگشت",
+            callback_data="back_main",
+            icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
+        )
+    ]
+]
 
     await query.message.edit_text(
     text,
