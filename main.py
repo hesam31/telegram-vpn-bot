@@ -980,10 +980,8 @@ async def profile_menu(update, context):
     #[InlineKeyboardButton(f"{te('referral')} سیستم رفرال", callback_data="profile_referral")],
     [InlineKeyboardButton(f"{te('orders')} تاریخچه خرید", callback_data="profile_orders")],
     [InlineKeyboardButton(f"{te('servers')} سرورهای من", callback_data="profile_servers")],
-    [InlineKeyboardButton(f"{te('link')} بازگشت", callback_data="back_main")]
-    parse_mode="HTML"
-
-]
+    [InlineKeyboardButton(f"{te('link')} بازگشت", callback_data="back_main")],
+    ]
 
     await query.message.edit_text(
     f"{te('profile')} پنل کاربری شما\n\n"
