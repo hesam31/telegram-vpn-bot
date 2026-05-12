@@ -999,11 +999,34 @@ async def profile_menu(update, context):
     await query.answer()
 
     keyboard = [
-    [InlineKeyboardButton(f"{MSG_EMOJIS['profile']} اطلاعات حساب", callback_data="profile_info")],
-    # [InlineKeyboardButton(f"{MSG_EMOJIS['referral']} سیستم رفرال", callback_data="profile_referral")],
-    [InlineKeyboardButton(f"{MSG_EMOJIS['orders']} تاریخچه خرید", callback_data="profile_orders")],
-    [InlineKeyboardButton(f"{MSG_EMOJIS['servers']} سرورهای من", callback_data="profile_servers")],
-    [InlineKeyboardButton(f"{MSG_EMOJIS['back']} بازگشت", callback_data="back_main")],
+    [
+        InlineKeyboardButton(
+            "اطلاعات حساب",
+            callback_data="profile_info",
+            icon_custom_emoji_id=MSG_EMOJIS["profile"]["id"]
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "تاریخچه خرید",
+            callback_data="profile_orders",
+            icon_custom_emoji_id=MSG_EMOJIS["orders"]["id"]
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "سرورهای من",
+            callback_data="profile_servers",
+            icon_custom_emoji_id=MSG_EMOJIS["servers"]["id"]
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "بازگشت",
+            callback_data="back_main",
+            icon_custom_emoji_id=MSG_EMOJIS["back"]["id"]
+        )
+    ],
 ]
 
     await query.message.edit_text(
@@ -1101,7 +1124,7 @@ async def profile_orders(update, context):
     services = db["users"].get(user_id, {}).get("services", [])
 
     if not services:
-        text = f"{MSG_EMOJIS['not']}شما هنوز خریدی ثبت نکرده‌اید."
+        text = f"<tg-emoji emoji-id='{MSG_EMOJIS['not']['id']}'>{MSG_EMOJIS['not']['char']}</tg-emoji> شما هنوز خریدی ثبت نکرده‌اید."
     else:
         text = " تاریخچه خرید شما:\n\n"
         for s in services:
@@ -1122,9 +1145,9 @@ async def profile_servers(update, context):
     services = db["users"].get(user_id, {}).get("services", [])
 
     if not services:
-        text = "🖥 شما سرور فعالی ندارید."
+    text = f"<tg-emoji emoji-id='{MSG_EMOJIS['not']['id']}'>{MSG_EMOJIS['not']['char']}</tg-emoji> شما سرور فعالی ندارید."
     else:
-        text = "🖥 سرورهای شما:\n\n"
+    text = f"<tg-emoji emoji-id='{MSG_EMOJIS['servers']['id']}'>{MSG_EMOJIS['servers']['char']}</tg-emoji> سرورهای شما:\n\n"
         for s in services:
             if isinstance(s, dict):
                 text += f"🔹 {s.get('sub_id','---')}\n"
