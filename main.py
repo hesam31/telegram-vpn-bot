@@ -388,23 +388,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["last_menu_msg_id"] = update.callback_query.message.message_id
     return ConversationHandler.END
 
-aasync def support_handler(update, context):
+async def support_handler(update, context):
     query = update.callback_query
     await query.answer()
 
     keyboard = [
         [
             InlineKeyboardButton(
-                "ارتباط با پشتیبانی",
-                url="https://t.me/hesamyaghoubii",
-                icon_custom_emoji_id=DYN_BTN_EMOJIS["support"]
+                f"{DYN_BTN_EMOJIS['support']} ارتباط با پشتیبانی",
+                url="https://t.me/hesamyaghoubii"
             )
         ],
         [
             InlineKeyboardButton(
-                "بازگشت",
-                callback_data="back_main",
-                icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
+                f"{DYN_BTN_EMOJIS['back']} بازگشت",
+                callback_data="back_main"
             )
         ]
     ]
@@ -568,8 +566,8 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["total"] = total
 
     buttons = [
-    [InlineKeyboardButton(f"{DYN_BTN_EMOJI['accept']} قوانین را میپذیرم", callback_data="accept_rules")],
-    [InlineKeyboardButton(f"{DYN_BTN_EMOJI['back']} بازگشت", callback_data="back_main")]
+    [InlineKeyboardButton(f"{DYN_BTN_EMOJIS['accept']} قوانین را میپذیرم", callback_data="accept_rules")],
+    [InlineKeyboardButton(f"{DYN_BTN_EMOJIS['back']} بازگشت", callback_data="back_main")]
 ]
 
     text = (
