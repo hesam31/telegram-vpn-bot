@@ -1100,12 +1100,10 @@ async def profile_info(update, context):
 """
 
     keyboard = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                f"{MSG_EMOJIS['back']} بازگشت",
-                callback_data="menu_profile"
-            )
-        ]
+        InlineKeyboardButton(
+    f"{MSG_EMOJIS['back']['char']} بازگشت",
+    callback_data="menu_profile"
+)
     ])
 
     await query.message.edit_text(
@@ -1131,9 +1129,13 @@ async def profile_orders(update, context):
             if isinstance(s, dict):
                 text += f"• {s.get('name')} | کد: {s.get('sub_id','---')}\n"
 
-    keyboard = [[InlineKeyboardButton(f"{MSG_EMOJIS['back']}بازگشت",callback_data="menu_profile")]]
+    Keyboard = [[InlineKeyboardButton(f"{MSG_EMOJIS['back']['char']} بازگشت", callback_data="menu_profile")]]
 
-    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.message.edit_text(
+    text,
+    reply_markup=InlineKeyboardMarkup(keyboard),
+    parse_mode="HTML"
+)
 
 async def profile_servers(update, context):
     query = update.callback_query
@@ -1153,9 +1155,13 @@ async def profile_servers(update, context):
             if isinstance(s, dict):
                 text += f"🔹 {s.get('sub_id','---')}\n"
 
-    keyboard = [[InlineKeyboardButton(f"{MSG_EMOJIS['back']}بازگشت", callback_data="menu_profile")]]
+    Keyboard = [[InlineKeyboardButton(f"{MSG_EMOJIS['back']['char']} بازگشت", callback_data="menu_profile")]]
 
-    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))           
+   await query.message.edit_text(
+    text,
+    reply_markup=InlineKeyboardMarkup(keyboard),
+    parse_mode="HTML"
+)           
 
 async def renew_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
