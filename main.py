@@ -1145,9 +1145,10 @@ async def profile_servers(update, context):
     services = db["users"].get(user_id, {}).get("services", [])
 
     if not services:
-    text = f"<tg-emoji emoji-id='{MSG_EMOJIS['not']['id']}'>{MSG_EMOJIS['not']['char']}</tg-emoji> شما سرور فعالی ندارید."
+        text = f"<tg-emoji emoji-id='{MSG_EMOJIS['not']['id']}'>{MSG_EMOJIS['not']['char']}</tg-emoji> شما سرور فعالی ندارید."
     else:
-    text = f"<tg-emoji emoji-id='{MSG_EMOJIS['servers']['id']}'>{MSG_EMOJIS['servers']['char']}</tg-emoji> سرورهای شما:\n\n"
+        text = f"<tg-emoji emoji-id='{MSG_EMOJIS['servers']['id']}'>{MSG_EMOJIS['servers']['char']}</tg-emoji> سرورهای شما:\n\n"
+
         for s in services:
             if isinstance(s, dict):
                 text += f"🔹 {s.get('sub_id','---')}\n"
