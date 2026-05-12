@@ -84,6 +84,8 @@ MSG_EMOJIS = {
     "back":  {"id":"5348514879558926674",  "char": "❌"},    
     "stats":  {"id":"5990060518293901972",  "char": "❌"},
     "not":  {"id":"5989790729923203577",  "char": "🚫"},
+    "servers":  {"id":"5841171023096976223",  "char": "🔥"},
+
 }
 
 def te(key):
@@ -128,7 +130,7 @@ DYN_BTN_EMOJIS = {
     "copy_btn":      "5987636855363867398",
     "back": "5972120066236357644",
     "support":"5979065840102810733",
-    "acceprt":"5348404473129614535"
+    "accept":"5348404473129614535"
 
 }
 
@@ -984,7 +986,7 @@ async def profile_menu(update, context):
     # [InlineKeyboardButton(f"{MSG_EMOJIS['referral']} سیستم رفرال", callback_data="profile_referral")],
     [InlineKeyboardButton(f"{MSG_EMOJIS['orders']} تاریخچه خرید", callback_data="profile_orders")],
     [InlineKeyboardButton(f"{MSG_EMOJIS['servers']} سرورهای من", callback_data="profile_servers")],
-    [InlineKeyboardButton(f"{MSG_EMOJIS['link']} بازگشت", callback_data="back_main")],
+    [InlineKeyboardButton(f"{MSG_EMOJIS['back']} بازگشت", callback_data="back_main")],
 ]
 
     await query.message.edit_text(
@@ -1515,8 +1517,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(support_handler, pattern="^menu_support$"))
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
-    app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))
-    app.add_handler(ConversationHandler(
+    app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))    app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
         states={
             BUY_SELECT_PLAN: [
