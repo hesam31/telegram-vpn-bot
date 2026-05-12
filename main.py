@@ -82,6 +82,8 @@ MSG_EMOJIS = {
     "orders":  {"id":"5989933370082071285",  "char": "🕐"},
     "paein":  {"id":"5350700390847365132",  "char": "⏬"},
     "back":  {"id":"5348514879558926674",  "char": "❌"},    
+    "stats":  {"id":"5990060518293901972",  "char": "❌"},
+    "not": {"id:5989790729923203577", "char":"🚫"}
 }
 
 def te(key):
@@ -95,7 +97,7 @@ BTN_CFG = {
     "renew":            {"text": "تمدید اشتراک",        "style": "primary",  "emoji_id": "4956418939920843885"},
     "referral": {"text": "زیر مجموعه(رفرال)", "style": "primary", "emoji_id": "5350790271627968474"},
     "my_services":      {"text": "سرویس‌های من",       "style": "primary",  "emoji_id": "5409380072291316349"},
-    "profile":          {"text": "پروفایل من",          "style": "primary",  "emoji_id": "4956387556594811916"},
+    "profile":          {"text": "پروفایل من",          "style": "primary",  "emoji_id": "5348136664738839786"},
     "news":             {"text": "آموزش و اخبار",       "style": "primary",  "emoji_id": "4956436416142771580"},
     "support":          {"text": "پشتیبانی",            "style": "primary",  "emoji_id": "5979065840102810733"},
     "back":             {"text": "بازگشت",              "style": "primary",  "emoji_id": "5972120066236357644"},
@@ -270,8 +272,18 @@ def back_kb(target="main"):
 def payment_invoice_kb(card: str, amount: int):
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton(" کپی شماره کارت", callback_data="noop_card", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["copy_btn"], copy_text=card),
-            InlineKeyboardButton(" کپی مبلغ", callback_data="noop_amount", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["copy_btn"], copy_text=str(int(amount))),
+        InlineKeyboardButton(
+    "کپی شماره کارت",
+    style="primary",
+    icon_custom_emoji_id=DYN_BTN_EMOJIS["copy_btn"],
+    copy_text=card
+),
+InlineKeyboardButton(
+    "کپی مبلغ",
+    style="primary",
+    icon_custom_emoji_id=DYN_BTN_EMOJIS["copy_btn"],
+    copy_text=str(int(amount))
+)
         ],
         [create_btn("back", "back_main")],
     ])
@@ -399,13 +411,13 @@ async def support_handler(update, context):
     try:
         await query.message.edit_text(
             "برای ارتباط با پشتیبانی روی دکمه زیر کلیک کنید.",
-            reply_markup=InlineKeyboardMarkup(keyboard)
+            reply_markup=InlineKeyboardMarkup(kb)
         )
     except:
         await context.bot.send_message(
             query.from_user.id,
             "برای ارتباط با پشتیبانی:",
-            reply_markup=InlineKeyboardMarkup(keyboard)
+            reply_markup=InlineKeyboardMarkup(kb)
         )
 
 async def cancel_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -555,8 +567,8 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["total"] = total
 
     buttons = [
-    [InlineKeyboardButton(f"{te('accept')} قوانین را میپذیرم", callback_data="accept_rules")],
-    [create_btn("back", "back_main")]
+    [InlineKeyboardButton(f"{MSG_EMOJIS['accept']} قوانین را میپذیرم", callback_data="accept_rules")],
+    [InlineKeyboardButton(f"{MSG_EMOJIS['back']} بازگشت", callback_data="back_main")]
 ]
 
     text = (
@@ -639,9 +651,9 @@ async def buy_prime(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     msg = (
         f"💳 <b>فاکتور PRIME</b>\n\n"
-        f"💎 سرویس: PRIME\n"
+        f"💎 سرویس: PRIME\n\n"
         f"💰 مبلغ: <code>{exact_amount:,}</code> تومان\n\n"
-        f"شماره کارت:\n<code>{CARD_NUMBER}</code>\n\n"
+        f"شماره کارت:\n\n<code>{CARD_NUMBER}</code>\n\n"
         "بعد از پرداخت، رسید را ارسال کنید."
     )
 
@@ -969,12 +981,12 @@ async def profile_menu(update, context):
     await query.answer()
 
     keyboard = [
-    [InlineKeyboardButton(f"{te('profile')} اطلاعات حساب", callback_data="profile_info")],
-    #[InlineKeyboardButton(f"{te('referral')} سیستم رفرال", callback_data="profile_referral")],
-    [InlineKeyboardButton(f"{te('orders')} تاریخچه خرید", callback_data="profile_orders")],
-    [InlineKeyboardButton(f"{te('servers')} سرورهای من", callback_data="profile_servers")],
-    [InlineKeyboardButton(f"{te('link')} بازگشت", callback_data="back_main")],
-    ]
+    [InlineKeyboardButton(f"{MSG_EMOJIS['profile']} اطلاعات حساب", callback_data="profile_info")],
+    # [InlineKeyboardButton(f"{MSG_EMOJIS['referral']} سیستم رفرال", callback_data="profile_referral")],
+    [InlineKeyboardButton(f"{MSG_EMOJIS['orders']} تاریخچه خرید", callback_data="profile_orders")],
+    [InlineKeyboardButton(f"{MSG_EMOJIS['servers']} سرورهای من", callback_data="profile_servers")],
+    [InlineKeyboardButton(f"{MSG_EMOJIS['link']} بازگشت", callback_data="back_main")],
+]
 
     await query.message.edit_text(
     f"{te('profile')} پنل کاربری شما\n\n"
@@ -1034,15 +1046,15 @@ async def profile_info(update, context):
     active_servers = get_active_servers(user_id)
 
     text = f"""
-📊 اطلاعات حساب شما
+{te('stats')} اطلاعات حساب شما
 
-👤 آیدی کاربر: {user_id}
+{te('profile')} آیدی کاربر: {user_id}
 
-🛒 تعداد خریدها: {buy_count}
-🖥 سرورهای فعال: {active_servers}
+{te('card')} تعداد خریدها: {buy_count}
+{te('box')} سرورهای فعال: {active_servers}
 """
 
-    keyboard = [[InlineKeyboardButton("🔙 بازگشت", callback_data="menu_profile")]]
+    keyboard = [[InlineKeyboardButton(f"{MSG_EMOJIS['back']}بازگشت", callback_data="menu_profile")]]
 
     await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))    
 
@@ -1056,14 +1068,14 @@ async def profile_orders(update, context):
     services = db["users"].get(user_id, {}).get("services", [])
 
     if not services:
-        text = "🧾 شما هنوز خریدی ثبت نکرده‌اید."
+        text = f"{MSG_EMOJIS['not']}شما هنوز خریدی ثبت نکرده‌اید."
     else:
-        text = "🧾 تاریخچه خرید شما:\n\n"
+        text = " تاریخچه خرید شما:\n\n"
         for s in services:
             if isinstance(s, dict):
                 text += f"• {s.get('name')} | کد: {s.get('sub_id','---')}\n"
 
-    keyboard = [[InlineKeyboardButton("🔙 بازگشت", callback_data="menu_profile")]]
+    keyboard = [[InlineKeyboardButton(f"{MSG_EMOJIS['back']}بازگشت" callback_data="menu_profile")]]
 
     await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
 
@@ -1084,7 +1096,7 @@ async def profile_servers(update, context):
             if isinstance(s, dict):
                 text += f"🔹 {s.get('sub_id','---')}\n"
 
-    keyboard = [[InlineKeyboardButton("🔙 بازگشت", callback_data="menu_profile")]]
+    keyboard = [[InlineKeyboardButton(f"{MSG_EMOJIS['back']}بازگشت", callback_data="menu_profile")]]
 
     await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))           
 
