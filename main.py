@@ -1155,13 +1155,18 @@ async def profile_servers(update, context):
             if isinstance(s, dict):
                 text += f"🔹 {s.get('sub_id','---')}\n"
 
-    Keyboard = [[InlineKeyboardButton(f"{MSG_EMOJIS['back']['char']} بازگشت", callback_data="menu_profile")]]
+    keyboard = [[
+        InlineKeyboardButton(
+            f"{MSG_EMOJIS['back']['char']} بازگشت",
+            callback_data="menu_profile"
+        )
+    ]]
 
-   await query.message.edit_text(
-    text,
-    reply_markup=InlineKeyboardMarkup(keyboard),
-    parse_mode="HTML"
-)           
+    await query.message.edit_text(
+        text,
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode="HTML"
+    )
 
 async def renew_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
