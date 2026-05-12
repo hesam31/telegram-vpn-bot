@@ -1517,7 +1517,8 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(support_handler, pattern="^menu_support$"))
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
-    app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))    app.add_handler(ConversationHandler(
+    app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))  
+    app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
         states={
             BUY_SELECT_PLAN: [
