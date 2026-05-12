@@ -395,19 +395,23 @@ async def support_handler(update, context):
     await query.answer()
 
     keyboard = [
-        [
-            InlineKeyboardButton(
-                f"{DYN_BTN_EMOJIS['support']} ارتباط با پشتیبانی",
-                url="https://t.me/hesamyaghoubii"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                f"{DYN_BTN_EMOJIS['back']} بازگشت",
-                callback_data="back_main"
-            )
-        ]
+    [
+        InlineKeyboardButton(
+            "ارتباط با پشتیبانی",
+            url="https://t.me/hesamyaghoubii",
+            style="primary",
+            icon_custom_emoji_id=DYN_BTN_EMOJIS["support"]
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "بازگشت",
+            callback_data="back_main",
+            style="primary",
+            icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
+        )
     ]
+]
 
     try:
         await query.message.edit_text(
@@ -568,10 +572,23 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["total"] = total
 
     buttons = [
-    [InlineKeyboardButton(f"{DYN_BTN_EMOJIS['accept']} قوانین را میپذیرم", callback_data="accept_rules")],
-    [InlineKeyboardButton(f"{DYN_BTN_EMOJIS['back']} بازگشت", callback_data="back_main")]
+    [
+        InlineKeyboardButton(
+            "قوانین را میپذیرم",
+            callback_data="accept_rules",
+            style="success",
+            icon_custom_emoji_id=DYN_BTN_EMOJIS["accept"]
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "بازگشت",
+            callback_data="back_main",
+            style="primary",
+            icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
+        )
+    ]
 ]
-
     text = (
         f"{te('warning')} قبل از خرید قوانین را تایید کنید.\n\n"
         "• اشتراک قابل عودت نیست\n"
@@ -1041,23 +1058,38 @@ async def profile_info(update, context):
     query = update.callback_query
     await query.answer()
 
+    # چک عضویت اجباری مثل بقیه بخش‌ها
+    if not await check_force_join(update, context):
+        return
+
     user_id = query.from_user.id
 
     buy_count = get_user_buy_count(user_id)
     active_servers = get_active_servers(user_id)
 
     text = f"""
-{te('stats')} اطلاعات حساب شما
+<tg-emoji emoji-id="{MSG_EMOJIS['stats']['id']}">{MSG_EMOJIS['stats']['char']}</tg-emoji> اطلاعات حساب شما
 
-{te('profile')} آیدی کاربر: {user_id}
+<tg-emoji emoji-id="{MSG_EMOJIS['profile']['id']}">{MSG_EMOJIS['profile']['char']}</tg-emoji> آیدی کاربر: <code>{user_id}</code>
 
-{te('card')} تعداد خریدها: {buy_count}
-{te('box')} سرورهای فعال: {active_servers}
+<tg-emoji emoji-id="{MSG_EMOJIS['card']['id']}">{MSG_EMOJIS['card']['char']}</tg-emoji> تعداد خریدها: {buy_count}
+<tg-emoji emoji-id="{MSG_EMOJIS['box']['id']}">{MSG_EMOJIS['box']['char']}</tg-emoji> سرورهای فعال: {active_servers}
 """
 
-    keyboard = [[InlineKeyboardButton(f"{MSG_EMOJIS['back']}بازگشت", callback_data="menu_profile")]]
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                f"{MSG_EMOJIS['back']} بازگشت",
+                callback_data="menu_profile"
+            )
+        ]
+    ])
 
-    await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))    
+    await query.message.edit_text(
+        text,
+        reply_markup=keyboard,
+        parse_mode="HTML"
+    )
 
 async def profile_orders(update, context):
     query = update.callback_query
