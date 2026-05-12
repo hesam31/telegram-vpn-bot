@@ -1075,7 +1075,7 @@ async def profile_orders(update, context):
             if isinstance(s, dict):
                 text += f"• {s.get('name')} | کد: {s.get('sub_id','---')}\n"
 
-    keyboard = [[InlineKeyboardButton(f"{MSG_EMOJIS['back']}بازگشت" callback_data="menu_profile")]]
+    keyboard = [[InlineKeyboardButton(f"{MSG_EMOJIS['back']}بازگشت",callback_data="menu_profile")]]
 
     await query.message.edit_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
 
