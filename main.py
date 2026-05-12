@@ -128,6 +128,7 @@ DYN_BTN_EMOJIS = {
     "copy_btn":      "5987636855363867398",
     "back": "5972120066236357644",
     "support":"5979065840102810733",
+    "acceprt":"5348404473129614535"
 
 }
 
@@ -387,7 +388,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["last_menu_msg_id"] = update.callback_query.message.message_id
     return ConversationHandler.END
 
-async def support_handler(update, context):
+aasync def support_handler(update, context):
     query = update.callback_query
     await query.answer()
 
@@ -411,13 +412,13 @@ async def support_handler(update, context):
     try:
         await query.message.edit_text(
             "برای ارتباط با پشتیبانی روی دکمه زیر کلیک کنید.",
-            reply_markup=InlineKeyboardMarkup(kb)
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
     except:
         await context.bot.send_message(
             query.from_user.id,
             "برای ارتباط با پشتیبانی:",
-            reply_markup=InlineKeyboardMarkup(kb)
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
 async def cancel_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -567,8 +568,8 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["total"] = total
 
     buttons = [
-    [InlineKeyboardButton(f"{MSG_EMOJIS['accept']} قوانین را میپذیرم", callback_data="accept_rules")],
-    [InlineKeyboardButton(f"{MSG_EMOJIS['back']} بازگشت", callback_data="back_main")]
+    [InlineKeyboardButton(f"{DYN_BTN_EMOJI['accept']} قوانین را میپذیرم", callback_data="accept_rules")],
+    [InlineKeyboardButton(f"{DYN_BTN_EMOJI['back']} بازگشت", callback_data="back_main")]
 ]
 
     text = (
