@@ -1546,7 +1546,7 @@ async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYP
     )
     return SET_TEST_SERVER
 
-async def admin_add_server(update, context):
+#async def admin_add_server(update, context):
     server = update.message.text.strip()
 
     if "temp_servers" not in context.user_data:
@@ -1625,6 +1625,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(support_handler, pattern="^menu_support$"))
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
+    app.add_handler(CallbackQueryHandler(admin_add_server, pattern="^admin_add_server$"))
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))  
     app.add_handler(CallbackQueryHandler(finish_servers, pattern="^finish_servers$"))
     app.add_handler(ConversationHandler(
