@@ -1518,17 +1518,24 @@ async def admin_del_channel_save(update: Update, context: ContextTypes.DEFAULT_T
     except: await update.message.reply_text(f"{te('error')} فقط عدد وارد کنید.", reply_markup=admin_menu_kb(), parse_mode="HTML")
     return ConversationHandler.END
     
-async def admin_add_server_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
+async def admin_add_server(update, context):
+    server = update.message.text.strip()
 
-    await query.message.edit_text(
-    "کانفیگ سرور را ارسال کنید:",
-    reply_markup=back_kb("admin")
+    if "temp_servers" not in context.user_data:
+        context.user_data["temp_servers"] = []
+
+    if len(context.user_data["temp_servers"]) >= 10:
+        await update.message.reply_text("❌ حداکثر 10 سرور مجاز است.")
+        return SET_SERVER
+
+    context.user_data["temp_servers"].append(server)
+
+    await update.message.reply_text(
+        f"✅ اضافه شد ({len(context.user_data['temp_servers'])}/10)\n"
+        "سرور بعدی را بفرست یا «اتمام ارسال» را بزن."
     )
 
     return SET_SERVER
-
 async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -1539,13 +1546,40 @@ async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYP
     )
     return SET_TEST_SERVER
 
-async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def admin_add_server(update, context):
+    server = update.message.text.strip()
+
+    if "temp_servers" not in context.user_data:
+        context.user_data["temp_servers"] = []
+
+    context.user_data["temp_servers"].append(server)
+
+    await update.message.reply_text("✅ اضافه شد. سرور بعدی را بفرست یا اتمام را بزن.")
+    return SET_SERVER
+
+async def finish_servers(update, context):
+    query = update.callback_query
+    await query.answer()
+
     db = load_db()
-    db["settings"].setdefault("servers", []).append(update.message.text.strip())
+
+    servers = context.user_data.get("temp_servers", [])
+
+    if not servers:
+        await query.message.edit_text("هیچ سروری ارسال نشده.")
+        return ConversationHandler.END
+
+    db["settings"].setdefault("servers", []).extend(servers)
     save_db(db)
-    await update.message.reply_text("سرور با موفقیت اضافه شد.")
-    return ConversationHandler.END
-    
+
+    context.user_data["temp_servers"] = []
+
+    await query.message.edit_text(
+        f"✅ {len(servers)} سرور ذخیره شد و ارسال بسته شد.",
+        reply_markup=admin_menu_kb()
+    )
+
+    return ConversationHandler.END    
 async def admin_save_test_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = load_db()
     db["settings"].setdefault("test_servers", []).append(update.message.text.strip())
@@ -1592,6 +1626,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))  
+    app.add_handler(CallbackQueryHandler(finish_servers, pattern="^finish_servers$"))
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
         states={
@@ -1649,6 +1684,9 @@ if __name__ == "__main__":
             DEL_CHANNEL_INDEX: [MessageHandler(filters.TEXT, admin_del_channel_save)],
             SET_TEST_SERVER: [MessageHandler(filters.TEXT, admin_save_test_server)],
             SET_SERVER: [MessageHandler(filters.TEXT, admin_add_server)],
+            SET_SERVER: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_add_server)
+            ],
             },
         fallbacks=[CallbackQueryHandler(cancel_callback, pattern="^back_")],
         allow_reentry=True
