@@ -619,7 +619,7 @@ async def buy_confirm_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     msg = (
         f"{te('card')} <b>فاکتور پرداخت</b>\n\n"
-        f"{te('diamond')} پلن: {plan}\n\n"
+        f"{te('diamond')}  پلن:  {plan}\n\n"
         f"{te('box')} حجم: {volume}\n\n"
         f"{te('NUMBER')} تعداد: {count}\n\n"
         f"{te('money')} مبلغ قابل پرداخت:\n\n"
@@ -1048,7 +1048,8 @@ async def profile_referral(update, context):
     referral_link = f"https://t.me/{bot_username}?start=ref_{user_id}"
 
     invited_count = get_invited_count(user_id)  # از دیتابیس
-    invited_buy = get_invited_buy_count(user_id)
+
+    remaining_invites = max(0, 10 - invited_count)
 
     text = f"""
 {te('hand')} <b>سیستم دعوت دوستان</b>
@@ -1058,26 +1059,26 @@ async def profile_referral(update, context):
 
 {te('invite')} <b>تعداد دعوت‌ها:</b> {invited_count}
 
-{te('card')} <b>تعداد خرید دعوتی‌ها:</b> {invited_buy}
+{te('stars')} <b>تعداد باقی مانده تا هدیه:</b> {remaining_invites}
 
-با ارسال لینک بالا به دوستان خود می‌توانید پاداش دریافت کنید.
+با دعوت <b>10 نفر</b> یک سرویس رایگان از ما هدیه بگیرید 🎁
 """
 
     keyboard = [
-    [
-        InlineKeyboardButton(
-            " بازگشت",
-            callback_data="back_main",
-            icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
-        )
+        [
+            InlineKeyboardButton(
+                " بازگشت",
+                callback_data="back_main",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
+            )
+        ]
     ]
-]
 
     await query.message.edit_text(
-    text,
-    reply_markup=InlineKeyboardMarkup(keyboard),
-    parse_mode="HTML"
-)
+        text,
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode="HTML"
+    )
 
 async def profile_info(update, context):
     query = update.callback_query
