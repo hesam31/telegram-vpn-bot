@@ -85,6 +85,8 @@ MSG_EMOJIS = {
     "stats":  {"id":"5990060518293901972",  "char": "❌"},
     "not":  {"id":"5989790729923203577",  "char": "🚫"},
     "servers":  {"id":"5841171023096976223",  "char": "🔥"},
+    "stars":  {"id":"5841394116583232174",  "char": "🔥"},
+
 
 }
 
@@ -618,13 +620,13 @@ async def buy_confirm_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
         f"{te('card')} <b>فاکتور پرداخت</b>\n\n"
         f"{te('diamond')} پلن: {plan}\n\n"
-        f"{te('box')} حجم: {volume}\n"
+        f"{te('box')} حجم: {volume}\n\n"
         f"{te('NUMBER')} تعداد: {count}\n\n"
-        f"{te('money')} مبلغ قابل پرداخت:\n"
-        f"<code>{exact_amount:,}</code> تومان\n\n"
-        f"{te('card')} شماره کارت:\n"
-        f"<code>{CARD_NUMBER}</code>\n\n"
-        f"پس از واریز، عکس رسید را ارسال کنید."
+        f"{te('money')} مبلغ قابل پرداخت:\n\n"
+        f"{te('money')} <code>{exact_amount:,}</code> تومان\n\n"
+        f"{te('card')} شماره کارت:\n\n"
+        f"{te('card')} <code>{CARD_NUMBER}</code>\n\n"
+        f"{te('stars')} پس از واریز عکس رسید را ارسال کنید:\n\n"
     )
 
     await query.message.edit_text(
