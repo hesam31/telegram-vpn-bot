@@ -1675,7 +1675,7 @@ if __name__ == "__main__":
             CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
             CallbackQueryHandler(admin_del_channel_prompt, pattern="^del_ch$"),
             CallbackQueryHandler(admin_set_test_start, pattern="^admin_set_test$"),
-            #CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"),
+            CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"),
             CallbackQueryHandler(profile_info, pattern="profile_info"),
             CallbackQueryHandler(admin_server_stats, pattern="admin_server_stats"),
             CallbackQueryHandler(admin_receipts, pattern="admin_receipts"),
