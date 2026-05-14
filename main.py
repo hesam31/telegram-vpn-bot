@@ -554,7 +554,7 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.edit_text(
     f"{te('box')} حجم انتخاب شد: {volume}\n\n"
     f"{te('money')} قیمت هر عدد: {price:,} تومان\n\n"
-    f"{te('number')} تعداد اکانت مورد نظر را وارد کنید:",
+    f"{te('NUMBER')} تعداد اکانت مورد نظر را وارد کنید:",
     parse_mode="HTML",
     reply_markup=back_kb()
 )
@@ -730,9 +730,7 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         f"""{te('sedora')} <b>رسید شما دریافت شد</b>
 
-{te('time')} سفارش شما در انتظار تایید ادمین است.
-
-پس از تایید، اطلاعات سرور به صورت خودکار ارسال خواهد شد.""",
+{te('time')} سفارش شما در انتظار تایید ادمین است. """,
         parse_mode="HTML"
     )
 
@@ -1625,7 +1623,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(support_handler, pattern="^menu_support$"))
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
-    app.add_handler(CallbackQueryHandler(admin_add_server, pattern="^admin_add_server$"))
+    app.add_handler(CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"))
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))  
     app.add_handler(CallbackQueryHandler(finish_servers, pattern="^finish_servers$"))
     app.add_handler(ConversationHandler(
@@ -1684,7 +1682,6 @@ if __name__ == "__main__":
             ADD_CHANNEL_LINK: [MessageHandler(filters.TEXT, admin_save_channel_link)],
             DEL_CHANNEL_INDEX: [MessageHandler(filters.TEXT, admin_del_channel_save)],
             SET_TEST_SERVER: [MessageHandler(filters.TEXT, admin_save_test_server)],
-            SET_SERVER: [MessageHandler(filters.TEXT, admin_add_server)],
             SET_SERVER: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, admin_add_server)
             ],
