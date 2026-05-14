@@ -1548,7 +1548,7 @@ async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYP
         parse_mode="HTML", reply_markup=back_kb("admin")
     )
     return SET_TEST_SERVER
-    
+
 async def finish_servers(update, context):
     query = update.callback_query
     await query.answer()
@@ -1650,6 +1650,7 @@ if __name__ == "__main__":
             ))
 
     app.add_handler(ConversationHandler(
+ConversationHandler(
         entry_points=[
             CallbackQueryHandler(admin_callback_handler, pattern="^adm_"),
             CallbackQueryHandler(admin_add_plan, pattern="^admin_add_plan$"),
@@ -1658,15 +1659,9 @@ if __name__ == "__main__":
             CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
             CallbackQueryHandler(admin_del_channel_prompt, pattern="^del_ch$"),
             CallbackQueryHandler(admin_set_test_start, pattern="^admin_set_test$"),
-            entry_points=[
-        CallbackQueryHandler(admin_add_server_start, pattern="admin_add_server")
-    ],
-    states={
-        SET_SERVER: [
-            MessageHandler(filters.TEXT & ~filters.COMMAND, admin_add_server)
-        ]
-    },
-    fallbacks=[]
+
+            CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"),  # ✅ این اینجاست
+
             CallbackQueryHandler(profile_info, pattern="profile_info"),
             CallbackQueryHandler(admin_server_stats, pattern="admin_server_stats"),
             CallbackQueryHandler(admin_receipts, pattern="admin_receipts"),
@@ -1674,6 +1669,13 @@ if __name__ == "__main__":
             CallbackQueryHandler(reject_receipt, pattern="^reject_receipt_"),
             CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
         ],
+        states={
+            SET_SERVER: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_add_server)
+            ]
+        },
+        fallbacks=[]
+)
         states={
             ADD_NAME: [MessageHandler(filters.TEXT, admin_save_plan_name)],
             ADD_PRICE: [MessageHandler(filters.TEXT, admin_save_plan_price)],
