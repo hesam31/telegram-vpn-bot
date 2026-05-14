@@ -1623,7 +1623,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(support_handler, pattern="^menu_support$"))
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
-    app.add_handler(CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"))
+    app.add_handler(CallbackQueryHandler(admin_add_server_stats, pattern="^admin_add_server$"))
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))  
     app.add_handler(CallbackQueryHandler(finish_servers, pattern="^finish_servers$"))
     app.add_handler(ConversationHandler(
