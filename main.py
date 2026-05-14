@@ -1516,18 +1516,10 @@ async def admin_del_channel_save(update: Update, context: ContextTypes.DEFAULT_T
     except: await update.message.reply_text(f"{te('error')} فقط عدد وارد کنید.", reply_markup=admin_menu_kb(), parse_mode="HTML")
     return ConversationHandler.END
 
-async def admin_add_server_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    await query.message.reply_text(
-        "لطفا سرور را ارسال کنید:",
-        reply_markup=back_kb("admin")
-    )
-
-    return SET_SERVER    
+ 
     
-async def admin_add_server(update, context):
+async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     server = update.message.text.strip()
 
     if "temp_servers" not in context.user_data:
@@ -1543,6 +1535,8 @@ async def admin_add_server(update, context):
         f"✅ اضافه شد ({len(context.user_data['temp_servers'])}/10)\n"
         "سرور بعدی را بفرست یا «اتمام ارسال» را بزن."
     )
+
+    return SET_SERVER
 
     return SET_SERVER
 async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
