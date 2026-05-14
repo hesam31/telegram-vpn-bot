@@ -1548,18 +1548,7 @@ async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYP
         parse_mode="HTML", reply_markup=back_kb("admin")
     )
     return SET_TEST_SERVER
-
-#async def admin_add_server(update, context):
-    server = update.message.text.strip()
-
-    if "temp_servers" not in context.user_data:
-        context.user_data["temp_servers"] = []
-
-    context.user_data["temp_servers"].append(server)
-
-    await update.message.reply_text("✅ اضافه شد. سرور بعدی را بفرست یا اتمام را بزن.")
-    return SET_SERVER
-
+    
 async def finish_servers(update, context):
     query = update.callback_query
     await query.answer()
@@ -1669,7 +1658,15 @@ if __name__ == "__main__":
             CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
             CallbackQueryHandler(admin_del_channel_prompt, pattern="^del_ch$"),
             CallbackQueryHandler(admin_set_test_start, pattern="^admin_set_test$"),
-            CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"),
+            entry_points=[
+        CallbackQueryHandler(admin_add_server_start, pattern="admin_add_server")
+    ],
+    states={
+        SET_SERVER: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, admin_add_server)
+        ]
+    },
+    fallbacks=[]
             CallbackQueryHandler(profile_info, pattern="profile_info"),
             CallbackQueryHandler(admin_server_stats, pattern="admin_server_stats"),
             CallbackQueryHandler(admin_receipts, pattern="admin_receipts"),
