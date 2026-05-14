@@ -1515,6 +1515,17 @@ async def admin_del_channel_save(update: Update, context: ContextTypes.DEFAULT_T
         else: await update.message.reply_text(f"{te('error')} شماره اشتباه است.", reply_markup=admin_menu_kb(), parse_mode="HTML")
     except: await update.message.reply_text(f"{te('error')} فقط عدد وارد کنید.", reply_markup=admin_menu_kb(), parse_mode="HTML")
     return ConversationHandler.END
+
+async def admin_add_server_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    await query.message.reply_text(
+        "لطفا سرور را ارسال کنید:",
+        reply_markup=back_kb("admin")
+    )
+
+    return SET_SERVER    
     
 async def admin_add_server(update, context):
     server = update.message.text.strip()
@@ -1623,7 +1634,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(support_handler, pattern="^menu_support$"))
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
-    app.add_handler(CallbackQueryHandler(admin_add_server_stats, pattern="^admin_add_server$"))
+    app.add_handler(CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"))
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))  
     app.add_handler(CallbackQueryHandler(finish_servers, pattern="^finish_servers$"))
     app.add_handler(ConversationHandler(
