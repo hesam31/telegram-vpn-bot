@@ -1562,15 +1562,23 @@ async def admin_add_server_finish(update: Update, context: ContextTypes.DEFAULT_
 
     db = load_db()
 
-    servers = context.user_data.get("temp_servers", [])
+    # اگر temp_servers نبود، امن‌سازی
+    servers = context.user_data.get("temp_servers")
 
     if not servers:
+        servers = []
+        context.user_data["temp_servers"] = []
+
+    # اگر هیچ سروری ثبت نشده
+    if len(servers) == 0:
         await query.message.edit_text("❌ هیچ سروری ثبت نشد.")
         return ConversationHandler.END
 
-    db["settings"].setdefault("servers", []).extend(servers)
+    # ذخیره در دیتابیس
+    db.setdefault("settings", {}).setdefault("servers", []).extend(servers)
     save_db(db)
 
+    # پاک کردن موقت
     context.user_data["temp_servers"] = []
 
     await query.message.edit_text(
