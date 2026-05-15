@@ -156,8 +156,9 @@ DYN_BTN_EMOJIS = {
     BUY_SELECT_VOLUME,
     BUY_GET_COUNT,
     BUY_CONFIRM_RULES,
-    TEST_SERVER_STATE
-) = range(18)
+    TEST_SERVER_STATE,
+    TEST_SERVER_INPUT
+) = range(19)
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
@@ -1258,7 +1259,7 @@ async def renew_process_payment(update: Update, context: ContextTypes.DEFAULT_TY
         f"{te('money')} مبلغ دقیق واریز: <code>{price_txt}</code> تومان\n\n"
         f"{te('warning')} <b>لطفاً دقیقاً همین مبلغ را واریز کنید</b> تا پرداخت شما شناسایی شود.\n\n"
         f"{te('card')} شماره کارت:\n<code>{CARD_NUMBER}</code>\n\n"
-        f"پس از واریز، عکس رسید را بفرستید.(لطفا در مبلغ پرداختی دقت فرمایید و برای اطمینان روی دکمه ی کپی مبلغ کلیک کنید.)"
+        f"پس از واریز عکس رسید را ارسال کنید(روی دکمه ی کپی مبلغ برای اطمینان حاصل شدن از درست بودن هزینه پرداختی کلیک کنید)"
     )
     kb = payment_invoice_kb(CARD_NUMBER, exact_amount) if exact_amount else back_kb()
     await query.message.edit_text(msg, parse_mode="HTML", reply_markup=kb)
@@ -1724,34 +1725,42 @@ async def finish_servers(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    current = load_db()["settings"].get("test_server", "تنظیم نشده")
-    await query.message.edit_text(
-        f"{te('test')} <b>تنظیم سرور تست</b>\n\nکانفیگ فعلی:\n<code>{current}</code>\n\nکانفیگ جدید را ارسال کنید:",
-        parse_mode="HTML", reply_markup=back_kb("admin")
-    )
+
     admin_id = str(query.from_user.id)
 
     db = load_db()
-    db["settings"].setdefault("test_session", {})
 
-    db["settings"]["test_session"][admin_id] = {
+    db["settings"].setdefault("test_server_session", {})
+
+    db["settings"]["test_server_session"][admin_id] = {
         "active": True,
         "servers": []
     }
+
+    save_db(db)
+
     keyboard = InlineKeyboardMarkup([
-    [InlineKeyboardButton("✅ اتمام ارسال", callback_data="finish_test_servers")],
-    [create_btn("back", "back_admin")]
-])
+        [InlineKeyboardButton("✅ اتمام فرایند", callback_data="finish_test_servers")],
+        [create_btn("back", "back_admin")]
+    ])
 
-    save_db(db)    
-    return TEST_SERVER_STATE
+    await query.message.edit_text(
+        "🎁 حالت افزودن سرور تست فعال شد\n\n"
+        "سرورها را یکی یکی ارسال کن.\n"
+        "بعد از اتمام روی دکمه «اتمام فرایند» بزن.",
+        reply_markup=keyboard
+    )
+
+    return TEST_SERVER_INPUT
 
 
-async def admin_add_test_server_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def admin_test_server_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     admin_id = str(update.effective_user.id)
 
     db = load_db()
-    session = db["settings"].get("test_session", {}).get(admin_id, {})
+
+    session = db["settings"].get("test_server_session", {}).get(admin_id, {})
 
     if not session.get("active"):
         return ConversationHandler.END
@@ -1760,35 +1769,37 @@ async def admin_add_test_server_input(update: Update, context: ContextTypes.DEFA
 
     session.setdefault("servers", []).append(server)
 
-    db["settings"]["test_session"][admin_id] = session
+    db["settings"]["test_server_session"][admin_id] = session
+
     save_db(db)
 
     await update.message.reply_text(
-        f"✅ اضافه شد ({len(session['servers'])})"
+        f"✅ سرور تست ذخیره شد ({len(session['servers'])})"
     )
 
-    return SET_TEST_SERVER
-
+    return TEST_SERVER_INPUT
 
 
 async def finish_test_servers(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     query = update.callback_query
     await query.answer()
 
     admin_id = str(query.from_user.id)
 
     db = load_db()
-    session = db["settings"].get("test_session", {}).get(admin_id, {})
+
+    session = db["settings"].get("test_server_session", {}).get(admin_id, {})
 
     servers = session.get("servers", [])
 
     if not servers:
-        await query.message.edit_text("❌ هیچ سروری ثبت نشد.")
+        await query.message.edit_text("❌ هیچ سرور تستی ثبت نشد.")
         return ConversationHandler.END
 
     db["settings"].setdefault("test_servers", []).extend(servers)
 
-    db["settings"]["test_session"][admin_id] = {
+    db["settings"]["test_server_session"][admin_id] = {
         "active": False,
         "servers": []
     }
@@ -1796,11 +1807,11 @@ async def finish_test_servers(update: Update, context: ContextTypes.DEFAULT_TYPE
     save_db(db)
 
     await query.message.edit_text(
-        f"✅ {len(servers)} سرور تست ذخیره شد.",
+        f"✅ تعداد {len(servers)} سرور تست ذخیره شد.",
         reply_markup=admin_menu_kb()
     )
 
-    return ConversationHandler.END        
+    return ConversationHandler.END
 
 async def check_expirations(context: ContextTypes.DEFAULT_TYPE):
     db = load_db(); now = datetime.now().timestamp(); changed = False
@@ -1897,10 +1908,15 @@ if __name__ == "__main__":
                 CallbackQueryHandler(reject_receipt, pattern="^reject_receipt_"),
                 CallbackQueryHandler(admin_add_server_input, pattern="^finish_servers$"),
                 CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
+                CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
+                CallbackQueryHandler(finish_servers, pattern="^finish_servers$"),
             ],
             states={
 
                 SET_SERVER: [
+                    
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, admin_test_server_input),
+
                     MessageHandler(
                         filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
                         admin_add_server_input
@@ -1910,6 +1926,8 @@ if __name__ == "__main__":
                         finish_servers,
                         pattern="^finish_servers$"
                     ),
+
+                    
                 ],
 
                 TEST_SERVER_STATE: [
