@@ -117,6 +117,7 @@ BTN_CFG = {
     "admin_add_server": {"text": "افزودن سرور", "style": "primary", "emoji_id": "4958725487682650920"},
     "admin_server_stats":{"text": "آمار سرورها","style": "primary", "emoji_id": "5409380072291316349"},
     "admin_receipts":{"text": "رسید های واریزی","style": "primary","emoji_id": "5350697092184944245"},
+    "admin_referrals": {"text": "سیستم رفرال","style": "primary","emoji_id": "5350790271627968474"},
 }
 
 DYN_BTN_EMOJIS = {
@@ -132,7 +133,8 @@ DYN_BTN_EMOJIS = {
     "copy_btn":      "5987636855363867398",
     "back": "5972120066236357644",
     "support":"5979065840102810733",
-    "accept":"5348404473129614535"
+    "accept":"5348404473129614535",
+    "special":"5967337229310238293"
 
 }
 
@@ -212,8 +214,8 @@ def get_invited_count(user_id):
     count = 0
 
     for uid, user in db["users"].items():
-        if user.get("inviter") == str(user_id):
-            count += 1
+    if user.get("inviter") == str(user_id) and user.get("is_active"):
+        count += 1
 
     return count
 
@@ -269,6 +271,7 @@ def admin_menu_kb():
         [create_btn("admin_add_server", "admin_add_server")],
         [create_btn("admin_server_stats", "admin_server_stats")],
         [create_btn("admin_receipts", "admin_receipts")],
+        [create_btn("admin_referrals", "admin_referrals")],
     ])
 
 def back_kb(target="main"):
@@ -287,7 +290,7 @@ InlineKeyboardButton(
     "کپی مبلغ",
     style="primary",
     icon_custom_emoji_id=DYN_BTN_EMOJIS["copy_btn"],
-    copy_text=str(int(amount))
+    copy_text=str(int(amount) * 10)
 )
         ],
         [create_btn("back", "back_main")],
@@ -330,6 +333,12 @@ async def check_force_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             try: await update.callback_query.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(markup_keys), parse_mode="HTML")
             except: pass
         return False
+    db = load_db()
+    uid = str(user_id)
+
+    if uid in db["users"]:
+        db["users"][uid]["is_active"] = True
+        save_db(db)
     return True
 
 async def check_join_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -373,6 +382,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "pending_order": None,
             "has_test": False,
             "inviter": inviter
+            "is_active": True
         }
 
         save_db(db)
@@ -519,13 +529,37 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data["plan"] = "VIP"
 
-    buttons = [
-        [InlineKeyboardButton("1GB - 290,000", callback_data="buy_vol_1")],
-        [InlineKeyboardButton("2GB - 580,000", callback_data="buy_vol_2")],
-        [InlineKeyboardButton("5GB - 1,450,000", callback_data="buy_vol_5")],
-        [InlineKeyboardButton("5 گیگ بخر 7 گیگ ببر - 1,450,000", callback_data="buy_vol_10")],
-        [create_btn("back", "back_main")]
-    ]
+buttons = [
+    [
+        InlineKeyboardButton(
+            "1GB - 290,000",
+            callback_data="buy_vol_1",
+            icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "2GB - 580,000",
+            callback_data="buy_vol_2",
+            icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "5GB - 1,450,000",
+            callback_data="buy_vol_5",
+            icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "5 گیگ بخر 7 گیگ ببر - 1,450,000",
+            callback_data="buy_vol_10",
+            icon_custom_emoji_id=DYN_BTN_EMOJIS["special"]
+        )
+    ],
+    [create_btn("back", "back_main")]
+]
 
     await query.message.edit_text(
         f"{te('box')} حجم مورد نظر را انتخاب کنید:",
@@ -1238,6 +1272,75 @@ async def renew_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except: pass
     return ConversationHandler.END
 
+
+async def admin_referral_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    db = load_db()
+
+    ref_map = {}
+
+    # ساخت لیست دعوت‌کننده‌ها
+    for uid, user in db["users"].items():
+        inviter = user.get("inviter")
+        if inviter:
+            ref_map.setdefault(inviter, []).append(uid)
+
+    if not ref_map:
+        await query.message.edit_text("هیچ رفرالی ثبت نشده است.", reply_markup=back_kb("admin"))
+        return
+
+    keyboard = []
+
+    for inviter_id, invited_list in ref_map.items():
+        keyboard.append([
+            InlineKeyboardButton(
+                f"👤 {inviter_id} ({len(invited_list)})",
+                callback_data=f"ref_user_{inviter_id}"
+            )
+        ])
+
+    keyboard.append([create_btn("back", "back_admin")])
+
+    await query.message.edit_text(
+        "📊 لیست رفرال کاربران:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+async def admin_referral_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    inviter_id = query.data.split("_")[2]
+
+    db = load_db()
+
+    invited = []
+
+    for uid, user in db["users"].items():
+        if user.get("inviter") == inviter_id:
+            invited.append(uid)
+
+    text = f"👤 کاربر: {inviter_id}\n\n📌 دعوت‌شده‌ها:\n"
+
+    if not invited:
+        text += "هیچ زیرمجموعه‌ای ندارد."
+    else:
+        for u in invited:
+            name = db["users"].get(u, {}).get("name", "unknown")
+            text += f"• {name} (<code>{u}</code>)\n"
+
+    keyboard = [
+        [InlineKeyboardButton("🔙 بازگشت", callback_data="admin_referrals")]
+    ]
+
+    await query.message.edit_text(
+        text,
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode="HTML"
+    )        
+
 async def admin_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in ADMIN_IDS: return
     msg = f"{te('admin')} <b>پنل مدیریت</b>\n\nگزینه مورد نظر را انتخاب کنید:"
@@ -1661,6 +1764,8 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))
     app.add_handler(CallbackQueryHandler(finish_servers, pattern="^finish_servers$"))
     app.add_handler(CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"))
+    app.add_handler(CallbackQueryHandler(admin_referral_panel, pattern="^admin_referrals$"))
+    app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
 
     # ---------------- BUY CONVERSATION ----------------
     app.add_handler(
