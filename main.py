@@ -501,7 +501,7 @@ async def buy_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     buttons = [
-        [InlineKeyboardButton("PRIME", callback_data="buy_prime", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"])],
+        [InlineKeyboardButton("VIP", callback_data="buy_VIP", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"])],
         [create_btn("back", "back_main")]
     ]
 
@@ -517,14 +517,14 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    context.user_data["plan"] = "PRIME"
+    context.user_data["plan"] = "VIP"
 
     buttons = [
         [InlineKeyboardButton("1GB - 290,000", callback_data="buy_vol_1")],
-        #[InlineKeyboardButton("3GB - 120,000", callback_data="buy_vol_3")],
-        #[InlineKeyboardButton("5GB - 180,000", callback_data="buy_vol_5")],
-        #[InlineKeyboardButton("10GB - 300,000", callback_data="buy_vol_10")],
-        #[create_btn("back", "back_main")]
+        [InlineKeyboardButton("2GB - 580,000", callback_data="buy_vol_2")],
+        [InlineKeyboardButton("5GB - 1,450,000", callback_data="buy_vol_5")],
+        [InlineKeyboardButton("5 گیگ بخر 7 گیگ ببر - 1,450,000", callback_data="buy_vol_10")],
+        [create_btn("back", "back_main")]
     ]
 
     await query.message.edit_text(
@@ -541,7 +541,7 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     volume_map = {
         "buy_vol_1": ("1GB", 290000),
-        "buy_vol_3": ("2GB", 580000),
+        "buy_vol_2": ("2GB", 580000),
         "buy_vol_5": ("5GB", 1450000),
         "buy_vol_10": ("5گیگ بخر 7 گیگ ببر", 1450000),
     }
@@ -659,19 +659,19 @@ async def buy_handle_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.edit_text(msg, parse_mode="HTML", reply_markup=payment_invoice_kb(CARD_NUMBER, exact_amount))
     return GET_RECEIPT
 
-async def buy_prime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def buy_VIP(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    plan = load_db()["plans"][0]  # یا هر پلن PRIME که داری
+    plan = load_db()["plans"][0]  # یا هر پلن VIP که داری
     context.user_data["buy_plan"] = plan
 
     exact_amount = plan["price"] + random.randint(100, 999)
     context.user_data["exact_amount"] = exact_amount
 
     msg = (
-        f"💳 <b>فاکتور PRIME</b>\n\n"
-        f"💎 سرویس: PRIME\n\n"
+        f"💳 <b>فاکتور VIP</b>\n\n"
+        f"💎 سرویس: VIP\n\n"
         f"💰 مبلغ: <code>{exact_amount:,}</code> تومان\n\n"
         f"شماره کارت:\n\n<code>{CARD_NUMBER}</code>\n\n"
         "بعد از پرداخت، رسید را ارسال کنید."
@@ -1522,10 +1522,10 @@ async def admin_add_server_start(update: Update, context: ContextTypes.DEFAULT_T
 
     db = load_db()
 
-    db["settings"]["server_session"] = {
-        "active": True,
-        "servers": []
-    }
+    db["settings"]["server_session"][str(admin_id)] = {
+    "active": True,
+    "servers": []
+}
     save_db(db)
 
     keyboard = InlineKeyboardMarkup([
@@ -1544,26 +1544,23 @@ async def admin_add_server_start(update: Update, context: ContextTypes.DEFAULT_T
 
 
 async def admin_add_server_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    db = load_db()
+    admin_id = str(update.effective_user.id)
 
-    session = db["settings"].get("server_session", {})
+    db = load_db()
+    session = db["settings"].get("server_session", {}).get(admin_id, {})
 
     if not session.get("active"):
-        await update.message.reply_text("❌ ابتدا وارد حالت افزودن سرور شوید.")
-        return SET_SERVER
+        return  # یا هیچ پیام نده
 
     server = update.message.text.strip()
 
-    if not server:
-        return SET_SERVER
-
     session.setdefault("servers", []).append(server)
-    db["settings"]["server_session"] = session
+
+    db["settings"]["server_session"][admin_id] = session
     save_db(db)
 
     await update.message.reply_text(
-        f"✅ اضافه شد ({len(session['servers'])})\n"
-        "ادامه بده یا روی اتمام بزن."
+        f"✅ اضافه شد ({len(session['servers'])})"
     )
 
     return SET_SERVER
@@ -1586,7 +1583,7 @@ async def finish_servers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db["settings"].setdefault("servers", []).extend(servers)
 
     # پاکسازی session
-    db["settings"]["server_session"] = {
+    db["settings"]["server_session"][admin_id] = {
         "active": False,
         "servers": []
     }
@@ -1663,7 +1660,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))
     app.add_handler(CallbackQueryHandler(finish_servers, pattern="^finish_servers$"))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, admin_add_server_input))
+    app.add_handler(MessageHandler(f filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),admin_add_server_input))
     app.add_handler(CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"))
 
     # ---------------- BUY CONVERSATION ----------------
@@ -1672,7 +1669,7 @@ if __name__ == "__main__":
             entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
             states={
                 BUY_SELECT_PLAN: [
-                    CallbackQueryHandler(buy_select_plan, pattern="^buy_prime$")
+                    CallbackQueryHandler(buy_select_plan, pattern="^buy_VIP$")
                 ],
                 BUY_SELECT_VOLUME: [
                     CallbackQueryHandler(buy_select_volume, pattern="^buy_vol_")
