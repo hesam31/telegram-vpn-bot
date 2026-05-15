@@ -1590,30 +1590,7 @@ async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYP
         parse_mode="HTML", reply_markup=back_kb("admin")
     )
     return SET_TEST_SERVER
-
-async def finish_servers(update, context):
-    query = update.callback_query
-    await query.answer()
-
-    db = load_db()
-
-    servers = context.user_data.get("temp_servers", [])
-
-    if not servers:
-        await query.message.edit_text("هیچ سروری ارسال نشده.")
-        return ConversationHandler.END
-
-    db["settings"].setdefault("servers", []).extend(servers)
-    save_db(db)
-
-    context.user_data["temp_servers"] = []
-
-    await query.message.edit_text(
-        f"✅ {len(servers)} سرور ذخیره شد و ارسال بسته شد.",
-        reply_markup=admin_menu_kb()
-    )
-
-    return ConversationHandler.END    
+ 
 async def admin_save_test_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = load_db()
     db["settings"].setdefault("test_servers", []).append(update.message.text.strip())
@@ -1666,6 +1643,9 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))
     #app.add_handler(CallbackQueryHandler(finish_servers, pattern="^finish_servers$"))
+    app.add_handler(
+    CallbackQueryHandler(admin_add_server_finish, pattern="^finish_servers$")
+)
     app.add_handler(CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"))
 
     # ---------------- BUY CONVERSATION ----------------
@@ -1711,15 +1691,18 @@ if __name__ == "__main__":
                 CallbackQueryHandler(admin_receipts, pattern="admin_receipts"),
                 CallbackQueryHandler(approve_receipt, pattern="^approve_receipt_"),
                 CallbackQueryHandler(reject_receipt, pattern="^reject_receipt_"),
+                CallbackQueryHandler(admin_add_server_finish, pattern="^finish_servers$")
                 CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
             ],
             states={
                 SET_SERVER: [
                  MessageHandler(filters.TEXT & ~filters.COMMAND, admin_add_server_input)
+                CallbackQueryHandler(admin_add_server_finish, pattern="^finish_servers$")
+
                   ]
             },
             fallbacks=[
-              CallbackQueryHandler(admin_add_server_finish, pattern="^finish_servers$")
+              CallbackQueryHandler(admin_start, pattern="^back_admin$")
             ],
             allow_reentry=True
         )
