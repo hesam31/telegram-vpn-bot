@@ -528,37 +528,37 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data["plan"] = "VIP"
 
-buttons = [
-    [
-        InlineKeyboardButton(
-            "1GB - 290,000",
-            callback_data="buy_vol_1",
-            icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
-        )
-    ],
-    [
-        InlineKeyboardButton(
-            "2GB - 580,000",
-            callback_data="buy_vol_2",
-            icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
-        )
-    ],
-    [
-        InlineKeyboardButton(
-            "5GB - 1,450,000",
-            callback_data="buy_vol_5",
-            icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
-        )
-    ],
-    [
-        InlineKeyboardButton(
-            "5 گیگ بخر 7 گیگ ببر - 1,450,000",
-            callback_data="buy_vol_10",
-            icon_custom_emoji_id=DYN_BTN_EMOJIS["special"]
-        )
-    ],
-    [create_btn("back", "back_main")]
-]
+    buttons = [
+        [
+            InlineKeyboardButton(
+                "1GB - 290,000",
+                callback_data="buy_vol_1",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "2GB - 580,000",
+                callback_data="buy_vol_2",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "5GB - 1,450,000",
+                callback_data="buy_vol_5",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "5 گیگ بخر 7 گیگ ببر - 1,450,000",
+                callback_data="buy_vol_10",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["special"]
+            )
+        ],
+        [create_btn("back", "back_main")]
+    ]
 
     await query.message.edit_text(
         f"{te('box')} حجم مورد نظر را انتخاب کنید:",
