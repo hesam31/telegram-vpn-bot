@@ -1657,7 +1657,7 @@ async def admin_add_server_input(update: Update, context: ContextTypes.DEFAULT_T
     session = db["settings"].get("server_session", {}).get(admin_id, {})
 
     if not session.get("active"):
-        return  # یا هیچ پیام نده
+        return ConversationHandler.END
 
     server = update.message.text.strip()
 
@@ -1678,8 +1678,10 @@ async def finish_servers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
+    admin_id = str(query.from_user.id)   # ❗ این خط رو اضافه کن
+
     db = load_db()
-    session = db["settings"].get("server_session", {})
+    session = db["settings"].get("server_session", {}).get(admin_id, {})
 
     servers = session.get("servers", [])
 
@@ -1713,14 +1715,78 @@ async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYP
         f"{te('test')} <b>تنظیم سرور تست</b>\n\nکانفیگ فعلی:\n<code>{current}</code>\n\nکانفیگ جدید را ارسال کنید:",
         parse_mode="HTML", reply_markup=back_kb("admin")
     )
-    return SET_TEST_SERVER
- 
-async def admin_save_test_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    admin_id = str(query.from_user.id)
+
     db = load_db()
-    db["settings"].setdefault("test_servers", []).append(update.message.text.strip())
+    db["settings"].setdefault("test_session", {})
+
+    db["settings"]["test_session"][admin_id] = {
+        "active": True,
+        "servers": []
+    }
+    keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("✅ اتمام ارسال", callback_data="finish_test_servers")],
+    [create_btn("back", "back_admin")]
+])
+
+    save_db(db)    
+    return SET_TEST_SERVER
+
+
+async def admin_add_test_server_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    admin_id = str(update.effective_user.id)
+
+    db = load_db()
+    session = db["settings"].get("test_session", {}).get(admin_id, {})
+
+    if not session.get("active"):
+        return ConversationHandler.END
+
+    server = update.message.text.strip()
+
+    session.setdefault("servers", []).append(server)
+
+    db["settings"]["test_session"][admin_id] = session
     save_db(db)
-    await update.message.reply_text(f"{te('success')} سرور تست با موفقیت ذخیره شد.", reply_markup=admin_menu_kb(), parse_mode="HTML")
-    return ConversationHandler.END
+
+    await update.message.reply_text(
+        f"✅ اضافه شد ({len(session['servers'])})"
+    )
+
+    return SET_TEST_SERVER
+
+
+
+async def finish_test_servers(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    admin_id = str(query.from_user.id)
+
+    db = load_db()
+    session = db["settings"].get("test_session", {}).get(admin_id, {})
+
+    servers = session.get("servers", [])
+
+    if not servers:
+        await query.message.edit_text("❌ هیچ سروری ثبت نشد.")
+        return ConversationHandler.END
+
+    db["settings"].setdefault("test_servers", []).extend(servers)
+
+    db["settings"]["test_session"][admin_id] = {
+        "active": False,
+        "servers": []
+    }
+
+    save_db(db)
+
+    await query.message.edit_text(
+        f"✅ {len(servers)} سرور تست ذخیره شد.",
+        reply_markup=admin_menu_kb()
+    )
+
+    return ConversationHandler.END        
 
 async def check_expirations(context: ContextTypes.DEFAULT_TYPE):
     db = load_db(); now = datetime.now().timestamp(); changed = False
@@ -1819,7 +1885,8 @@ if __name__ == "__main__":
             ],
             states={
                 SET_SERVER: [
-                 MessageHandler(filters.TEXT & ~filters.COMMAND & filters.User(tuple(ADMIN_IDS)),admin_add_server_input),
+                 MessageHandler(filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS), admin_add_server_input),
+                 MessageHandler( filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),admin_add_test_server_input),
                  CallbackQueryHandler(admin_add_server_input, pattern="^finish_servers$"),
 
                   ]
