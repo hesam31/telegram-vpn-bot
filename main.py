@@ -375,14 +375,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 inviter = ref.split("_")[1]
 
         db["users"][uid] = {
-            "name": update.effective_user.first_name,
-            "username": update.effective_user.username,
-            "services": [],
-            "pending_order": None,
-            "has_test": False,
-            "inviter": inviter
-            "is_active": True
-        }
+    "name": update.effective_user.first_name,
+    "username": update.effective_user.username,
+    "services": [],
+    "pending_order": None,
+    "has_test": False,
+    "inviter": inviter,
+    "is_active": True
+}
 
         save_db(db)
     if not await check_force_join(update, context): return ConversationHandler.END
