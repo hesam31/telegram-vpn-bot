@@ -155,8 +155,9 @@ DYN_BTN_EMOJIS = {
     BUY_SELECT_PLAN,
     BUY_SELECT_VOLUME,
     BUY_GET_COUNT,
-    BUY_CONFIRM_RULES
-) = range(17)
+    BUY_CONFIRM_RULES,
+    TEST_SERVER_STATE
+) = range(18)
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
@@ -533,6 +534,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
             InlineKeyboardButton(
                 "1GB - 290,000",
                 callback_data="buy_vol_1",
+                style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
             )
         ],
@@ -540,23 +542,34 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
             InlineKeyboardButton(
                 "2GB - 580,000",
                 callback_data="buy_vol_2",
+                style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
             )
         ],
         [
             InlineKeyboardButton(
-                "5GB - 1,450,000",
-                callback_data="buy_vol_5",
+                "3GB - 870,000",
+                callback_data="buy_vol_3",
+                style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
             )
         ],
         [
             InlineKeyboardButton(
                 "5 گیگ بخر 7 گیگ ببر - 1,450,000",
-                callback_data="buy_vol_10",
+                callback_data="buy_vol_5",
+                style="success",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["special"]
             )
         ],
+        [
+            InlineKeyboardButton(
+                "10GB - 2,900,00",
+                callback_data="buy_vol_5",
+                style="primary",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
+            )
+        ],        
         [create_btn("back", "back_main")]
     ]
 
@@ -575,8 +588,9 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     volume_map = {
         "buy_vol_1": ("1GB", 290000),
         "buy_vol_2": ("2GB", 580000),
-        "buy_vol_5": ("5GB", 1450000),
-        "buy_vol_10": ("5گیگ بخر 7 گیگ ببر", 1450000),
+        "buy_vol_3": ("5GB", 870000),
+        "buy_vol_10": ("5GB", 2900000),
+        "buy_vol_5": ("5گیگ بخر 7 گیگ ببر", 1450000),
     }
 
     volume, price = volume_map.get(query.data, ("نامشخص", 0))
@@ -1244,7 +1258,7 @@ async def renew_process_payment(update: Update, context: ContextTypes.DEFAULT_TY
         f"{te('money')} مبلغ دقیق واریز: <code>{price_txt}</code> تومان\n\n"
         f"{te('warning')} <b>لطفاً دقیقاً همین مبلغ را واریز کنید</b> تا پرداخت شما شناسایی شود.\n\n"
         f"{te('card')} شماره کارت:\n<code>{CARD_NUMBER}</code>\n\n"
-        f"پس از واریز، عکس رسید را بفرستید."
+        f"پس از واریز، عکس رسید را بفرستید.(لطفا در مبلغ پرداختی دقت فرمایید و برای اطمینان روی دکمه ی کپی مبلغ کلیک کنید.)"
     )
     kb = payment_invoice_kb(CARD_NUMBER, exact_amount) if exact_amount else back_kb()
     await query.message.edit_text(msg, parse_mode="HTML", reply_markup=kb)
@@ -1730,7 +1744,7 @@ async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYP
 ])
 
     save_db(db)    
-    return SET_TEST_SERVER
+    return TEST_SERVER_STATE
 
 
 async def admin_add_test_server_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1833,6 +1847,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))
     app.add_handler(CallbackQueryHandler(finish_servers, pattern="^finish_servers$"))
+    app.add_handler(CallbackQueryHandler(finish_test_servers,pattern="^finish_test_servers$"))
     app.add_handler(CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"))
     app.add_handler(CallbackQueryHandler(admin_referral_panel, pattern="^admin_referrals$"))
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
@@ -1884,12 +1899,30 @@ if __name__ == "__main__":
                 CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
             ],
             states={
-                SET_SERVER: [
-                 MessageHandler(filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS), admin_add_server_input),
-                 MessageHandler( filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),admin_add_test_server_input),
-                 CallbackQueryHandler(admin_add_server_input, pattern="^finish_servers$"),
 
-                  ]
+                SET_SERVER: [
+                    MessageHandler(
+                        filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
+                        admin_add_server_input
+                    ),
+
+                    CallbackQueryHandler(
+                        finish_servers,
+                        pattern="^finish_servers$"
+                    ),
+                ],
+
+                TEST_SERVER_STATE: [
+                    MessageHandler(
+                        filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
+                        admin_add_test_server_input
+                    ),
+
+                    CallbackQueryHandler(
+                        finish_test_servers,
+                        pattern="^finish_test_servers$"
+                    ),
+                ],
             },
             fallbacks=[
               CallbackQueryHandler(admin_start, pattern="^back_admin$")
