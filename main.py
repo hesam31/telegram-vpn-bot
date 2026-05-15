@@ -209,16 +209,15 @@ def create_btn(config_key, callback_data=None, url=None):
     return InlineKeyboardButton(**kwargs)
 
 
-def get_invited_count(user_id):
+def get_real_invited_count(user_id):
     db = load_db()
     count = 0
 
     for uid, user in db["users"].items():
-    if user.get("inviter") == str(user_id) and user.get("is_active"):
-        count += 1
+        if user.get("inviter") == str(user_id) and user.get("is_active"):
+            count += 1
 
     return count
-
 
 def get_invited_buy_count(user_id):
     db = load_db()
