@@ -1516,8 +1516,6 @@ async def admin_del_channel_save(update: Update, context: ContextTypes.DEFAULT_T
     except: await update.message.reply_text(f"{te('error')} فقط عدد وارد کنید.", reply_markup=admin_menu_kb(), parse_mode="HTML")
     return ConversationHandler.END
 
- 
-    
 async def admin_add_server_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -1525,15 +1523,64 @@ async def admin_add_server_start(update: Update, context: ContextTypes.DEFAULT_T
     context.user_data["temp_servers"] = []
 
     await query.message.edit_text(
-        "📡 لطفاً سرورها را یکی‌یکی ارسال کنید.\n"
-        "بعد از اتمام روی «اتمام» بزنید.",
+        "📡 حالت افزودن سرور فعال شد\n\n"
+        "لطفاً سرورها را یکی‌یکی ارسال کنید.\n"
+        "وقتی تمام شد روی «اتمام» بزنید.",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("اتمام ارسال", callback_data="finish_servers")],
+            [InlineKeyboardButton("✅ اتمام ارسال", callback_data="finish_servers")],
             [create_btn("back", "back_admin")]
         ])
     )
 
     return SET_SERVER
+
+
+async def admin_add_server_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    server = update.message.text.strip()
+
+    if "temp_servers" not in context.user_data:
+        context.user_data["temp_servers"] = []
+
+    if len(context.user_data["temp_servers"]) >= 10:
+        await update.message.reply_text("❌ حداکثر 10 سرور مجاز است.")
+        return SET_SERVER
+
+    context.user_data["temp_servers"].append(server)
+
+    await update.message.reply_text(
+        f"✅ اضافه شد ({len(context.user_data['temp_servers'])}/10)\n"
+        "سرور بعدی را بفرست یا روی «اتمام» بزن."
+    )
+
+    return SET_SERVER
+
+
+
+async def admin_add_server_finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    db = load_db()
+
+    servers = context.user_data.get("temp_servers", [])
+
+    if not servers:
+        await query.message.edit_text("❌ هیچ سروری ثبت نشد.")
+        return ConversationHandler.END
+
+    db["settings"].setdefault("servers", []).extend(servers)
+    save_db(db)
+
+    context.user_data["temp_servers"] = []
+
+    await query.message.edit_text(
+        f"✅ {len(servers)} سرور ذخیره شد.",
+        reply_markup=admin_menu_kb()
+    )
+
+    return ConversationHandler.END
+
+
 async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -1618,7 +1665,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))
-    app.add_handler(CallbackQueryHandler(finish_servers, pattern="^finish_servers$"))
+    #app.add_handler(CallbackQueryHandler(finish_servers, pattern="^finish_servers$"))
     app.add_handler(CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"))
 
     # ---------------- BUY CONVERSATION ----------------
@@ -1668,10 +1715,12 @@ if __name__ == "__main__":
             ],
             states={
                 SET_SERVER: [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, admin_add_server)
-                ]
+                 MessageHandler(filters.TEXT & ~filters.COMMAND, admin_add_server_input)
+                  ]
             },
-            fallbacks=[],
+            fallbacks=[
+              CallbackQueryHandler(admin_add_server_finish, pattern="^finish_servers$")
+            ],
             allow_reentry=True
         )
     )
