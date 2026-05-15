@@ -1715,7 +1715,7 @@ if __name__ == "__main__":
             states={
                 SET_SERVER: [
                  MessageHandler(filters.TEXT & ~filters.COMMAND, admin_add_server_input),
-                 CallbackQueryHandler(admin_add_server_finish, pattern="^finish_servers$"),
+                 CallbackQueryHandler(admin_add_server_input, pattern="^finish_servers$"),
 
                   ]
             },
