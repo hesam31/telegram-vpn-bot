@@ -1660,7 +1660,6 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))
     app.add_handler(CallbackQueryHandler(finish_servers, pattern="^finish_servers$"))
-    app.add_handler(MessageHandler(f filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),admin_add_server_input))
     app.add_handler(CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"))
 
     # ---------------- BUY CONVERSATION ----------------
@@ -1711,7 +1710,7 @@ if __name__ == "__main__":
             ],
             states={
                 SET_SERVER: [
-                 MessageHandler(filters.TEXT & ~filters.COMMAND, admin_add_server_input),
+                 MessageHandler(f filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),admin_add_server_input),
                  CallbackQueryHandler(admin_add_server_input, pattern="^finish_servers$"),
 
                   ]
