@@ -1623,12 +1623,16 @@ async def admin_add_server_start(update: Update, context: ContextTypes.DEFAULT_T
     query = update.callback_query
     await query.answer()
 
+    admin_id = str(update.effective_user.id) 
+
     db = load_db()
 
-    db["settings"]["server_session"][str(admin_id)] = {
-    "active": True,
-    "servers": []
-}
+    db["settings"].setdefault("server_session", {})
+    db["settings"]["server_session"][admin_id] = {
+        "active": True,
+        "servers": []
+    }
+
     save_db(db)
 
     keyboard = InlineKeyboardMarkup([
