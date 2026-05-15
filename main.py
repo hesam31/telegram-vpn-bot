@@ -1933,7 +1933,7 @@ if __name__ == "__main__":
                 TEST_SERVER_STATE: [
                     MessageHandler(
                         filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
-                        admin_add_test_server_input
+                        admin_test_server_input
                     ),
 
                     CallbackQueryHandler(
