@@ -1709,7 +1709,7 @@ if __name__ == "__main__":
                 CallbackQueryHandler(admin_receipts, pattern="admin_receipts"),
                 CallbackQueryHandler(approve_receipt, pattern="^approve_receipt_"),
                 CallbackQueryHandler(reject_receipt, pattern="^reject_receipt_"),
-                CallbackQueryHandler(admin_add_server_finish, pattern="^finish_servers$"),
+                CallbackQueryHandler(admin_add_server_input, pattern="^finish_servers$"),
                 CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
             ],
             states={
