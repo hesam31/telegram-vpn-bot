@@ -1518,25 +1518,20 @@ async def admin_del_channel_save(update: Update, context: ContextTypes.DEFAULT_T
 
  
     
-async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def admin_add_server_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
 
-    server = update.message.text.strip()
+    context.user_data["temp_servers"] = []
 
-    if "temp_servers" not in context.user_data:
-        context.user_data["temp_servers"] = []
-
-    if len(context.user_data["temp_servers"]) >= 10:
-        await update.message.reply_text("❌ حداکثر 10 سرور مجاز است.")
-        return SET_SERVER
-
-    context.user_data["temp_servers"].append(server)
-
-    await update.message.reply_text(
-        f"✅ اضافه شد ({len(context.user_data['temp_servers'])}/10)\n"
-        "سرور بعدی را بفرست یا «اتمام ارسال» را بزن."
+    await query.message.edit_text(
+        "📡 لطفاً سرورها را یکی‌یکی ارسال کنید.\n"
+        "بعد از اتمام روی «اتمام» بزنید.",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("اتمام ارسال", callback_data="finish_servers")],
+            [create_btn("back", "back_admin")]
+        ])
     )
-
-    return SET_SERVER
 
     return SET_SERVER
 async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
