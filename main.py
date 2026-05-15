@@ -497,8 +497,6 @@ async def test_server_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
         return
 
     config = test_servers.pop(0) 
-    save_db(db) 
-
     db["users"][uid]["has_test"] = True
     save_db(db)
     await query.message.edit_text(
@@ -1751,7 +1749,7 @@ async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYP
         reply_markup=keyboard
     )
 
-    return TEST_SERVER_INPUT
+    return TEST_SERVER_STATE 
 
 
 async def admin_test_server_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1780,8 +1778,7 @@ async def admin_test_server_input(update: Update, context: ContextTypes.DEFAULT_
     return TEST_SERVER_INPUT
 
 
-async def finish_test_servers(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
+async def finish_test_servers(update, context):
     query = update.callback_query
     await query.answer()
 
@@ -1794,7 +1791,7 @@ async def finish_test_servers(update: Update, context: ContextTypes.DEFAULT_TYPE
     servers = session.get("servers", [])
 
     if not servers:
-        await query.message.edit_text("❌ هیچ سرور تستی ثبت نشد.")
+        await query.message.edit_text("❌ هیچ سرور تستی ثبت نشد")
         return ConversationHandler.END
 
     db["settings"].setdefault("test_servers", []).extend(servers)
@@ -1807,10 +1804,11 @@ async def finish_test_servers(update: Update, context: ContextTypes.DEFAULT_TYPE
     save_db(db)
 
     await query.message.edit_text(
-        f"✅ تعداد {len(servers)} سرور تست ذخیره شد.",
+        f"✅ {len(servers)} سرور تست ذخیره شد.",
         reply_markup=admin_menu_kb()
     )
 
+    return ConversationHandler.END
     return ConversationHandler.END
 
 async def check_expirations(context: ContextTypes.DEFAULT_TYPE):
@@ -1906,7 +1904,6 @@ if __name__ == "__main__":
                 CallbackQueryHandler(admin_receipts, pattern="admin_receipts"),
                 CallbackQueryHandler(approve_receipt, pattern="^approve_receipt_"),
                 CallbackQueryHandler(reject_receipt, pattern="^reject_receipt_"),
-                CallbackQueryHandler(admin_add_server_input, pattern="^finish_servers$"),
                 CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
                 CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
                 CallbackQueryHandler(finish_servers, pattern="^finish_servers$"),
@@ -1914,9 +1911,7 @@ if __name__ == "__main__":
             states={
 
                 SET_SERVER: [
-                    
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, admin_test_server_input),
-
+                
                     MessageHandler(
                         filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
                         admin_add_server_input
