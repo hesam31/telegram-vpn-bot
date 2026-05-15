@@ -166,7 +166,7 @@ DURATION_MAP = {
 def load_db():
     if not os.path.exists(DB_FILE):
         default_data = {
-    "settings": {"channels": [], "test_servers": [], "servers": []},
+    "settings": {"channels": [], "test_servers": [], "servers": [],"server_session": {}},
     "users": {},
     "plans": [{"name": "تست رایگان", "price": 0, "id": 1234}],
     "receipts": []
@@ -1520,69 +1520,81 @@ async def admin_add_server_start(update: Update, context: ContextTypes.DEFAULT_T
     query = update.callback_query
     await query.answer()
 
-    context.user_data["temp_servers"] = []
+    db = load_db()
+
+    db["settings"]["server_session"] = {
+        "active": True,
+        "servers": []
+    }
+    save_db(db)
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("✅ اتمام ارسال", callback_data="finish_servers")],
+        [create_btn("back", "back_admin")]
+    ])
 
     await query.message.edit_text(
         "📡 حالت افزودن سرور فعال شد\n\n"
-        "لطفاً سرورها را یکی‌یکی ارسال کنید.\n"
-        "وقتی تمام شد روی «اتمام» بزنید.",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("✅ اتمام ارسال", callback_data="finish_servers")],
-            [create_btn("back", "back_admin")]
-        ])
+        "سرورها را یکی یکی ارسال کنید.\n"
+        "وقتی تمام شد روی «اتمام ارسال» بزن.",
+        reply_markup=keyboard
     )
 
     return SET_SERVER
 
 
 async def admin_add_server_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    server = update.message.text.strip()
+    db = load_db()
 
-    if "temp_servers" not in context.user_data:
-        context.user_data["temp_servers"] = []
+    session = db["settings"].get("server_session", {})
 
-    if len(context.user_data["temp_servers"]) >= 10:
-        await update.message.reply_text("❌ حداکثر 10 سرور مجاز است.")
+    if not session.get("active"):
+        await update.message.reply_text("❌ ابتدا وارد حالت افزودن سرور شوید.")
         return SET_SERVER
 
-    context.user_data["temp_servers"].append(server)
+    server = update.message.text.strip()
+
+    if not server:
+        return SET_SERVER
+
+    session.setdefault("servers", []).append(server)
+    db["settings"]["server_session"] = session
+    save_db(db)
 
     await update.message.reply_text(
-        f"✅ اضافه شد ({len(context.user_data['temp_servers'])}/10)\n"
-        "سرور بعدی را بفرست یا روی «اتمام» بزن."
+        f"✅ اضافه شد ({len(session['servers'])})\n"
+        "ادامه بده یا روی اتمام بزن."
     )
 
     return SET_SERVER
 
 
 
-async def admin_add_server_finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def finish_servers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
     db = load_db()
+    session = db["settings"].get("server_session", {})
 
-    # اگر temp_servers نبود، امن‌سازی
-    servers = context.user_data.get("temp_servers")
+    servers = session.get("servers", [])
 
-    if not servers:
-        servers = []
-        context.user_data["temp_servers"] = []
-
-    # اگر هیچ سروری ثبت نشده
     if len(servers) == 0:
         await query.message.edit_text("❌ هیچ سروری ثبت نشد.")
         return ConversationHandler.END
 
-    # ذخیره در دیتابیس
-    db.setdefault("settings", {}).setdefault("servers", []).extend(servers)
+    db["settings"].setdefault("servers", []).extend(servers)
+
+    # پاکسازی session
+    db["settings"]["server_session"] = {
+        "active": False,
+        "servers": []
+    }
+
     save_db(db)
 
-    # پاک کردن موقت
-    context.user_data["temp_servers"] = []
-
     await query.message.edit_text(
-        f"✅ {len(servers)} سرور ذخیره شد.",
+        f"✅ {len(servers)} سرور با موفقیت ذخیره شد.",
         reply_markup=admin_menu_kb()
     )
 
@@ -1650,8 +1662,8 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))
-    #app.add_handler(CallbackQueryHandler(finish_servers, pattern="^finish_servers$"))
-    app.add_handler(CallbackQueryHandler(admin_add_server_finish, pattern="^finish_servers$"))
+    app.add_handler(CallbackQueryHandler(finish_servers, pattern="^finish_servers$"))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, admin_add_server_input))
     app.add_handler(CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"))
 
     # ---------------- BUY CONVERSATION ----------------
