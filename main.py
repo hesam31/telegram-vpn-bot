@@ -1277,7 +1277,6 @@ async def admin_referral_panel(update: Update, context: ContextTypes.DEFAULT_TYP
     await query.answer()
 
     db = load_db()
-
     ref_map = {}
 
     # ساخت لیست دعوت‌کننده‌ها
@@ -1287,7 +1286,10 @@ async def admin_referral_panel(update: Update, context: ContextTypes.DEFAULT_TYP
             ref_map.setdefault(inviter, []).append(uid)
 
     if not ref_map:
-        await query.message.edit_text("هیچ رفرالی ثبت نشده است.", reply_markup=back_kb("admin"))
+        await query.message.edit_text(
+            "هیچ رفرالی ثبت نشده است.",
+            reply_markup=back_kb("admin")
+        )
         return
 
     keyboard = []
@@ -1306,7 +1308,6 @@ async def admin_referral_panel(update: Update, context: ContextTypes.DEFAULT_TYP
         "📊 لیست رفرال کاربران:",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-
 async def admin_referral_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
