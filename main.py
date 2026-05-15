@@ -1078,7 +1078,7 @@ async def profile_referral(update, context):
 
     referral_link = f"https://t.me/{bot_username}?start=ref_{user_id}"
 
-    invited_count = get_invited_count(user_id)  # از دیتابیس
+    invited_count = get_real_invited_count(user_id)  # از دیتابیس
 
     remaining_invites = max(0, 10 - invited_count)
 
