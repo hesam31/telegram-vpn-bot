@@ -104,7 +104,7 @@ BTN_CFG = {
     "profile":          {"text": "پروفایل من",          "style": "primary",  "emoji_id": "5348136664738839786"},
     "news":             {"text": "آموزش و اخبار",       "style": "primary",  "emoji_id": "4956436416142771580"},
     "support":          {"text": "پشتیبانی",            "style": "primary",  "emoji_id": "5979065840102810733"},
-    "back":             {"text": "بازگشت",              "style": "primary",  "emoji_id": "5972120066236357644"},
+    "back":             {"text": "بازگشت",              "style": "danger",  "emoji_id": "5972120066236357644"},
     "test_server":      {"text": "سرور تست رایگان",    "style": "success",  "emoji_id": "5348440533675031854"},
     "admin_add_plan":   {"text": "افزودن پلن",          "style": "primary",  "emoji_id": "4956232383721374836"},
     "admin_del_plan":   {"text": "حذف پلن",             "style": "primary",  "emoji_id": "4956475826762679249"},
@@ -511,7 +511,7 @@ async def buy_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     buttons = [
         [InlineKeyboardButton("VIP", callback_data="buy_VIP", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"])],
-        [create_btn("back", "back_main")]
+        [InlineKeyboardButton("بازگشت", callback_data="back", style="danger", icon_custom_emoji_id=DYN_BTN_EMOJIS["back"])],
     ]
 
     await query.message.edit_text(
@@ -569,7 +569,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
             )
         ],        
-        [create_btn("back", "back_main")]
+        [InlineKeyboardButton("بازگشت", callback_data="back", style="danger", icon_custom_emoji_id=DYN_BTN_EMOJIS["back"])]
     ]
 
     await query.message.edit_text(
