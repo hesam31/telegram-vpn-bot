@@ -639,24 +639,24 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ]
     text = (
         f"{te('warning')} قبل از خرید قوانین را تایید کنید.\n\n"
-    "  📖 لطفا با حوصله خوانده شود"
 
-"🚨 در صورت نارضایتی مشتری، تا ۲۴ ساعت بعد از خرید حجم مصرفی محاسبه شده و مبلغ باقی‌مانده به شما بازگردانده میشه یا سرور جایگزین ارسال میشود."
+        f"{te('book')} لطفا با حوصله خوانده شود\n\n"
 
-"⚠️فقط در صورت حادثه یا خاموشی دیتاسنتر حاصل از جنگ سرور های ما قطع میشود و مسولیت آن با ما نیست."
+        f"{te('warning')} در صورت نارضایتی مشتری، تا ۲۴ ساعت بعد از خرید حجم مصرفی محاسبه شده و مبلغ باقی‌مانده به شما بازگردانده می‌شود یا سرور جایگزین ارسال می‌شود.\n\n"
 
-"❗احتمال قطعی کم وجود دارد، هیچ سرویسی کاملاً پایدار نیست، ولی قطعی هامون بسیار کمه و آزار دهنده نیست و زود فیکس میشه."
+        f"{te('error')} فقط در صورت حادثه یا خاموشی دیتاسنتر حاصل از جنگ سرورهای ما قطع می‌شود و مسئولیت آن با ما نیست.\n\n"
 
-"❗سرور دارای ساب لینک هست بعد از ارسال سرور مسئولیت مصرف حجم یا چگونگی استفاده آن با مشتری است"
+        f"{te('warning')} احتمال قطعی کم وجود دارد، هیچ سرویسی کاملاً پایدار نیست، ولی قطعی‌ها بسیار کم و سریع رفع می‌شوند.\n\n"
 
-"در صورت بروز قطعی، از ارسال پیام‌های مکرر خودداری کنید. تیم فنی ما به‌صورت مداوم وضعیت سرورها را بررسی کرده و در سریع‌ترین زمان ممکن برای رفع مشکل اقدام می‌کند."
+        f"{te('link')} سرور دارای ساب‌لینک است؛ بعد از ارسال سرور، مسئولیت مصرف حجم و نحوه استفاده بر عهده مشتری می‌باشد.\n\n"
 
-"سرویس‌ها بدون محدودیت زمانی و بدون محدودیت کاربر ارائه می‌شوند."
+        f"{te('bell')} در صورت بروز قطعی، از ارسال پیام‌های مکرر خودداری کنید. تیم فنی ما به‌صورت مداوم وضعیت سرورها را بررسی کرده و در سریع‌ترین زمان مشکل را رفع می‌کند.\n\n"
 
-"💎 سرور ها دارای تضمین ما تا پایان حجم شما هستند"
+        f"{te('time')} سرویس‌ها بدون محدودیت زمانی و بدون محدودیت کاربر ارائه می‌شوند.\n\n"
 
-"💻پشتیبانی به صورت ۲۴ ساعته در خدمت شماست."
+        f"{te('diamond')} سرورها دارای تضمین تا پایان حجم شما هستند.\n\n"
 
+        f"{te('support')} پشتیبانی به‌صورت ۲۴ ساعته در خدمت شماست."
     )
 
     await update.message.reply_text(
@@ -1121,20 +1121,30 @@ async def profile_referral(update, context):
 
 {te('stars')} <b>تعداد باقی مانده تا هدیه:</b> {remaining_invites}
 
-با دعوت <b>10 نفر</b> یک سرویس رایگان از ما هدیه بگیرید 🎁
+با دعوت <b>10 نفر</b> یک سرویس رایگان از ما هدیه بگیرید 
 <b>بعد از اینکه تعداد دعوت های شما به 10 رسید پیام ربات را به پشتیبانی فوروارد کنید و سرویس هدیه را دریافت کنید</b> 
 """
 
     keyboard = [
         [
             InlineKeyboardButton(
+                " ارتباط با پشتیبانی",
+                style="success",
+                callback_data="menu_support",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["support"]
+            )
+        ],
+
+        [
+            InlineKeyboardButton(
                 " بازگشت",
+                style="danger",
                 callback_data="back_main",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
+                
             )
         ]
     ]
-
     await query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup(keyboard),
@@ -1762,47 +1772,51 @@ async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYP
     save_db(db)
 
     keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("✅ اتمام فرایند", callback_data="finish_test_servers")],
+        [InlineKeyboardButton("✅ اتمام ارسال", callback_data="finish_test_servers")],
         [create_btn("back", "back_admin")]
     ])
 
     await query.message.edit_text(
         "🎁 حالت افزودن سرور تست فعال شد\n\n"
-        "سرورها را یکی یکی ارسال کن.\n"
-        "بعد از اتمام روی دکمه «اتمام فرایند» بزن.",
+        "سرورها را یکی یکی ارسال کنید.\n"
+        "پس از پایان روی «اتمام ارسال» بزنید.",
         reply_markup=keyboard
     )
 
-    return TEST_SERVER_STATE 
-
+    return TEST_SERVER_STATE
 
 async def admin_test_server_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     admin_id = str(update.effective_user.id)
 
     db = load_db()
 
-    session = db["settings"].get("test_server_session", {}).get(admin_id, {})
+    db["settings"].setdefault("test_server_session", {})
 
-    if not session.get("active"):
-        return ConversationHandler.END
+    if admin_id not in db["settings"]["test_server_session"]:
+        db["settings"]["test_server_session"][admin_id] = {
+            "active": True,
+            "servers": []
+        }
+
+    session = db["settings"]["test_server_session"][admin_id]
 
     server = update.message.text.strip()
 
-    session.setdefault("servers", []).append(server)
+    if not server:
+        return TEST_SERVER_STATE
 
-    db["settings"]["test_server_session"][admin_id] = session
+    session["servers"].append(server)
 
     save_db(db)
 
     await update.message.reply_text(
-        f"✅ سرور تست ذخیره شد ({len(session['servers'])})"
+        f"✅ سرور تست ذخیره شد\n📦 تعداد: {len(session['servers'])}"
     )
 
-    return TEST_SERVER_INPUT
+    return TEST_SERVER_STATE
 
 
-async def finish_test_servers(update, context):
+async def finish_test_servers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
@@ -1815,10 +1829,14 @@ async def finish_test_servers(update, context):
     servers = session.get("servers", [])
 
     if not servers:
-        await query.message.edit_text("❌ هیچ سرور تستی ثبت نشد")
+        await query.message.edit_text(
+            "❌ هیچ سرور تستی ثبت نشد."
+        )
         return ConversationHandler.END
 
-    db["settings"].setdefault("test_servers", []).extend(servers)
+    db["settings"].setdefault("test_servers", [])
+
+    db["settings"]["test_servers"].extend(servers)
 
     db["settings"]["test_server_session"][admin_id] = {
         "active": False,
@@ -1832,7 +1850,6 @@ async def finish_test_servers(update, context):
         reply_markup=admin_menu_kb()
     )
 
-    return ConversationHandler.END
     return ConversationHandler.END
 
 async def check_expirations(context: ContextTypes.DEFAULT_TYPE):
@@ -1879,7 +1896,6 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))
-    app.add_handler(CallbackQueryHandler(finish_test_servers,pattern="^finish_test_servers$"))
     app.add_handler(CallbackQueryHandler(admin_referral_panel, pattern="^admin_referrals$"))
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
 
@@ -1930,6 +1946,20 @@ if __name__ == "__main__":
                 CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
             ],
             states={
+
+                TEST_SERVER_STATE: [
+
+                    MessageHandler(
+                        filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
+                        admin_test_server_input
+                    ),
+
+                    CallbackQueryHandler(
+                        finish_test_servers,
+                        pattern="^finish_test_servers$"
+                    ),
+
+                ],
 
                 SET_SERVER: [
                     MessageHandler(
