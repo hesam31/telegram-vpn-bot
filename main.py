@@ -639,8 +639,24 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ]
     text = (
         f"{te('warning')} قبل از خرید قوانین را تایید کنید.\n\n"
-        "• اشتراک قابل عودت نیست\n"
-        "• مسئولیت استفاده با کاربر است"
+    "  📖 لطفا با حوصله خوانده شود"
+
+"🚨 در صورت نارضایتی مشتری، تا ۲۴ ساعت بعد از خرید حجم مصرفی محاسبه شده و مبلغ باقی‌مانده به شما بازگردانده میشه یا سرور جایگزین ارسال میشود."
+
+"⚠️فقط در صورت حادثه یا خاموشی دیتاسنتر حاصل از جنگ سرور های ما قطع میشود و مسولیت آن با ما نیست."
+
+"❗احتمال قطعی کم وجود دارد، هیچ سرویسی کاملاً پایدار نیست، ولی قطعی هامون بسیار کمه و آزار دهنده نیست و زود فیکس میشه."
+
+"❗سرور دارای ساب لینک هست بعد از ارسال سرور مسئولیت مصرف حجم یا چگونگی استفاده آن با مشتری است"
+
+"در صورت بروز قطعی، از ارسال پیام‌های مکرر خودداری کنید. تیم فنی ما به‌صورت مداوم وضعیت سرورها را بررسی کرده و در سریع‌ترین زمان ممکن برای رفع مشکل اقدام می‌کند."
+
+"سرویس‌ها بدون محدودیت زمانی و بدون محدودیت کاربر ارائه می‌شوند."
+
+"💎 سرور ها دارای تضمین ما تا پایان حجم شما هستند"
+
+"💻پشتیبانی به صورت ۲۴ ساعته در خدمت شماست."
+
     )
 
     await update.message.reply_text(
@@ -901,7 +917,7 @@ async def admin_receipts(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.edit_text(
     text=text,
     parse_mode="HTML",
-    reply_markup=InlineKeyboardMarkup(keyboard)
+    reply_markup=InlineKeyboardMarkup(kb)
 )
 async def receipt_next(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -1667,20 +1683,28 @@ async def admin_add_server_input(update: Update, context: ContextTypes.DEFAULT_T
     admin_id = str(update.effective_user.id)
 
     db = load_db()
-    session = db["settings"].get("server_session", {}).get(admin_id, {})
 
-    if not session.get("active"):
-        return ConversationHandler.END
+    db["settings"].setdefault("server_session", {})
+
+    if admin_id not in db["settings"]["server_session"]:
+        db["settings"]["server_session"][admin_id] = {
+            "active": True,
+            "servers": []
+        }
+
+    session = db["settings"]["server_session"][admin_id]
 
     server = update.message.text.strip()
 
-    session.setdefault("servers", []).append(server)
+    if not server:
+        return SET_SERVER
 
-    db["settings"]["server_session"][admin_id] = session
+    session["servers"].append(server)
+
     save_db(db)
 
     await update.message.reply_text(
-        f"✅ اضافه شد ({len(session['servers'])})"
+        f"✅ سرور ذخیره شد\n📦 تعداد: {len(session['servers'])}"
     )
 
     return SET_SERVER
@@ -1855,9 +1879,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
     app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
     app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))
-    app.add_handler(CallbackQueryHandler(finish_servers, pattern="^finish_servers$"))
     app.add_handler(CallbackQueryHandler(finish_test_servers,pattern="^finish_test_servers$"))
-    app.add_handler(CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"))
     app.add_handler(CallbackQueryHandler(admin_referral_panel, pattern="^admin_referrals$"))
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
 
@@ -1906,12 +1928,10 @@ if __name__ == "__main__":
                 CallbackQueryHandler(reject_receipt, pattern="^reject_receipt_"),
                 CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
                 CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
-                CallbackQueryHandler(finish_servers, pattern="^finish_servers$"),
             ],
             states={
 
                 SET_SERVER: [
-                
                     MessageHandler(
                         filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
                         admin_add_server_input
@@ -1921,10 +1941,7 @@ if __name__ == "__main__":
                         finish_servers,
                         pattern="^finish_servers$"
                     ),
-
-                    
                 ],
-
                 TEST_SERVER_STATE: [
                     MessageHandler(
                         filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
