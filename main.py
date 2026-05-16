@@ -632,7 +632,7 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
         InlineKeyboardButton(
             "بازگشت",
             callback_data="back_main",
-            style="primary",
+            style="danger",
             icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
         )
     ]
@@ -900,6 +900,7 @@ async def admin_receipts(update: Update, context: ContextTypes.DEFAULT_TYPE):
     kb.append([
         InlineKeyboardButton(
             "بازگشت",
+            style="danger",
             callback_data="admin"
         )
     ])
@@ -1086,6 +1087,7 @@ async def profile_menu(update, context):
         InlineKeyboardButton(
             "بازگشت",
             callback_data="back_main",
+            style="danger",
             icon_custom_emoji_id=MSG_EMOJIS["back"]["id"]
         )
     ],
@@ -1177,6 +1179,7 @@ async def profile_info(update, context):
         [
             InlineKeyboardButton(
                 f"{MSG_EMOJIS['back']['char']} بازگشت",
+                style="danger",
                 callback_data="menu_profile"
             )
         ]
@@ -1205,7 +1208,7 @@ async def profile_orders(update, context):
             if isinstance(s, dict):
                 text += f"• {s.get('name')} | کد: {s.get('sub_id','---')}\n"
 
-    Keyboard = [[InlineKeyboardButton(f"{MSG_EMOJIS['back']['char']} بازگشت", callback_data="menu_profile")]]
+    Keyboard = [[InlineKeyboardButton(f"{MSG_EMOJIS['back']['char']} بازگشت", style="danger", callback_data="menu_profile")]]
 
     await query.message.edit_text(
     text,
@@ -1234,6 +1237,7 @@ async def profile_servers(update, context):
     keyboard = [[
         InlineKeyboardButton(
             f"{MSG_EMOJIS['back']['char']} بازگشت",
+            style="danger",
             callback_data="menu_profile"
         )
     ]]
@@ -1371,7 +1375,7 @@ async def admin_referral_user(update: Update, context: ContextTypes.DEFAULT_TYPE
             text += f"• {name} (<code>{u}</code>)\n"
 
     keyboard = [
-        [InlineKeyboardButton("🔙 بازگشت", callback_data="admin_referrals")]
+        [InlineKeyboardButton(" بازگشت",style="danger", callback_data="admin_referrals")]
     ]
 
     await query.message.edit_text(
