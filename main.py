@@ -88,6 +88,9 @@ MSG_EMOJIS = {
     "servers":  {"id":"5841171023096976223",  "char": "🔥"},
     "stars":  {"id":"5841394116583232174",  "char": "🔥"},
     "gift":  {"id":"5970037062932371393",  "char": "⭕️"},
+    "taeid":  {"id":"6073335669260819751",  "char": "👍"},
+
+
 
 
 
@@ -1035,7 +1038,8 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await context.bot.send_message(
         uid,
-        f"✅ پرداخت تایید شد\n\n<code>{config}</code>",
+        f"{te('taeid')} <b>پرداخت تایید شد</b>\n\n",
+        f"<code>{config}</code>",
         parse_mode="HTML"
     )
 
