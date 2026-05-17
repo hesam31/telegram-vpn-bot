@@ -80,13 +80,15 @@ MSG_EMOJIS = {
     "link":  {"id":"5841171023096976223",  "char": "🔥"},
     "invite":  {"id":"5348438459205831716",  "char": "🐾"},
     "support":  {"id":"5979065840102810733",  "char": "👩‍💻"},
-    "orders":  {"id":"5989933370082071285",  "char": "🕐"},
+    "orders":  {"id":"5348090777308251395",  "char": "🕐"},
     "paein":  {"id":"5350700390847365132",  "char": "⏬"},
     "back":  {"id":"5348514879558926674",  "char": "❌"},    
     "stats":  {"id":"5990060518293901972",  "char": "❌"},
     "not":  {"id":"5989790729923203577",  "char": "🚫"},
     "servers":  {"id":"5841171023096976223",  "char": "🔥"},
     "stars":  {"id":"5841394116583232174",  "char": "🔥"},
+    "gift":  {"id":"5970037062932371393",  "char": "⭕️"},
+
 
 
 }
@@ -1067,6 +1069,7 @@ async def profile_menu(update, context):
         InlineKeyboardButton(
             "اطلاعات حساب",
             callback_data="profile_info",
+            style="primary",
             icon_custom_emoji_id=MSG_EMOJIS["profile"]["id"]
         )
     ],
@@ -1074,6 +1077,7 @@ async def profile_menu(update, context):
         InlineKeyboardButton(
             "تاریخچه خرید",
             callback_data="profile_orders",
+            style="primary",            
             icon_custom_emoji_id=MSG_EMOJIS["orders"]["id"]
         )
     ],
@@ -1081,6 +1085,7 @@ async def profile_menu(update, context):
         InlineKeyboardButton(
             "سرورهای من",
             callback_data="profile_servers",
+            style="primary",            
             icon_custom_emoji_id=MSG_EMOJIS["servers"]["id"]
         )
     ],
@@ -1118,15 +1123,13 @@ async def profile_referral(update, context):
 {te('hand')} <b>سیستم دعوت دوستان</b>
 
 {te('link')} <b>لینک دعوت شما:</b>
+
 {referral_link}
 
 {te('invite')} <b>تعداد دعوت‌ها:</b> {invited_count}
-
 {te('stars')} <b>تعداد باقی مانده تا هدیه:</b> {remaining_invites}
 
-با دعوت <b>10 نفر</b> یک سرویس رایگان از ما هدیه بگیرید 
-<b>بعد از اینکه تعداد دعوت های شما به 10 رسید پیام ربات را به پشتیبانی فوروارد کنید و سرویس هدیه را دریافت کنید</b> 
-"""
+{te('gift')} <b>با دعوت 10 نفر از دوستان خود و فوروارد پیام ربات به پشتیبانی، سرویس هدیه ویژه صدورا را دریافت کنید.</b>"""
 
     keyboard = [
         [
@@ -1181,7 +1184,7 @@ async def profile_info(update, context):
             InlineKeyboardButton(
                 f"{MSG_EMOJIS['back']['char']} بازگشت",
                 style="danger",
-                callback_data="menu_profile"
+                callback_data="back_main",
             )
         ]
     ])
@@ -1213,7 +1216,7 @@ async def profile_orders(update, context):
 
     await query.message.edit_text(
     text,
-    reply_markup=InlineKeyboardMarkup(keyboard),
+    reply_markup=InlineKeyboardMarkup(Keyboard),
     parse_mode="HTML"
 )
 
