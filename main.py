@@ -514,7 +514,7 @@ async def buy_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     buttons = [
         [InlineKeyboardButton("VIP", callback_data="buy_VIP", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"])],
-        [InlineKeyboardButton("بازگشت", callback_data="back-main", style="danger", icon_custom_emoji_id=DYN_BTN_EMOJIS["back"])],
+        [create_btn("back", "back_main")],
     ]
 
     await query.message.edit_text(
@@ -572,7 +572,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
             )
         ],        
-        [InlineKeyboardButton("بازگشت", callback_data="back-main", style="danger", icon_custom_emoji_id=DYN_BTN_EMOJIS["back"])]
+        [create_btn("back", "back_main")],
     ]
 
     await query.message.edit_text(
