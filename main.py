@@ -128,7 +128,7 @@ BTN_CFG = {
 
 DYN_BTN_EMOJIS = {
     "channel_join":  "5350356823528455446",
-    "check_join":    "5350773074578916842",
+    "check_join":    "5972326417940093090",
     "plan_item":     "4956232383721374836",
     "renew_item":    "4956418939920843885",
     "del_item":      "4956475826762679249",
@@ -140,7 +140,8 @@ DYN_BTN_EMOJIS = {
     "back": "5972120066236357644",
     "support":"5979065840102810733",
     "accept":"5348404473129614535",
-    "special":"5967337229310238293"
+    "special":"5967337229310238293",
+    "join":"5350835008007324644"
 
 }
 
@@ -332,9 +333,9 @@ async def check_force_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     if not_joined:
         markup_keys = []
         for ch in channels:
-            markup_keys.append([InlineKeyboardButton(f"عضویت در {ch['username']}", url=ch['link'], style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["channel_join"])])
+            markup_keys.append([InlineKeyboardButton(f"عضویت در {ch['username']}", url=ch['link'], style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["join"])])
         markup_keys.append([InlineKeyboardButton("بررسی عضویت", callback_data="check_join_btn", style="success", icon_custom_emoji_id=DYN_BTN_EMOJIS["check_join"])])
-        msg = f"{te('error')} برای استفاده از ربات، لطفاً ابتدا در تمامی کانال‌های زیر عضو شوید:"
+        msg = f"{te('gift')} برای استفاده از ربات، لطفاً ابتدا در تمامی کانال‌های زیر عضو شوید:"
         if update.message: await update.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(markup_keys), parse_mode="HTML")
         elif update.callback_query:
             try: await update.callback_query.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(markup_keys), parse_mode="HTML")
@@ -854,75 +855,68 @@ async def admin_receipts(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
+    kb = [
+        [
+            InlineKeyboardButton(
+                "⏳ در انتظار بررسی",
+                callback_data="receipts_pending"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "📁 تایید / رد شده",
+                callback_data="receipts_archive"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "🔙 بازگشت",
+                callback_data="back_admin"
+            )
+        ]
+    ]
+
+    await query.message.edit_text(
+        "مدیریت رسید ها:",
+        reply_markup=InlineKeyboardMarkup(kb)
+    )
+
+
+async def show_pending_receipts(update, context):
+
+    query = update.callback_query
+    await query.answer()
+
     db = load_db()
 
     receipts = [
-        (i, r) for i, r in enumerate(db["receipts"])
-        if r["status"] == "pending"
+        (i, r)
+        for i, r in enumerate(db["receipts"])
+        if r.get("status") == "pending"
     ]
-
-    page = int(context.user_data.get("receipt_page", 0))
-
-    per_page = 10
-    start = page * per_page
-    end = start + per_page
-
-    page_items = receipts[start:end]
 
     kb = []
 
-    for i, r in page_items:
+    for i, r in receipts:
+
         kb.append([
             InlineKeyboardButton(
-                f"رسید کاربر {r['user_id']}",
+                f"⏳ رسید {r['user_id']}",
                 callback_data=f"view_receipt_{i}"
             )
         ])
 
-    nav = []
-
-    if page > 0:
-        nav.append(
-            InlineKeyboardButton(
-                "⬅️ قبلی",
-                callback_data="receipt_prev"
-            )
-        )
-
-    if end < len(receipts):
-        nav.append(
-            InlineKeyboardButton(
-                "➡️ بعدی",
-                callback_data="receipt_next"
-            )
-        )
-
-    if nav:
-        kb.append(nav)
-
     kb.append([
         InlineKeyboardButton(
-            "بازگشت",
-            style="danger",
-            callback_data="admin"
+            "🔙 بازگشت",
+            callback_data="admin_receipts"
         )
     ])
 
-    total_pages = (len(receipts) + per_page - 1) // per_page
-
-    text = f"""
-📥 رسید های واریزی
-
-تعداد در انتظار: {len(receipts)}
-
-صفحه {page+1} از {max(total_pages,1)}
-"""
-
     await query.message.edit_text(
-    text=text,
-    parse_mode="HTML",
-    reply_markup=InlineKeyboardMarkup(kb)
-)
+        "⏳ رسید های در انتظار:",
+        reply_markup=InlineKeyboardMarkup(kb)
+    )    
 async def receipt_next(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     query = update.callback_query
@@ -946,6 +940,45 @@ async def receipt_prev(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await admin_receipts(update, context)    
 
+
+async def show_archive_receipts(update, context):
+
+    query = update.callback_query
+    await query.answer()
+
+    db = load_db()
+
+    receipts = [
+        (i, r)
+        for i, r in enumerate(db["receipts"])
+        if r.get("status") in ["approved", "rejected"]
+    ]
+
+    kb = []
+
+    for i, r in receipts:
+
+        status = "✅" if r["status"] == "approved" else "❌"
+
+        kb.append([
+            InlineKeyboardButton(
+                f"{status} رسید {r['user_id']}",
+                callback_data=f"view_receipt_{i}"
+            )
+        ])
+
+    kb.append([
+        InlineKeyboardButton(
+            "🔙 بازگشت",
+            callback_data="admin_receipts"
+        )
+    ])
+
+    await query.message.edit_text(
+        "📁 آرشیو رسید ها:",
+        reply_markup=InlineKeyboardMarkup(kb)
+    )    
+
 async def view_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -953,6 +986,13 @@ async def view_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     index = int(query.data.split("_")[-1])
 
     db = load_db()
+    if index >= len(db["receipts"]):
+
+        await query.answer(
+            "رسید یافت نشد",
+            show_alert=True
+        )
+        return    
     receipt = db["receipts"][index]
 
     uid = receipt["user_id"]
@@ -995,7 +1035,14 @@ async def view_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+    
+    if receipt.get("status") != "pending":
 
+        await query.answer(
+            "این رسید قبلاً بررسی شده",
+            show_alert=True
+        )
+        return    
     index = int(query.data.replace("approve_receipt_", ""))
 
     db = load_db()
@@ -1033,15 +1080,17 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user["pending_order"] = None
 
-    db["receipts"].pop(index)
+    db["receipts"][index]["status"] = "approved"
     save_db(db)
 
     await context.bot.send_message(
-        uid,
-        f"{te('taeid')} <b>پرداخت تایید شد</b>\n\n",
-        f"<code>{config}</code>",
-        parse_mode="HTML"
-    )
+    chat_id=uid,
+    text=(
+        f"{te('accept')} <b>پرداخت تایید شد</b>\n\n"
+        f"<code>{config}</code>"
+    ),
+    parse_mode="HTML"
+)
 
     await query.message.edit_caption("✅ ارسال شد")
 
@@ -1054,9 +1103,7 @@ async def reject_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     db = load_db()
     db["receipts"][index]["status"] = "rejected"
-
     save_db(db)
-
     await query.message.edit_caption(
         "❌ رسید رد شد"
     )            
@@ -1952,7 +1999,9 @@ if __name__ == "__main__":
                 CallbackQueryHandler(reject_receipt, pattern="^reject_receipt_"),
                 CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
                 CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
-                CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$")
+                CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
+                CallbackQueryHandler(show_pending_receipts,pattern="^receipts_pending$"),
+                CallbackQueryHandler(show_archive_receipts,pattern="^receipts_archive$"),
             ],
             states={
                 ADD_CHANNEL_USER: [
