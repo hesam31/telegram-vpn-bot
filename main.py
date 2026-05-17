@@ -1092,7 +1092,7 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=uid,
         text=(
-            f"{te('accept')} <b>پرداخت تایید شد</b>\n\n"
+            f"{te('taeid')} <b>پرداخت تایید شد</b>\n\n"
             f"<code>{config}</code>"
         ),
         parse_mode="HTML"
