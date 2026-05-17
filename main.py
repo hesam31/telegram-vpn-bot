@@ -1035,14 +1035,7 @@ async def view_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    
-    if receipt.get("status") != "pending":
 
-        await query.answer(
-            "این رسید قبلاً بررسی شده",
-            show_alert=True
-        )
-        return    
     index = int(query.data.replace("approve_receipt_", ""))
 
     db = load_db()
@@ -1052,19 +1045,31 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     receipt = db["receipts"][index]
+
+    if receipt.get("status") != "pending":
+
+        await query.answer(
+            "این رسید قبلاً بررسی شده",
+            show_alert=True
+        )
+        return
+
     uid = str(receipt["user_id"])
 
     user = db["users"].get(uid)
+
     if not user:
         await query.message.reply_text("کاربر پیدا نشد")
         return
 
     pending = user.get("pending_order")
+
     if not pending:
         await query.message.reply_text("pending_order وجود ندارد")
         return
 
     servers = db["settings"].get("servers", [])
+
     if not servers:
         await query.message.reply_text("سرور نداریم")
         return
@@ -1081,19 +1086,19 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user["pending_order"] = None
 
     db["receipts"][index]["status"] = "approved"
+
     save_db(db)
 
     await context.bot.send_message(
-    chat_id=uid,
-    text=(
-        f"{te('accept')} <b>پرداخت تایید شد</b>\n\n"
-        f"<code>{config}</code>"
-    ),
-    parse_mode="HTML"
-)
+        chat_id=uid,
+        text=(
+            f"{te('accept')} <b>پرداخت تایید شد</b>\n\n"
+            f"<code>{config}</code>"
+        ),
+        parse_mode="HTML"
+    )
 
     await query.message.edit_caption("✅ ارسال شد")
-
 
 async def reject_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
