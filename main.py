@@ -1942,7 +1942,6 @@ if __name__ == "__main__":
                 CallbackQueryHandler(admin_add_plan, pattern="^admin_add_plan$"),
                 CallbackQueryHandler(admin_broadcast_start, pattern="^admin_broadcast$"),
                 CallbackQueryHandler(admin_dm_start, pattern="^admin_dm$"),
-                CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
                 CallbackQueryHandler(admin_del_channel_prompt, pattern="^del_ch$"),
                 CallbackQueryHandler(admin_set_test_start, pattern="^admin_set_test$"),
                 CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"),
@@ -1953,8 +1952,15 @@ if __name__ == "__main__":
                 CallbackQueryHandler(reject_receipt, pattern="^reject_receipt_"),
                 CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
                 CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
+                CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$")
             ],
             states={
+                ADD_CHANNEL_USER: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_channel_user)
+                ],
+                ADD_CHANNEL_LINK: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_channel_link)
+                ],                
 
                 TEST_SERVER_STATE: [
 
