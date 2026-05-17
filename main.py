@@ -37,11 +37,12 @@ def _patched_to_dict(self, *args, **kwargs):
 InlineKeyboardButton.__init__ = _patched_init
 InlineKeyboardButton.to_dict = _patched_to_dict
 
-BOT_TOKEN = "8580604744:AAHRY7Dpo0imsfsCY6_rrnR-iLSb5DXcBFQ"
+BOT_TOKEN = "8878547383:AAEKAvalx3osK72rP2i7KqFLduBYdftGc_c"
 ADMIN_IDS = [81469723]
 DB_FILE = "database.json"
 CARD_NUMBER = "6037697637334522"
-SUPPORT_ID = "@hesamyaghoubii"
+SUPPORT_ID = ["@hesamyaghoubii"
+              "@puyaghsmi"]
 
 MSG_EMOJIS = {
     "welcome": {"id": "6316501178368663573", "char": "🦅"},
@@ -420,7 +421,7 @@ async def support_handler(update, context):
         InlineKeyboardButton(
             "بازگشت",
             callback_data="back_main",
-            style="primary",
+            style="danger",
             icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
         )
     ]
@@ -511,7 +512,7 @@ async def buy_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     buttons = [
         [InlineKeyboardButton("VIP", callback_data="buy_VIP", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"])],
-        [InlineKeyboardButton("بازگشت", callback_data="back", style="danger", icon_custom_emoji_id=DYN_BTN_EMOJIS["back"])],
+        [InlineKeyboardButton("بازگشت", callback_data="back-main", style="danger", icon_custom_emoji_id=DYN_BTN_EMOJIS["back"])],
     ]
 
     await query.message.edit_text(
@@ -569,7 +570,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
             )
         ],        
-        [InlineKeyboardButton("بازگشت", callback_data="back", style="danger", icon_custom_emoji_id=DYN_BTN_EMOJIS["back"])]
+        [InlineKeyboardButton("بازگشت", callback_data="back-main", style="danger", icon_custom_emoji_id=DYN_BTN_EMOJIS["back"])]
     ]
 
     await query.message.edit_text(
