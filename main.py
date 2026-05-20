@@ -898,9 +898,20 @@ async def show_pending_receipts(update, context):
         if r.get("status") == "pending"
     ]
 
+    receipts.reverse()  # جدیدترین بالا
+
+    page = int(query.data.split("_")[-1]) if "page_" in query.data else 0
+
+    per_page = 5
+
+    start = page * per_page
+    end = start + per_page
+
+    page_items = receipts[start:end]
+
     kb = []
 
-    for i, r in receipts:
+    for i, r in page_items:
 
         kb.append([
             InlineKeyboardButton(
@@ -908,6 +919,27 @@ async def show_pending_receipts(update, context):
                 callback_data=f"view_receipt_{i}"
             )
         ])
+
+    nav = []
+
+    if page > 0:
+        nav.append(
+            InlineKeyboardButton(
+                "⬅️ قبلی",
+                callback_data=f"receipts_pending_page_{page-1}"
+            )
+        )
+
+    if end < len(receipts):
+        nav.append(
+            InlineKeyboardButton(
+                "➡️ بعدی",
+                callback_data=f"receipts_pending_page_{page+1}"
+            )
+        )
+
+    if nav:
+        kb.append(nav)
 
     kb.append([
         InlineKeyboardButton(
@@ -917,31 +949,9 @@ async def show_pending_receipts(update, context):
     ])
 
     await query.message.edit_text(
-        "⏳ رسید های در انتظار:",
+        f"⏳ رسید های در انتظار\n\nصفحه {page + 1}",
         reply_markup=InlineKeyboardMarkup(kb)
-    )    
-async def receipt_next(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    query = update.callback_query
-    await query.answer()
-
-    page = context.user_data.get("receipt_page", 0)
-    context.user_data["receipt_page"] = page + 1
-
-    await admin_receipts(update, context)    
-
-
-async def receipt_prev(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    query = update.callback_query
-    await query.answer()
-
-    page = context.user_data.get("receipt_page", 0)
-
-    if page > 0:
-        context.user_data["receipt_page"] = page - 1
-
-    await admin_receipts(update, context)    
+    )  
 
 
 async def show_archive_receipts(update, context):
@@ -1958,8 +1968,6 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(profile_servers, pattern="^profile_servers$"))
     app.add_handler(CallbackQueryHandler(support_handler, pattern="^menu_support$"))
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
-    app.add_handler(CallbackQueryHandler(receipt_next, pattern="receipt_next"))
-    app.add_handler(CallbackQueryHandler(receipt_prev, pattern="receipt_prev"))
     app.add_handler(CallbackQueryHandler(admin_referral_panel, pattern="^admin_referrals$"))
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
 
