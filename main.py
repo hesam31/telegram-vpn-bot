@@ -37,7 +37,7 @@ def _patched_to_dict(self, *args, **kwargs):
 InlineKeyboardButton.__init__ = _patched_init
 InlineKeyboardButton.to_dict = _patched_to_dict
 
-BOT_TOKEN = os.getenv("8878547383:AAEKAvalx3osK72rP2i7KqFLduBYdftGc_c")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_IDS = [81469723,1892655576]
 DB_FILE = "database.json"
 CARD_NUMBER = "6037697637334522"
@@ -2071,5 +2071,7 @@ if __name__ == "__main__":
         )
     )
 
-    print("--- Premium UI Bot Started ---")
+if __name__ == "__main__":
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+
     app.run_polling()
