@@ -650,6 +650,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
             InlineKeyboardButton(
                 "5 گیگ بخر 7 گیگ ببر - 1,350,000",
                 callback_data="buy_vol_5",
+
                 style="success",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["special"]
             )
@@ -2328,7 +2329,6 @@ if __name__ == "__main__":
                 CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
                 CallbackQueryHandler(show_pending_receipts,pattern="^receipts_pending$"),
                 CallbackQueryHandler(show_archive_receipts,pattern="^receipts_archive$"),
-                CallbackQueryHandler(admin_set_server_volume, pattern="^srv_vol_"),
                 CallbackQueryHandler(finish_servers, pattern="^finish_servers$"),
                 
 
