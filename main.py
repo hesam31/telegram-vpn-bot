@@ -185,7 +185,7 @@ DURATION_MAP = {
 def load_db():
     if not os.path.exists(DB_FILE):
         default_data = {
-    "settings": {"channels": [], "test_servers": [], "servers": [],"server_session": {}},
+    "settings": {"channels": [], "test_servers": [], "servers": [{"id": "srv1", "volume": 1},{"id": "srv2", "volume": 1},{"id": "srv3", "volume": 2},{"id": "srv4", "volume": 5},{"id": "srv5", "volume": 10}]"server_session": {}},
     "users": {},
     "plans": [{"name": "تست رایگان", "price": 0, "id": 1234}],
     "receipts": []
@@ -211,6 +211,21 @@ def save_db(data):
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
 
+def allocate_servers(db, volume, count):
+    servers = db["settings"].get("servers", [])
+
+    matched = [s for s in servers if s["volume"] == volume]
+
+    if len(matched) < count:
+        return None
+
+    allocated = matched[:count]
+
+    db["settings"]["servers"] = [
+        s for s in servers if s not in allocated
+    ]
+
+    return allocated
 def create_btn(config_key, callback_data=None, url=None):
     cfg = BTN_CFG[config_key]
     kwargs = {"text": cfg["text"], "style": cfg.get("style", "primary")}
@@ -583,7 +598,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "2GB - 580,000",
+                "2GB - 560,000",
                 callback_data="buy_vol_2",
                 style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -591,7 +606,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "3GB - 870,000",
+                "3GB - 840,000",
                 callback_data="buy_vol_3",
                 style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -599,7 +614,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "5 گیگ بخر 7 گیگ ببر - 1,450,000",
+                "5 گیگ بخر 7 گیگ ببر - 1,350,000",
                 callback_data="buy_vol_5",
                 style="success",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["special"]
@@ -607,8 +622,8 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "10GB - 2,900,00",
-                callback_data="buy_vol_5",
+                "10GB - 2,500,00",
+                callback_data="buy_vol_10",
                 style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
             )
@@ -630,10 +645,10 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     volume_map = {
         "buy_vol_1": ("1GB", 290000),
-        "buy_vol_2": ("2GB", 580000),
-        "buy_vol_3": ("5GB", 870000),
-        "buy_vol_10": ("5GB", 2900000),
-        "buy_vol_5": ("5گیگ بخر 7 گیگ ببر", 1450000),
+        "buy_vol_2": ("2GB", 560000),
+        "buy_vol_3": ("3GB", 840000),
+        "buy_vol_10": ("10GB", 2500000),
+        "buy_vol_5": ("5گیگ بخر 7 گیگ ببر", 1350000),
     }
 
     volume, price = volume_map.get(query.data, ("نامشخص", 0))
@@ -1113,16 +1128,37 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text("pending_order وجود ندارد")
         return
 
-    servers = db["settings"].get("servers", [])
+    pending = user.get("pending_order")
 
-    if not servers:
-        await query.message.reply_text("سرور نداریم")
+    volume_text = pending.get("volume")  # مثل "1GB"
+    count = pending.get("count", 1)
+
+    # تبدیل حجم به عدد
+    volume_map = {
+        "1GB": 1,
+        "2GB": 2,
+        "3GB": 3,
+        "5GB": 5,
+        "10GB": 10
+    }
+
+    volume = volume_map.get(volume_text)
+
+    if not volume:
+        await query.message.reply_text("حجم نامعتبر است")
         return
 
+    allocated = allocate_servers(db, volume, count)
+
+if not allocated:
+    await query.message.reply_text("موجودی کافی نیست")
+    return
     config = servers.pop(0)
 
+    for srv in allocated:
     user.setdefault("services", []).append({
-        "sub_id": config,
+        "sub_id": srv["id"],
+        "volume": srv["volume"],
         "name": pending.get("plan", "unknown"),
         "start_ts": datetime.now().timestamp(),
         "expiry_ts": datetime.now().timestamp() + 30 * 86400
@@ -1567,7 +1603,33 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
         await context.bot.send_message(query.from_user.id, "هیچ سروری موجود نیست")
         return
 
-    config = servers.pop(0)
+pending = db["users"][uid].get("pending_order")
+
+volume_map = {
+    "1GB": 1,
+    "2GB": 2,
+    "3GB": 3,
+    "5GB": 5,
+    "10GB": 10
+}
+
+volume = volume_map.get(pending["volume"])
+
+count = pending["count"]
+
+allocated = allocate_servers(db, volume, count)
+
+if not allocated:
+    await context.bot.send_message(query.from_user.id, "سرور کافی نیست")
+    return
+
+for srv in allocated:
+    db["users"][uid]["services"].append({
+        "sub_id": srv["id"],
+        "name": pending["plan"],
+        "expiry_ts": datetime.now().timestamp() + 30 * 86400,
+        "start_ts": datetime.now().timestamp()
+    })    
     save_db(db)
 
     # سفارش جدید
@@ -1768,59 +1830,92 @@ async def admin_add_server_start(update: Update, context: ContextTypes.DEFAULT_T
     query = update.callback_query
     await query.answer()
 
-    admin_id = str(update.effective_user.id) 
+    admin_id = str(query.from_user.id)
 
     db = load_db()
-
     db["settings"].setdefault("server_session", {})
+
     db["settings"]["server_session"][admin_id] = {
         "active": True,
+        "volume": None,
         "servers": []
     }
 
     save_db(db)
 
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("✅ اتمام ارسال", callback_data="finish_servers")],
+    kb = [
+        [InlineKeyboardButton("1GB", callback_data="srv_vol_1")],
+        [InlineKeyboardButton("2GB", callback_data="srv_vol_2")],
+        [InlineKeyboardButton("5GB", callback_data="srv_vol_5")],
+        [InlineKeyboardButton("10GB", callback_data="srv_vol_10")],
         [create_btn("back", "back_admin")]
-    ])
+    ]
 
     await query.message.edit_text(
-        "📡 حالت افزودن سرور فعال شد\n\n"
-        "سرورها را یکی یکی ارسال کنید.\n"
-        "وقتی تمام شد روی «اتمام ارسال» بزن.",
-        reply_markup=keyboard
+        "📦 حجم سرورها را انتخاب کنید:",
+        reply_markup=InlineKeyboardMarkup(kb)
     )
 
     return SET_SERVER
 
 
-async def admin_add_server_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    admin_id = str(update.effective_user.id)
+async def admin_set_server_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    admin_id = str(query.from_user.id)
+
+    volume_map = {
+        "srv_vol_1": 1,
+        "srv_vol_2": 2,
+        "srv_vol_5": 5,
+        "srv_vol_10": 10,
+    }
+
+    volume = volume_map.get(query.data)
 
     db = load_db()
+    session = db["settings"]["server_session"].get(admin_id)
 
-    db["settings"].setdefault("server_session", {})
+    if not session:
+        await query.message.edit_text("❌ سشن پیدا نشد")
+        return ConversationHandler.END
 
-    if admin_id not in db["settings"]["server_session"]:
-        db["settings"]["server_session"][admin_id] = {
-            "active": True,
-            "servers": []
-        }
+    session["volume"] = volume
+    save_db(db)
 
-    session = db["settings"]["server_session"][admin_id]
+    kb = [
+        [InlineKeyboardButton("⛔ اتمام ارسال", callback_data="finish_servers")],
+        [create_btn("back", "back_admin")]
+    ]
 
-    server = update.message.text.strip()
+    await query.message.edit_text(
+        f"📡 حالت ارسال سرور فعال شد\n\n"
+        f"📦 حجم انتخاب شده: {volume}GB\n\n"
+        f"حالا سرورها را یکی یکی ارسال کنید.",
+        reply_markup=InlineKeyboardMarkup(kb)
+    )
 
-    if not server:
+    return SET_SERVER    
+
+async def admin_add_server_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    admin_id = str(update.effective_user.id)
+    server_text = update.message.text.strip()
+
+    db = load_db()
+    session = db["settings"].get("server_session", {}).get(admin_id)
+
+    if not session or not session.get("active"):
         return SET_SERVER
 
-    session["servers"].append(server)
+    if not server_text:
+        return SET_SERVER
 
+    session["servers"].append(server_text)
     save_db(db)
 
     await update.message.reply_text(
-        f"✅ سرور ذخیره شد\n📦 تعداد: {len(session['servers'])}"
+        f"✅ سرور اضافه شد\n📦 تعداد فعلی: {len(session['servers'])}"
     )
 
     return SET_SERVER
@@ -1831,32 +1926,45 @@ async def finish_servers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    admin_id = str(query.from_user.id)   # ❗ این خط رو اضافه کن
+    admin_id = str(query.from_user.id)
 
     db = load_db()
-    session = db["settings"].get("server_session", {}).get(admin_id, {})
+    session = db["settings"].get("server_session", {}).get(admin_id)
 
-    servers = session.get("servers", [])
-
-    if len(servers) == 0:
-        await query.message.edit_text("❌ هیچ سروری ثبت نشد.")
+    if not session:
+        await query.message.edit_text("❌ سشن فعال نیست")
         return ConversationHandler.END
 
-    db["settings"].setdefault("servers", []).extend(servers)
+    servers = session.get("servers", [])
+    volume = session.get("volume")
 
-    # پاکسازی session
+    if not servers:
+        await query.message.edit_text("❌ هیچ سروری ثبت نشد")
+        return ConversationHandler.END
+
+    db["settings"].setdefault("servers", [])
+
+    for s in servers:
+        db["settings"]["servers"].append({
+            "id": s,
+            "volume": volume
+        })
+
+    # پاکسازی سشن
     db["settings"]["server_session"][admin_id] = {
         "active": False,
-        "servers": []
+        "servers": [],
+        "volume": None
     }
 
     save_db(db)
 
     await query.message.edit_text(
-        f"✅ {len(servers)} سرور با موفقیت ذخیره شد.",
+        f"✅ {len(servers)} سرور با حجم {volume}GB ذخیره شد",
         reply_markup=admin_menu_kb()
     )
 
+    return ConversationHandler.END
     return ConversationHandler.END
 
 
@@ -2051,6 +2159,10 @@ if __name__ == "__main__":
                 CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
                 CallbackQueryHandler(show_pending_receipts,pattern="^receipts_pending$"),
                 CallbackQueryHandler(show_archive_receipts,pattern="^receipts_archive$"),
+                CallbackQueryHandler(admin_set_server_volume, pattern="^srv_vol_"),
+                CallbackQueryHandler(finish_servers, pattern="^finish_servers$"),
+                
+
             ],
             states={
                 ADD_CHANNEL_USER: [
