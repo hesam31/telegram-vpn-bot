@@ -2328,9 +2328,7 @@ if __name__ == "__main__":
                 CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
                 CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
                 CallbackQueryHandler(show_pending_receipts,pattern="^receipts_pending$"),
-                CallbackQueryHandler(show_archive_receipts,pattern="^receipts_archive$"),
-                CallbackQueryHandler(finish_servers, pattern="^finish_servers$"),
-                
+                CallbackQueryHandler(show_archive_receipts,pattern="^receipts_archive$"),                
 
             ],
             states={
@@ -2359,11 +2357,6 @@ if __name__ == "__main__":
                     MessageHandler(
                         filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
                         admin_add_server_input
-                    ),
-
-                    CallbackQueryHandler(
-                        finish_servers,
-                        pattern="^finish_servers$"
                     ),
                 ],
                 TEST_SERVER_STATE: [
