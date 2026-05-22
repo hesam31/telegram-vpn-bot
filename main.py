@@ -1127,6 +1127,7 @@ async def view_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     query = update.callback_query
     await query.answer()
 
@@ -1145,6 +1146,7 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     uid = str(receipt["user_id"])
+
     user = db["users"].get(uid)
 
     if not user:
@@ -1165,7 +1167,9 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "5گیگ بخر 7 گیگ ببر": 5
     }
 
-    raw_volume = volume_map.get(pending.get("volume"))
+    raw_volume = volume_map.get(
+        pending.get("volume")
+    )
 
     if raw_volume is None:
         await query.message.reply_text("حجم نامعتبر است")
@@ -1179,56 +1183,70 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     count = pending.get("count", 1)
 
-    allocated = allocate_servers(db, volume, count)
+    allocated = allocate_servers(
+        db,
+        volume,
+        count
+    )
 
     if not allocated:
         await query.message.reply_text("موجودی کافی نیست")
         return
 
-    # اضافه کردن سرویس‌ها
+    # ذخیره سرویس ها
+
     for srv in allocated:
+
         user.setdefault("services", []).append({
 
-    "sub_id": srv["id"],
+            "sub_id": srv["id"],
 
-    "volume": srv["volume"],
+            "volume": srv["volume"],
 
-    "config": srv["config"],
+            "config": srv["config"],
 
-    "name": pending.get("plan", "unknown"),
+            "name": pending.get(
+                "plan",
+                "unknown"
+            ),
 
-    "start_ts": datetime.now().timestamp(),
+            "start_ts": datetime.now().timestamp(),
 
-    "expiry_ts": datetime.now().timestamp() + 30 * 86400
+            "expiry_ts": (
+                datetime.now().timestamp()
+                + 30 * 86400
+            )
 
-})
-text = "✅ سرویس‌های شما:\n\n"
+        })
 
-for srv in allocated:
+    # ارسال کانفیگ ها
 
-    text += (
-        f"📦 {srv['volume']}GB\n"
-        f"<code>{srv['config']}</code>\n\n"
+    text = "✅ سرویس‌های شما:\n\n"
+
+    for srv in allocated:
+
+        text += (
+            f"📦 {srv['volume']}GB\n"
+            f"<code>{srv['config']}</code>\n\n"
+        )
+
+    await context.bot.send_message(
+        chat_id=uid,
+        text=text,
+        parse_mode="HTML"
     )
 
-await context.bot.send_message(
-    chat_id=uid,
-    text=text,
-    parse_mode="HTML"
-)
+    # پاک کردن pending
 
     user["pending_order"] = None
+
     db["receipts"][index]["status"] = "approved"
 
     save_db(db)
 
-    await context.bot.send_message(
-        chat_id=uid,
-        text=f"{te('taeid')} <b>پرداخت تایید شد</b>",
-        parse_mode="HTML"
+    await query.message.edit_caption(
+        "✅ ارسال شد"
     )
-
-    await query.message.edit_caption("✅ ارسال شد")
 
 
 async def reject_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
