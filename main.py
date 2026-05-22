@@ -1121,15 +1121,10 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     receipt = db["receipts"][index]
 
     if receipt.get("status") != "pending":
-
-        await query.answer(
-            "این رسید قبلاً بررسی شده",
-            show_alert=True
-        )
+        await query.answer("این رسید قبلاً بررسی شده", show_alert=True)
         return
 
     uid = str(receipt["user_id"])
-
     user = db["users"].get(uid)
 
     if not user:
@@ -1142,12 +1137,6 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text("pending_order وجود ندارد")
         return
 
-    pending = user.get("pending_order")
-
-    volume_text = pending.get("volume")  # مثل "1GB"
-    count = pending.get("count", 1)
-
-    # تبدیل حجم به عدد
     volume_map = {
         "1GB": 1,
         "2GB": 2,
@@ -1156,40 +1145,38 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "10GB": 10
     }
 
-    volume = volume_map.get(volume_text)
+    volume = volume_map.get(pending.get("volume"))
 
     if not volume:
         await query.message.reply_text("حجم نامعتبر است")
         return
 
+    count = pending.get("count", 1)
+
     allocated = allocate_servers(db, volume, count)
 
-if not allocated:
-    await query.message.reply_text("موجودی کافی نیست")
-    return
-    config = servers.pop(0)
+    if not allocated:
+        await query.message.reply_text("موجودی کافی نیست")
+        return
 
-for srv in allocated:
-    user.setdefault("services", []).append({
-        "sub_id": srv["id"],
-        "volume": srv["volume"],
-        "name": pending.get("plan", "unknown"),
-        "start_ts": datetime.now().timestamp(),
-        "expiry_ts": datetime.now().timestamp() + 30 * 86400
-    })
+    # اضافه کردن سرویس‌ها
+    for srv in allocated:
+        user.setdefault("services", []).append({
+            "sub_id": srv["id"],
+            "volume": srv["volume"],
+            "name": pending.get("plan", "unknown"),
+            "start_ts": datetime.now().timestamp(),
+            "expiry_ts": datetime.now().timestamp() + 30 * 86400
+        })
 
     user["pending_order"] = None
-
     db["receipts"][index]["status"] = "approved"
 
     save_db(db)
 
     await context.bot.send_message(
         chat_id=uid,
-        text=(
-            f"{te('taeid')} <b>پرداخت تایید شد</b>\n\n"
-            f"{config}"
-        ),
+        text=f"{te('taeid')} <b>پرداخت تایید شد</b>",
         parse_mode="HTML"
     )
 
