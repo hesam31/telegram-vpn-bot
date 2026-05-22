@@ -2277,7 +2277,7 @@ if __name__ == "__main__":
     app.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST, channel_post_handler))
     app.add_handler(CallbackQueryHandler(admin_callback_handler, pattern="adm_"))
     app.add_handler(CallbackQueryHandler(admin_add_server_start,pattern="^admin_add_server$"))
-    app.add_handler(CallbackQueryHandler(admin_select_server_volume,pattern="^addsrv_"))
+    app.add_handler(CallbackQueryHandler(admin_select_server_volume, pattern="^addsrv_"))
     app.add_handler(CallbackQueryHandler(finish_add_server,pattern="^finish_add_server$"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,admin_save_server))
 
