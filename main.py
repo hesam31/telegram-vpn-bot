@@ -708,34 +708,34 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return BUY_GET_COUNT
 
     if "price" not in context.user_data or "volume" not in context.user_data:
-    await update.message.reply_text("ابتدا حجم مورد نظر را انتخاب کنید.")
-    return ConversationHandler.END    
+        await update.message.reply_text("ابتدا حجم مورد نظر را انتخاب کنید.")
+        return ConversationHandler.END
 
     context.user_data["count"] = count
-    context.user_data["plan"]=plan
 
     base_price = context.user_data.get("price", 0)
     total = base_price * count
     context.user_data["total"] = total
 
     buttons = [
-    [
-        InlineKeyboardButton(
-            "قوانین را میپذیرم",
-            callback_data="accept_rules",
-            style="success",
-            icon_custom_emoji_id=DYN_BTN_EMOJIS["accept"]
-        )
-    ],
-    [
-        InlineKeyboardButton(
-            "بازگشت",
-            callback_data="back_main",
-            style="danger",
-            icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
-        )
+        [
+            InlineKeyboardButton(
+                "قوانین را میپذیرم",
+                callback_data="accept_rules",
+                style="success",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["accept"]
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "بازگشت",
+                callback_data="back_main",
+                style="danger",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
+            )
+        ]
     ]
-]
+
     text = (
         f"{te('rule')} قبل از خرید قوانین را تایید کنید.\n\n"
 
