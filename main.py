@@ -189,11 +189,11 @@ def load_db():
                 "channels": [],
                 "test_servers": [],
                 "servers": [
-                    {"id": "srv1", "volume": 1},
-                    {"id": "srv2", "volume": 1},
-                    {"id": "srv3", "volume": 2},
-                    {"id": "srv4", "volume": 5},
-                    {"id": "srv5", "volume": 10}
+                    {"id": "srv1", "volume": 1, "config": "vless://server1"},
+                    {"id": "srv2", "volume": 2, "config": "vless://server2"},
+                    {"id": "srv3", "volume": 3, "config": "vless://server3"},
+                    {"id": "srv4", "volume": 5, "config": "vless://server5"},
+                    {"id": "srv5", "volume": 10,"config": "vless://server10"}
                 ],
                 "server_session": {}
             },
@@ -1141,11 +1141,17 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "1GB": 1,
         "2GB": 2,
         "3GB": 3,
-        "5GB": 5,
-        "10GB": 10
+        "10GB": 10,
+        "5گیگ بخر 7 گیگ ببر": 5
     }
 
-    volume = normalize_volume(volume_map.get(pending.get("volume")))
+    raw_volume = volume_map.get(pending.get("volume"))
+
+    if raw_volume is None:
+        await query.message.reply_text("حجم نامعتبر است")
+        return
+
+    volume = normalize_volume(raw_volume)
 
     if not volume:
         await query.message.reply_text("حجم نامعتبر است")
@@ -1182,6 +1188,7 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await query.message.edit_caption("✅ ارسال شد")
 
+
 async def reject_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -1189,57 +1196,62 @@ async def reject_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     index = int(query.data.split("_")[-1])
 
     db = load_db()
+
+    if index >= len(db["receipts"]):
+        await query.answer("رسید نامعتبر است", show_alert=True)
+        return
+
     db["receipts"][index]["status"] = "rejected"
     save_db(db)
-    await query.message.edit_caption(
-        "❌ رسید رد شد"
-    )            
+
+    await query.message.edit_caption("❌ رسید رد شد")
+
 
 async def profile_menu(update, context):
     query = update.callback_query
     await query.answer()
 
     keyboard = [
-    [
-        InlineKeyboardButton(
-            "اطلاعات حساب",
-            callback_data="profile_info",
-            style="primary",
-            icon_custom_emoji_id=MSG_EMOJIS["profile"]["id"]
-        )
-    ],
-    [
-        InlineKeyboardButton(
-            "تاریخچه خرید",
-            callback_data="profile_orders",
-            style="primary",            
-            icon_custom_emoji_id=MSG_EMOJIS["orders"]["id"]
-        )
-    ],
-    [
-        InlineKeyboardButton(
-            "سرورهای من",
-            callback_data="profile_servers",
-            style="primary",            
-            icon_custom_emoji_id=MSG_EMOJIS["servers"]["id"]
-        )
-    ],
-    [
-        InlineKeyboardButton(
-            "بازگشت",
-            callback_data="back_main",
-            style="danger",
-            icon_custom_emoji_id=MSG_EMOJIS["back"]["id"]
-        )
-    ],
-]
+        [
+            InlineKeyboardButton(
+                "اطلاعات حساب",
+                callback_data="profile_info",
+                style="primary",
+                icon_custom_emoji_id=MSG_EMOJIS["profile"]["id"]
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "تاریخچه خرید",
+                callback_data="profile_orders",
+                style="primary",
+                icon_custom_emoji_id=MSG_EMOJIS["orders"]["id"]
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "سرورهای من",
+                callback_data="profile_servers",
+                style="primary",
+                icon_custom_emoji_id=MSG_EMOJIS["servers"]["id"]
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "بازگشت",
+                callback_data="back_main",
+                style="danger",
+                icon_custom_emoji_id=MSG_EMOJIS["back"]["id"]
+            )
+        ],
+    ]
 
     await query.message.edit_text(
-    f"{te('profile')} پنل کاربری شما\n\n"
-    f"{te('paein')} یکی از گزینه‌ها را انتخاب کنید:",
-    reply_markup=InlineKeyboardMarkup(keyboard),
-    parse_mode="HTML"
-)
+        f"{te('profile')} پنل کاربری شما\n\n"
+        f"{te('paein')} یکی از گزینه‌ها را انتخاب کنید:",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode="HTML"
+    )
 
 async def profile_referral(update, context):
     query = update.callback_query
@@ -1572,6 +1584,7 @@ async def admin_server_stats(update: Update, context: ContextTypes.DEFAULT_TYPE)
     )    
 
 async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     if update.effective_user.id not in ADMIN_IDS:
         return
 
@@ -1581,21 +1594,28 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
     db = load_db()
 
     data = query.data.split("_")
-    action = data[1]
 
-    # بعضی callback ها مثل adm_approve_UID_new هستند
     if len(data) < 3:
-        await context.bot.send_message(query.from_user.id, "داده callback نامعتبر است")
+        await context.bot.send_message(
+            query.from_user.id,
+            "داده callback نامعتبر است"
+        )
         return
 
+    action = data[1]
     uid = data[2]
 
     if uid not in db["users"]:
-        await context.bot.send_message(query.from_user.id, "کاربر یافت نشد")
+        await context.bot.send_message(
+            query.from_user.id,
+            "کاربر یافت نشد"
+        )
         return
 
     # ---------------- REJECT ----------------
+
     if action == "reject":
+
         db["users"][uid]["pending_order"] = None
         save_db(db)
 
@@ -1605,83 +1625,162 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
             parse_mode="HTML"
         )
 
-        await query.edit_message_caption(
-            caption=(query.message.caption or "") + f"\n\n{te('error')} رد شد.",
-            parse_mode="HTML"
-        )
-        return
-
-    # ---------------- APPROVE ----------------
-    if action == "approve":
-        pending = db["users"][uid].get("pending_order")
-
-        if not pending:
-            await context.bot.send_message(uid, "سفارش پیدا نشد")
-            return
-
-        # ---------------- VOLUME MAP ----------------
-        volume_map = {
-            "1GB": 1,
-            "2GB": 2,
-            "3GB": 3,
-            "5گیگ بخر 7 گیگ ببر": 5,
-            "5GB": 5,
-            "10GB": 10
-        }
-
-        volume = volume_map.get(pending.get("volume"))
-        count = int(pending.get("count", 1))
-
-        if not volume:
-            await context.bot.send_message(uid, "حجم نامعتبر است")
-            return
-
-        # ---------------- ALLOCATION ----------------
-        allocated = allocate_servers(db, volume, count)
-
-        if not allocated or len(allocated) < count:
-            await context.bot.send_message(uid, "سرور کافی نیست")
-            return
-
-        # ---------------- ADD SERVICES ----------------
-        now = datetime.now().timestamp()
-
-        user_services = db["users"][uid].setdefault("services", [])
-
-        for srv in allocated:
-            user_services.append({
-                "sub_id": srv["id"],
-                "volume": srv["volume"],
-                "name": pending.get("plan"),
-                "start_ts": now,
-                "expiry_ts": now + 30 * 86400
-            })
-
-        # پاک کردن سفارش
-        db["users"][uid]["pending_order"] = None
-        save_db(db)
-
-        # ---------------- NOTIFY USER ----------------
-        await context.bot.send_message(
-            chat_id=uid,
-            text=f"{te('success')} <b>پرداخت تایید شد و سرویس شما فعال شد</b>",
-            parse_mode="HTML"
-        )
-
-        # ---------------- EDIT ADMIN MESSAGE ----------------
         try:
             await query.edit_message_caption(
-                caption=(query.message.caption or "") + "\n\n✅ ارسال شد",
+                caption=(query.message.caption or "") + f"\n\n{te('error')} رد شد.",
                 parse_mode="HTML"
             )
         except:
             pass
 
         return
-def normalize_volume(v):
-    if isinstance(v, str):
-        v = v.replace("GB","").replace("گیگ","").strip()
-    return int(v)
+
+    # ---------------- APPROVE ----------------
+
+    if action == "approve":
+
+        pending = db["users"][uid].get("pending_order")
+
+        if not pending:
+            await context.bot.send_message(
+                uid,
+                "سفارش پیدا نشد"
+            )
+            return
+
+        # ---------------- VOLUME MAP ----------------
+
+        volume_map = {
+            "1GB": 1,
+            "2GB": 2,
+            "3GB": 3,
+            "5گیگ بخر 7 گیگ ببر": 5,
+            "10GB": 10
+        }
+
+        raw_volume = volume_map.get(
+            pending.get("volume")
+        )
+
+        if raw_volume is None:
+
+            await context.bot.send_message(
+                uid,
+                "حجم نامعتبر است"
+            )
+
+            return
+
+        volume = normalize_volume(raw_volume)
+
+        count = int(
+            pending.get("count", 1)
+        )
+
+        # ---------------- ALLOCATE ----------------
+
+        allocated = allocate_servers(
+            db,
+            volume,
+            count
+        )
+
+        if not allocated:
+
+            await context.bot.send_message(
+                uid,
+                "سرور کافی نیست"
+            )
+
+            return
+
+        if len(allocated) < count:
+
+            await context.bot.send_message(
+                uid,
+                "تعداد سرور کافی نیست"
+            )
+
+            return
+
+        # ---------------- ADD SERVICES ----------------
+
+        now = datetime.now().timestamp()
+
+        user_services = db["users"][uid].setdefault(
+            "services",
+            []
+        )
+
+        for srv in allocated:
+
+            user_services.append({
+
+                "sub_id": srv["id"],
+
+                "volume": srv["volume"],
+
+                "name": pending.get("plan"),
+
+                "config": srv.get("config", ""),
+
+                "start_ts": now,
+
+                "expiry_ts": now + 30 * 86400
+
+            })
+
+        # ---------------- CLEAR ORDER ----------------
+
+        db["users"][uid]["pending_order"] = None
+
+        save_db(db)
+
+        # ---------------- SEND CONFIGS ----------------
+
+        text = (
+            f"{te('success')} "
+            f"<b>پرداخت تایید شد و سرویس شما فعال شد</b>\n\n"
+        )
+
+        for srv in allocated:
+
+            config = srv.get("config")
+
+            if not config:
+                continue
+
+            text += (
+                f"📦 حجم: {srv['volume']}GB\n"
+                f"<code>{config}</code>\n\n"
+            )
+
+        if text.strip() == f"{te('success')} <b>پرداخت تایید شد و سرویس شما فعال شد</b>":
+
+            text += "⚠️ کانفیگی برای ارسال پیدا نشد."
+
+        await context.bot.send_message(
+            chat_id=uid,
+            text=text,
+            parse_mode="HTML"
+        )
+
+        # ---------------- EDIT ADMIN MESSAGE ----------------
+
+        try:
+
+            await query.edit_message_caption(
+                caption=(
+                    (query.message.caption or "")
+                    + "\n\n✅ ارسال شد"
+                ),
+                parse_mode="HTML"
+            )
+
+        except:
+            pass
+
+        return
 
 async def admin_add_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
