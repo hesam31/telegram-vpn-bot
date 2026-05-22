@@ -325,18 +325,22 @@ def extract_number(text: str):
 
 async def channel_post_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    post = update.channel_post
-    if not post:
+    if not update.channel_post:
         return
 
+    post = update.channel_post
+
     bot_username = (await context.bot.get_me()).username
+
+    btn_cfg = BTN_CFG["CHANNEL_POST_BUTTON"]
 
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                text="خرید فوری سرور از صدورابات ",
+                text=btn_cfg["text"],
+                url=f"https://t.me/{bot_username}",
                 style="success",
-                url=f"https://t.me/{bot_username}?start=from_channel"
+                icon_custom_emoji_id=btn_cfg.get("emoji_id")
             )
         ]
     ])
