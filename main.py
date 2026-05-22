@@ -185,11 +185,25 @@ DURATION_MAP = {
 def load_db():
     if not os.path.exists(DB_FILE):
         default_data = {
-    "settings": {"channels": [], "test_servers": [], "servers": [{"id": "srv1", "volume": 1},{"id": "srv2", "volume": 1},{"id": "srv3", "volume": 2},{"id": "srv4", "volume": 5},{"id": "srv5", "volume": 10}]"server_session": {}},
-    "users": {},
-    "plans": [{"name": "تست رایگان", "price": 0, "id": 1234}],
-    "receipts": []
-}
+            "settings": {
+                "channels": [],
+                "test_servers": [],
+                "servers": [
+                    {"id": "srv1", "volume": 1},
+                    {"id": "srv2", "volume": 1},
+                    {"id": "srv3", "volume": 2},
+                    {"id": "srv4", "volume": 5},
+                    {"id": "srv5", "volume": 10}
+                ],
+                "server_session": {}
+            },
+            "users": {},
+            "plans": [
+                {"name": "تست رایگان", "price": 0, "id": 1234}
+            ],
+            "receipts": []
+        }
+        return default_data
         return default_data
     with open(DB_FILE, "r", encoding="utf-8") as f:
         try:
