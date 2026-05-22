@@ -690,6 +690,7 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data["volume"] = volume
     context.user_data["price"] = price
+    context.user_data["count"] = None
 
     await query.message.edit_text(
     f"{te('box')} حجم انتخاب شد: {volume}\n\n"
@@ -707,8 +708,8 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("فقط عدد وارد کنید.")
         return BUY_GET_COUNT
 
-    if "price" not in context.user_data or "volume" not in context.user_data:
-        await update.message.reply_text("ابتدا حجم مورد نظر را انتخاب کنید.")
+    if not context.user_data.get("volume") or not context.user_data.get("price"):
+        await update.message.reply_text("ابتدا حجم را انتخاب کنید.")
         return ConversationHandler.END
 
     context.user_data["count"] = count
@@ -2299,7 +2300,7 @@ if __name__ == "__main__":
                     CallbackQueryHandler(buy_select_volume, pattern="^buy_vol_")
                 ],
                 BUY_GET_COUNT: [
-                    MessageHandler(filters.TEXT, buy_get_count)
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, buy_get_count)
                 ],
                 BUY_CONFIRM_RULES: [
                     CallbackQueryHandler(buy_confirm_rules, pattern="^accept_rules$")
