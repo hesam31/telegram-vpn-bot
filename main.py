@@ -1169,7 +1169,7 @@ if not allocated:
     return
     config = servers.pop(0)
 
-    for srv in allocated:
+for srv in allocated:
     user.setdefault("services", []).append({
         "sub_id": srv["id"],
         "volume": srv["volume"],
