@@ -335,7 +335,7 @@ async def channel_post_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         [
             InlineKeyboardButton(
                 text="خرید فوری سرور از صدورابات ",
-                style="success"
+                style="success",
                 url=f"https://t.me/{bot_username}?start=from_channel"
             )
         ]
