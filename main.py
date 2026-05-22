@@ -228,26 +228,16 @@ def save_db(data):
 def allocate_servers(db, volume, count):
     servers = db["settings"].get("servers", [])
 
-    matched = [s for s in servers if s["volume"] == volume]
+    matched = [s for s in servers if int(s["volume"]) == int(volume)]
 
     if len(matched) < count:
         return None
 
     allocated = matched[:count]
 
-    # ❌ مشکل اصلی اینجا بود
-    # باید دقیقاً از همون لیست حذف کنی نه از کل servers به شکل غلط
-
-    new_servers = []
-    removed = 0
-
-    for s in servers:
-        if s["volume"] == volume and removed < count:
-            removed += 1
-            continue
-        new_servers.append(s)
-
-    db["settings"]["servers"] = new_servers
+    db["settings"]["servers"] = [
+        s for s in servers if s not in allocated
+    ]
 
     return allocated
 def create_btn(config_key, callback_data=None, url=None):
@@ -1155,7 +1145,7 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "10GB": 10
     }
 
-    volume = volume_map.get(pending.get("volume"))
+    volume = normalize_volume(volume_map.get(pending.get("volume")))
 
     if not volume:
         await query.message.reply_text("حجم نامعتبر است")
@@ -1589,7 +1579,7 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
     await query.answer()
 
     data = query.data.split("_")
-    uid = data[2]
+    uid = data = ["adm", "approve", uid, "new"]
 
     db = load_db()
 
@@ -1608,6 +1598,47 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
             caption=(query.message.caption or "") + f"\n\n{te('error')} رد شد.",
             parse_mode="HTML"
         )
+    if data[1] == "approve":pending = db["users"][uid].get("pending_order")
+
+if not pending:
+    await context.bot.send_message(uid, "سفارش پیدا نشد")
+    return
+
+volume_map = {
+    "1GB": 1,
+    "2GB": 2,
+    "3GB": 3,
+    "5گیگ بخر 7 گیگ ببر": 5,
+    "10GB": 10
+}
+
+volume = volume_map.get(pending.get("volume"))
+count = int(pending.get("count", 1))
+
+allocated = allocate_servers(db, volume, count)
+
+if not allocated:
+    await context.bot.send_message(uid, "سرور کافی نیست")
+    return
+
+for srv in allocated:
+    db["users"][uid].setdefault("services", []).append({
+        "sub_id": srv["id"],
+        "volume": srv["volume"],
+        "name": pending.get("plan"),
+        "start_ts": datetime.now().timestamp(),
+        "expiry_ts": datetime.now().timestamp() + 30 * 86400
+    })
+
+db["users"][uid]["pending_order"] = None
+save_db(db)
+
+await context.bot.send_message(
+    uid,
+    "پرداخت تایید شد و سرویس برات ارسال شد ✅"
+)
+
+return    
 
     # ---------------- CHECK ORDER ----------------
     pending = db["users"][uid].get("pending_order")
@@ -1681,6 +1712,12 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
         caption=(query.message.caption or "") + "\n\n✅ ارسال شد",
         parse_mode="HTML"
     )
+
+def normalize_volume(v):
+    if isinstance(v, str):
+        v = v.replace("GB","").replace("گیگ","").strip()
+    return int(v)
+
 async def admin_add_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -2111,6 +2148,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_referral_panel, pattern="^admin_referrals$"))
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
     app.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST, channel_post_handler))
+    app.add_handler(CallbackQueryHandler(admin_callback_handler, pattern="adm_"))
     # ---------------- BUY CONVERSATION ----------------
     app.add_handler(
         ConversationHandler(
