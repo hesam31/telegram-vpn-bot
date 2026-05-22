@@ -334,7 +334,8 @@ async def channel_post_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                text="خرید فوری",
+                text="خرید فوری سرور از صدورابات ",
+                style="success"
                 url=f"https://t.me/{bot_username}?start=from_channel"
             )
         ]
