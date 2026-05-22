@@ -235,9 +235,19 @@ def allocate_servers(db, volume, count):
 
     allocated = matched[:count]
 
-    db["settings"]["servers"] = [
-        s for s in servers if s not in allocated
-    ]
+    # ❌ مشکل اصلی اینجا بود
+    # باید دقیقاً از همون لیست حذف کنی نه از کل servers به شکل غلط
+
+    new_servers = []
+    removed = 0
+
+    for s in servers:
+        if s["volume"] == volume and removed < count:
+            removed += 1
+            continue
+        new_servers.append(s)
+
+    db["settings"]["servers"] = new_servers
 
     return allocated
 def create_btn(config_key, callback_data=None, url=None):
@@ -1577,19 +1587,32 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
 
     query = update.callback_query
     await query.answer()
+
     data = query.data.split("_")
     uid = data[2]
 
     db = load_db()
 
+    if uid not in db["users"]:
+        await context.bot.send_message(query.from_user.id, "کاربر یافت نشد")
+        return
+
+    # ---------------- REJECT ----------------
     if data[1] == "reject":
-        await context.bot.send_message(uid, f"{te('error')} سفارش شما رد شد.", parse_mode="HTML")
+        await context.bot.send_message(
+            uid,
+            f"{te('error')} سفارش شما رد شد.",
+            parse_mode="HTML"
+        )
         return await query.edit_message_caption(
-            caption=query.message.caption + f"\n\n{te('error')} رد شد.",
+            caption=(query.message.caption or "") + f"\n\n{te('error')} رد شد.",
             parse_mode="HTML"
         )
 
-    if not db["users"][uid].get("pending_order"):
+    # ---------------- CHECK ORDER ----------------
+    pending = db["users"][uid].get("pending_order")
+
+    if not pending:
         await context.bot.send_message(
             query.from_user.id,
             f"{te('error')} سفارش یافت نشد.",
@@ -1597,43 +1620,67 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
         )
         return
 
-    pending = db["users"][uid]["pending_order"]
-
+    # ---------------- SERVER INVENTORY ----------------
     servers = db["settings"].get("servers", [])
 
     if not servers:
         await context.bot.send_message(query.from_user.id, "هیچ سروری موجود نیست")
         return
 
+    # ---------------- FIXED VOLUME MAP ----------------
     volume_map = {
         "1GB": 1,
         "2GB": 2,
         "3GB": 3,
+        "5گیگ بخر 7 گیگ ببر": 5,
         "5GB": 5,
         "10GB": 10
     }
 
-    volume = volume_map.get(pending["volume"])
-    count = pending["count"]
+    volume = volume_map.get(pending.get("volume"))
+    count = int(pending.get("count", 1))
 
+    if not volume:
+        await context.bot.send_message(query.from_user.id, "حجم نامعتبر است")
+        return
+
+    # ---------------- ALLOCATION (FIXED FLOW) ----------------
     allocated = allocate_servers(db, volume, count)
 
-    if not allocated:
+    if not allocated or len(allocated) < count:
         await context.bot.send_message(query.from_user.id, "سرور کافی نیست")
         return
 
-    # ادامه پردازش
+    # ---------------- ADD SERVICES ----------------
+    now = datetime.now().timestamp()
+
+    user_services = db["users"][uid].setdefault("services", [])
+
     for srv in allocated:
-        db["users"][uid]["services"].append({
+        user_services.append({
             "sub_id": srv["id"],
-            "name": pending["plan"],
-            "expiry_ts": datetime.now().timestamp() + 30 * 86400,
-            "start_ts": datetime.now().timestamp()
+            "name": pending.get("plan"),
+            "volume": pending.get("volume"),
+            "expiry_ts": now + 30 * 86400,
+            "start_ts": now
         })
+
+    # پاک کردن سفارش معلق
+    db["users"][uid]["pending_order"] = None
 
     save_db(db)
 
-    # ادامه new / renew باید اینجا باشه
+    # ---------------- NOTIFY USER ----------------
+    await context.bot.send_message(
+        chat_id=uid,
+        text=f"{te('success')} <b>پرداخت تایید شد و سرویس شما فعال شد</b>",
+        parse_mode="HTML"
+    )
+
+    await query.edit_message_caption(
+        caption=(query.message.caption or "") + "\n\n✅ ارسال شد",
+        parse_mode="HTML"
+    )
 async def admin_add_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
