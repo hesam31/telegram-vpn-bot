@@ -2356,7 +2356,7 @@ if __name__ == "__main__":
                 SET_SERVER: [
                     MessageHandler(
                         filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
-                        admin_add_server_input
+                        admin_add_server_start
                     ),
                 ],
                 TEST_SERVER_STATE: [
