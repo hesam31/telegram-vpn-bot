@@ -6,6 +6,7 @@ from datetime import datetime
 import re
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import MenuButtonCommands
+from telegram.ext import MessageHandler, filters
 from telegram.ext import (
     ApplicationBuilder,
     ContextTypes,
@@ -324,18 +325,17 @@ def extract_number(text: str):
 
 async def channel_post_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    if not update.channel_post:
-        return
-
     post = update.channel_post
+    if not post:
+        return
 
     bot_username = (await context.bot.get_me()).username
 
     keyboard = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                CHANNEL_POST_BUTTON,
-                url=f"https://t.me/{bot_username}"
+                text="خرید فوری",
+                url=f"https://t.me/{bot_username}?start=from_channel"
             )
         ]
     ])
@@ -344,7 +344,6 @@ async def channel_post_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         await post.edit_reply_markup(reply_markup=keyboard)
     except Exception as e:
         print("CHANNEL BUTTON ERROR:", e)
-
     
 async def set_menu_button(app):
     await app.bot.set_chat_menu_button(
@@ -1972,6 +1971,7 @@ if __name__ == "__main__":
 
     if app.job_queue:
         app.job_queue.run_repeating(check_expirations, interval=14400, first=60)
+        
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("admin", admin_start))
@@ -1998,7 +1998,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
     app.add_handler(CallbackQueryHandler(admin_referral_panel, pattern="^admin_referrals$"))
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
-    app.add_handler(MessageHandler(filters.ChatType.CHANNEL,channel_post_handler))
+    app.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST, channel_post_handler))
     # ---------------- BUY CONVERSATION ----------------
     app.add_handler(
         ConversationHandler(
