@@ -129,6 +129,8 @@ BTN_CFG = {
     "admin_server_stats":{"text": "آمار سرورها","style": "primary", "emoji_id": "5409380072291316349"},
     "admin_receipts":{"text": "رسید های واریزی","style": "primary","emoji_id": "5350697092184944245"},
     "admin_referrals": {"text": "سیستم رفرال","style": "primary","emoji_id": "5350790271627968474"},
+    "CHANNEL_POST_BUTTON": {"text": "خرید فوری کانفیگ": "style": "success","emoji_id": "6073335669260819751"},
+
 }
 
 DYN_BTN_EMOJIS = {
@@ -317,6 +319,32 @@ def extract_number(text: str):
     cleaned = re.sub(r"[^\d]", "", text)
 
     return int(cleaned) if cleaned else None    
+
+
+
+async def channel_post_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    if not update.channel_post:
+        return
+
+    post = update.channel_post
+
+    bot_username = (await context.bot.get_me()).username
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                CHANNEL_POST_BUTTON,
+                url=f"https://t.me/{bot_username}"
+            )
+        ]
+    ])
+
+    try:
+        await post.edit_reply_markup(reply_markup=keyboard)
+    except Exception as e:
+        print("CHANNEL BUTTON ERROR:", e)
+
     
 async def set_menu_button(app):
     await app.bot.set_chat_menu_button(
@@ -1038,7 +1066,7 @@ async def view_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ])
 
     await context.bot.send_photo(
-        chat_id=ADMIN_IDS[0],
+        chat_id=query.from_user.id,   
         photo=receipt["photo"],
         caption=text,
         reply_markup=kb
@@ -1106,7 +1134,7 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id=uid,
         text=(
             f"{te('taeid')} <b>پرداخت تایید شد</b>\n\n"
-            f"<code>{config}</code>"
+            f"{config}"
         ),
         parse_mode="HTML"
     )
@@ -1554,7 +1582,7 @@ async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_T
 
         await context.bot.send_message(
             uid,
-            f"{te('success')} اشتراک شما فعال شد\n\n<code>{config}</code>",
+            f"{te('success')} اشتراک شما فعال شد\n\n<code>{config}",
             parse_mode="HTML"
         )
 
@@ -1970,7 +1998,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
     app.add_handler(CallbackQueryHandler(admin_referral_panel, pattern="^admin_referrals$"))
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
-
+    app.add_handler(MessageHandler(filters.ChatType.CHANNEL,channel_post_handler))
     # ---------------- BUY CONVERSATION ----------------
     app.add_handler(
         ConversationHandler(
