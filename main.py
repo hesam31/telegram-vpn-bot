@@ -707,7 +707,12 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("فقط عدد وارد کنید.")
         return BUY_GET_COUNT
 
+    if "price" not in context.user_data or "volume" not in context.user_data:
+    await update.message.reply_text("ابتدا حجم مورد نظر را انتخاب کنید.")
+    return ConversationHandler.END    
+
     context.user_data["count"] = count
+    context.user_data["plan"]=plan
 
     base_price = context.user_data.get("price", 0)
     total = base_price * count
@@ -2359,18 +2364,6 @@ if __name__ == "__main__":
                         admin_add_server_start
                     ),
                 ],
-                TEST_SERVER_STATE: [
-                    MessageHandler(
-                        filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
-                        admin_test_server_input
-                    ),
-
-                    CallbackQueryHandler(
-                        finish_test_servers,
-                        pattern="^finish_test_servers$"
-                    ),
-                ],
-            },
             fallbacks=[
               CallbackQueryHandler(admin_start, pattern="^back_admin$")
             ],
