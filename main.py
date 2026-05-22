@@ -130,7 +130,7 @@ BTN_CFG = {
     "admin_server_stats":{"text": "آمار سرورها","style": "primary", "emoji_id": "5409380072291316349"},
     "admin_receipts":{"text": "رسید های واریزی","style": "primary","emoji_id": "5350697092184944245"},
     "admin_referrals": {"text": "سیستم رفرال","style": "primary","emoji_id": "5350790271627968474"},
-    "CHANNEL_POST_BUTTON": {"text": "خرید فوری کانفیگ","style": "success","emoji_id": "6073335669260819751"},
+    "CHANNEL_POST_BUTTON": {"text": "خرید فوری سرور از صدورابات","style": "success","emoji_id": "6073335669260819751"},
 
 }
 
