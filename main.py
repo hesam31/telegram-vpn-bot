@@ -1998,56 +1998,25 @@ async def admin_del_channel_save(update: Update, context: ContextTypes.DEFAULT_T
     return ConversationHandler.END
 
 async def admin_add_server_start(update, context):
-
-    query = update.callback_query
-    await query.answer()
+    # بررسی اینکه آیا درخواست از طریق دکمه بوده یا پیام متنی
+    if update.callback_query:
+        query = update.callback_query
+        await query.answer()
+        message_func = query.message.edit_text
+    else:
+        message_func = update.message.reply_text
 
     keyboard = [
-
-        [
-            InlineKeyboardButton(
-                "1GB",
-                callback_data="addsrv_1"
-            )
-        ],
-
-        [
-            InlineKeyboardButton(
-                "2GB",
-                callback_data="addsrv_2"
-            )
-        ],
-
-        [
-            InlineKeyboardButton(
-                "3GB",
-                callback_data="addsrv_3"
-            )
-        ],
-
-        [
-            InlineKeyboardButton(
-                "5GB",
-                callback_data="addsrv_5"
-            )
-        ],
-
-        [
-            InlineKeyboardButton(
-                "10GB",
-                callback_data="addsrv_10"
-            )
-        ],
-
-        [
-            InlineKeyboardButton(
-                "بازگشت",
-                callback_data="back_admin"
-            )
-        ]
+        [InlineKeyboardButton("1GB", callback_data="addsrv_1")],
+        [InlineKeyboardButton("2GB", callback_data="addsrv_2")],
+        [InlineKeyboardButton("3GB", callback_data="addsrv_3")],
+        [InlineKeyboardButton("5GB", callback_data="addsrv_5")],
+        [InlineKeyboardButton("10GB", callback_data="addsrv_10")],
+        [InlineKeyboardButton("بازگشت", callback_data="back_admin")]
     ]
 
-    await query.message.edit_text(
+    # ارسال پیام انتخاب حجم
+    await message_func(
         "حجم سرورها را انتخاب کنید:",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
@@ -2085,14 +2054,6 @@ async def admin_save_server(update, context):
     config = update.message.text.strip()
 
     volume = context.user_data.get("server_volume")
-
-    if not volume:
-
-        await update.message.reply_text(
-            "ابتدا حجم را انتخاب کنید."
-        )
-
-        return ConversationHandler.END
 
     db = load_db()
 
@@ -2330,7 +2291,6 @@ if __name__ == "__main__":
                 CallbackQueryHandler(admin_dm_start, pattern="^admin_dm$"),
                 CallbackQueryHandler(admin_del_channel_prompt, pattern="^del_ch$"),
                 CallbackQueryHandler(admin_set_test_start, pattern="^admin_set_test$"),
-                CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"),
                 CallbackQueryHandler(profile_info, pattern="profile_info"),
                 CallbackQueryHandler(admin_server_stats, pattern="admin_server_stats"),
                 CallbackQueryHandler(admin_receipts, pattern="admin_receipts"),
@@ -2340,8 +2300,7 @@ if __name__ == "__main__":
                 CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
                 CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
                 CallbackQueryHandler(show_pending_receipts,pattern="^receipts_pending$"),
-                CallbackQueryHandler(show_archive_receipts,pattern="^receipts_archive$"),                
-
+                CallbackQueryHandler(show_archive_receipts,pattern="^receipts_archive$"),     
             ],
             states={
                 ADD_CHANNEL_USER: [
