@@ -678,6 +678,9 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
+    # گرفتن دیتای دقیق دکمه کلیک شده
+    callback_data = query.data
+
     volume_map = {
         "buy_vol_1": ("1GB", 290000),
         "buy_vol_2": ("2GB", 560000),
@@ -686,19 +689,20 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "buy_vol_5": ("5گیگ بخر 7 گیگ ببر", 1350000),
     }
 
-    # مطمئن می‌شویم دیتای دکمه در مپ وجود دارد
-    if query.data in volume_map:
-        volume, price = volume_map[query.data]
+    # بررسی وجود دکمه در مپ و ذخیره سازی قطعی در دیتای کاربر
+    if callback_data in volume_map:
+        volume, price = volume_map[callback_data]
         context.user_data["volume"] = volume
         context.user_data["price"] = price
         context.user_data["count"] = None
     else:
-        await query.message.edit_text("خطایی رخ داد. لطفا مجددا تلاش کنید.", reply_markup=back_kb())
+        # اگر دیتای نامعتبر آمد به منوی اصلی برگردد
+        await query.message.edit_text("خطایی در انتخاب حجم رخ داد. لطفا دوباره تلاش کنید.", reply_markup=back_kb())
         return ConversationHandler.END
 
     await query.message.edit_text(
-        f"{te('box')} حجم انتخاب شد: {volume}\n\n"
-        f"{te('money')} قیمت هر عدد: {price:,} تومان\n\n"
+        f"{te('box')} حجم انتخاب شد: <b>{volume}</b>\n\n"
+        f"{te('money')} قیمت هر عدد: <b>{price:,} تومان</b>\n\n"
         f"{te('NUMBER')} تعداد اکانت مورد نظر را وارد کنید:",
         parse_mode="HTML",
         reply_markup=back_kb()
@@ -711,7 +715,7 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except ValueError:
         await update.message.reply_text("فقط عدد وارد کنید.")
         return BUY_GET_COUNT
-        
+
     context.user_data["count"] = count
 
     base_price = context.user_data.get("price", 0)
@@ -2294,12 +2298,14 @@ if __name__ == "__main__":
             entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
             states={
                 BUY_SELECT_PLAN: [
-                    CallbackQueryHandler(buy_select_plan, pattern="^buy_")
+                CallbackQueryHandler(buy_select_plan, pattern="^buy_VIP$")
                 ],
                 BUY_SELECT_VOLUME: [
+                    # این الگو باعث می‌شود تمام دکمه‌های حجم که با buy_vol_ شروع می‌شوند به تابع هدایت شوند
                     CallbackQueryHandler(buy_select_volume, pattern="^buy_vol_")
                 ],
                 BUY_GET_COUNT: [
+                    # گرفتن تعداد که کاربر به صورت متن یا عدد ارسال میکند
                     MessageHandler(filters.TEXT & ~filters.COMMAND, buy_get_count)
                 ],
                 BUY_CONFIRM_RULES: [
