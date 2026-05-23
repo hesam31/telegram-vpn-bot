@@ -711,11 +711,7 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except ValueError:
         await update.message.reply_text("فقط عدد وارد کنید.")
         return BUY_GET_COUNT
-
-    if not context.user_data.get("volume") or not context.user_data.get("price"):
-        await update.message.reply_text("ابتدا حجم را انتخاب کنید.")
-        return ConversationHandler.END
-
+        
     context.user_data["count"] = count
 
     base_price = context.user_data.get("price", 0)
