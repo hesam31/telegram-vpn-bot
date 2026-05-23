@@ -2217,53 +2217,50 @@ async def check_expirations(context: ContextTypes.DEFAULT_TYPE):
     if changed: save_db(db)
 
 if __name__ == "__main__":
-    if not os.path.exists(DB_FILE):
-        load_db()
+    import asyncio
 
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    async def post_init(app):
+        # job queue safe init
+        if app.job_queue:
+            app.job_queue.run_repeating(
+                check_expirations,
+                interval=14400,
+                first=60
+            )
 
-    if app.job_queue:
-        app.job_queue.run_repeating(check_expirations, interval=14400, first=60)
-        
+    app = ApplicationBuilder().token(BOT_TOKEN).post_init(post_init).build()
 
+    # ---------------- BASIC HANDLERS ----------------
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("admin", admin_start))
 
     app.add_handler(CallbackQueryHandler(check_join_callback, pattern="^check_join_btn$"))
     app.add_handler(CallbackQueryHandler(start, pattern="^back_main$"))
     app.add_handler(CallbackQueryHandler(admin_start, pattern="^back_admin$"))
+
     app.add_handler(CallbackQueryHandler(my_services, pattern="^menu_services$"))
     app.add_handler(CallbackQueryHandler(profile_menu, pattern="^menu_profile$"))
     app.add_handler(CallbackQueryHandler(show_channels_text, pattern="^menu_news$"))
     app.add_handler(CallbackQueryHandler(test_server_handler, pattern="^menu_test$"))
-    app.add_handler(CallbackQueryHandler(lambda u, c: u.callback_query.answer(), pattern="^noop_"))
     app.add_handler(CallbackQueryHandler(list_users, pattern="^admin_users$"))
     app.add_handler(CallbackQueryHandler(list_plans, pattern="^admin_products$"))
     app.add_handler(CallbackQueryHandler(del_plan_prompt, pattern="^admin_del_plan$"))
     app.add_handler(CallbackQueryHandler(perform_del_plan, pattern="^delp_"))
     app.add_handler(CallbackQueryHandler(admin_manage_channels, pattern="^admin_channels$"))
-    # app.add_handler(CallbackQueryHandler(buy_prime, pattern="^buy_prime$"))
     app.add_handler(CallbackQueryHandler(profile_info, pattern="^profile_info$"))
     app.add_handler(CallbackQueryHandler(profile_referral, pattern="^profile_referral$"))
     app.add_handler(CallbackQueryHandler(profile_orders, pattern="^profile_orders$"))
     app.add_handler(CallbackQueryHandler(profile_servers, pattern="^profile_servers$"))
     app.add_handler(CallbackQueryHandler(support_handler, pattern="^menu_support$"))
-    app.add_handler(CallbackQueryHandler(admin_receipts, pattern="admin_receipts"))
+    app.add_handler(CallbackQueryHandler(admin_receipts, pattern="^admin_receipts$"))
     app.add_handler(CallbackQueryHandler(admin_referral_panel, pattern="^admin_referrals$"))
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
     app.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST, channel_post_handler))
-    app.add_handler(CallbackQueryHandler(admin_callback_handler, pattern="adm_"))
-    app.add_handler(CallbackQueryHandler(admin_add_server_start,pattern="^admin_add_server$"))
-    app.add_handler(CallbackQueryHandler(admin_select_server_volume, pattern="^addsrv_"))
-    app.add_handler(CallbackQueryHandler(finish_add_server,pattern="^finish_add_server$"))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,admin_save_server))
+    app.add_handler(CallbackQueryHandler(admin_callback_handler, pattern="^adm_"))
 
     # ---------------- BUY CONVERSATION ----------------
-app.add_handler(
-    ConversationHandler(
-        entry_points=[
-            CallbackQueryHandler(buy_start, pattern="^menu_buy$")
-        ],
+    buy_conv = ConversationHandler(
+        entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
 
         states={
             BUY_SELECT_PLAN: [
@@ -2288,76 +2285,58 @@ app.add_handler(
         },
 
         fallbacks=[
-            CallbackQueryHandler(cancel_callback, pattern="^cancel$"),
+            CallbackQueryHandler(cancel_callback, pattern="^cancel$")
         ],
 
-        allow_reentry=True
+        allow_reentry=True,
     )
-)
+
+    app.add_handler(buy_conv)
 
     # ---------------- ADMIN CONVERSATION ----------------
-    app.add_handler(
-        ConversationHandler(
-            entry_points=[
-                CallbackQueryHandler(admin_callback_handler, pattern="^adm_"),
-                CallbackQueryHandler(admin_add_plan, pattern="^admin_add_plan$"),
-                CallbackQueryHandler(admin_broadcast_start, pattern="^admin_broadcast$"),
-                CallbackQueryHandler(admin_dm_start, pattern="^admin_dm$"),
-                CallbackQueryHandler(admin_del_channel_prompt, pattern="^del_ch$"),
-                CallbackQueryHandler(admin_set_test_start, pattern="^admin_set_test$"),
-                CallbackQueryHandler(profile_info, pattern="profile_info"),
-                CallbackQueryHandler(admin_server_stats, pattern="admin_server_stats"),
-                CallbackQueryHandler(admin_receipts, pattern="admin_receipts"),
-                CallbackQueryHandler(approve_receipt, pattern="^approve_receipt_"),
-                CallbackQueryHandler(reject_receipt, pattern="^reject_receipt_"),
-                CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
-                CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
-                CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
-                CallbackQueryHandler(show_pending_receipts,pattern="^receipts_pending$"),
-                CallbackQueryHandler(show_archive_receipts,pattern="^receipts_archive$"),     
+    admin_conv = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(admin_add_plan, pattern="^admin_add_plan$"),
+            CallbackQueryHandler(admin_broadcast_start, pattern="^admin_broadcast$"),
+            CallbackQueryHandler(admin_dm_start, pattern="^admin_dm$"),
+            CallbackQueryHandler(admin_del_channel_prompt, pattern="^del_ch$"),
+            CallbackQueryHandler(admin_set_test_start, pattern="^admin_set_test$"),
+            CallbackQueryHandler(admin_server_stats, pattern="^admin_server_stats$"),
+            CallbackQueryHandler(show_pending_receipts, pattern="^receipts_pending.*"),
+            CallbackQueryHandler(show_archive_receipts, pattern="^receipts_archive.*"),
+            CallbackQueryHandler(approve_receipt, pattern="^approve_receipt_"),
+            CallbackQueryHandler(reject_receipt, pattern="^reject_receipt_"),
+            CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
+            CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
+            CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
+        ],
+
+        states={
+            ADD_NAME: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_plan_name)
             ],
-            states={
-                ADD_CHANNEL_USER: [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_channel_user)
-                ],
-                ADD_CHANNEL_LINK: [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_channel_link)
-                ],                
-
-                TEST_SERVER_STATE: [
-
-                    MessageHandler(
-                        filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
-                        admin_test_server_input
-                    ),
-
-                    CallbackQueryHandler(
-                        finish_test_servers,
-                        pattern="^finish_test_servers$"
-                    ),
-
-                ],
-
-                SET_SERVER: [
-                    MessageHandler(
-                        filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
-                        admin_add_server_start
-                    ),
-                ],
-              
-            },
-            fallbacks=[
-              CallbackQueryHandler(admin_start, pattern="^back_admin$")
+            ADD_PRICE: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_plan_price)
             ],
-            allow_reentry=True
-        )
+            ADD_CHANNEL_USER: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_channel_user)
+            ],
+            ADD_CHANNEL_LINK: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_channel_link)
+            ],
+            TEST_SERVER_STATE: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_test_server_input)
+            ],
+        },
+
+        fallbacks=[
+            CallbackQueryHandler(admin_start, pattern="^back_admin$")
+        ],
+
+        allow_reentry=True,
     )
 
-import asyncio
-
-if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    app.add_handler(admin_conv)
 
     print("--- Premium UI Bot Started ---")
     app.run_polling()
