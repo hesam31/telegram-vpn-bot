@@ -2050,27 +2050,28 @@ async def admin_select_server_volume(update, context):
     return ADD_SERVER_CONFIGS
 
 async def admin_save_server(update, context):
+    user_id = update.effective_user.id
+    
+    # شرط امنیتی: اگر کاربر ادمین نبود، تابع هیچ کاری نکند و خارج شود
+    if user_id not in ADMIN_IDS:
+        return ConversationHandler.END
 
     config = update.message.text.strip()
-
     volume = context.user_data.get("server_volume")
 
+    if not volume:
+        await update.message.reply_text("ابتدا حجم را انتخاب کنید.")
+        return ConversationHandler.END
+
     db = load_db()
-
     db["settings"].setdefault("servers", [])
-
     server_id = f"srv_{random.randint(100000,999999)}"
 
     db["settings"]["servers"].append({
-
         "id": server_id,
-
         "volume": volume,
-
         "config": config
-
     })
-
     save_db(db)
 
     count = len([
@@ -2099,9 +2100,6 @@ async def finish_add_server(update, context):
     )
 
     return ConversationHandler.END            
-
-
-
 
 async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -2258,6 +2256,11 @@ if __name__ == "__main__":
         ConversationHandler(
             entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
             states={
+                ADD_SERVER_CONFIGS: [
+    # حتماً فیلتر ادمین (filters.User(ADMIN_IDS)) به انتهای این خط اضافه شود:
+    MessageHandler(filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS), admin_save_server),
+    CallbackQueryHandler(finish_add_server, pattern="^finish_add_server$")
+],
                 BUY_SELECT_PLAN: [
                 CallbackQueryHandler(buy_select_plan, pattern="^buy_VIP$")
                 ],
