@@ -2004,7 +2004,7 @@ async def admin_del_channel_save(update: Update, context: ContextTypes.DEFAULT_T
     except: await update.message.reply_text(f"{te('error')} فقط عدد وارد کنید.", reply_markup=admin_menu_kb(), parse_mode="HTML")
     return ConversationHandler.END
 
-async def admin_add_server_start(update, context):
+async def admin_add_server(update, context):
     # بررسی اینکه آیا درخواست از طریق دکمه بوده یا پیام متنی
     if update.callback_query:
         query = update.callback_query
@@ -2253,6 +2253,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(profile_servers, pattern="^profile_servers$"))
     app.add_handler(CallbackQueryHandler(support_handler, pattern="^menu_support$"))
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="^admin_receipts$"))
+    app.add_handler(CallbackQueryHandler(admin_add_server, pattern="^admin_add_server$"))
     app.add_handler(CallbackQueryHandler(admin_referral_panel, pattern="^admin_referrals$"))
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
     app.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST, channel_post_handler))
