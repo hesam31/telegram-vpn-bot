@@ -678,27 +678,32 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    # گرفتن دیتای دقیق دکمه کلیک شده
     callback_data = query.data
 
     volume_map = {
         "buy_vol_1": ("1GB", 290000),
         "buy_vol_2": ("2GB", 560000),
         "buy_vol_3": ("3GB", 840000),
-        "buy_vol_10": ("10GB", 2500000),
         "buy_vol_5": ("5گیگ بخر 7 گیگ ببر", 1350000),
+        "buy_vol_10": ("10GB", 2500000),
     }
 
-    # بررسی وجود دکمه در مپ و ذخیره سازی قطعی در دیتای کاربر
-    if callback_data in volume_map:
-        volume, price = volume_map[callback_data]
-        context.user_data["volume"] = volume
-        context.user_data["price"] = price
-        context.user_data["count"] = None
-    else:
-        # اگر دیتای نامعتبر آمد به منوی اصلی برگردد
-        await query.message.edit_text("خطایی در انتخاب حجم رخ داد. لطفا دوباره تلاش کنید.", reply_markup=back_kb())
+    # ❌ اگر دکمه اشتباه بود
+    if callback_data not in volume_map:
+        await query.message.edit_text(
+            "خطا در انتخاب حجم. لطفاً دوباره تلاش کنید.",
+            reply_markup=back_kb()
+        )
         return ConversationHandler.END
+
+    volume, price = volume_map[callback_data]
+
+    # ✅ ذخیره درست و قطعی
+    context.user_data["volume"] = volume
+    context.user_data["price"] = price
+
+    # ❌ این خط اشتباه بود و باعث گم شدن state میشد
+    # context.user_data["count"] = None
 
     await query.message.edit_text(
         f"{te('box')} حجم انتخاب شد: <b>{volume}</b>\n\n"
@@ -707,6 +712,8 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="HTML",
         reply_markup=back_kb()
     )
+
+    # 🔥 مهم: حتما state برگرده
     return BUY_GET_COUNT
 
 async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2059,10 +2066,8 @@ async def admin_save_server(update, context):
     config = update.message.text.strip()
     volume = context.user_data.get("server_volume")
 
-    if "volume" not in context.user_data:
-        await update.message.reply_text(
-            "ابتدا حجم را انتخاب کنید."
-        )
+    if not volume:
+        await update.message.reply_text("ابتدا حجم را انتخاب کنید.")
         return ConversationHandler.END
 
     db = load_db()
@@ -2253,96 +2258,100 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(finish_add_server,pattern="^finish_add_server$"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,admin_save_server))
 
-   # ---------------- BUY CONVERSATION ----------------
-buy_conv = ConversationHandler(
-    entry_points=[
-        CallbackQueryHandler(buy_start, pattern="^menu_buy$")
-    ],
-    states={
-        BUY_SELECT_PLAN: [
-            CallbackQueryHandler(buy_select_plan, pattern="^buy_VIP$")
+    # ---------------- BUY CONVERSATION ----------------
+app.add_handler(
+    ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(buy_start, pattern="^menu_buy$")
         ],
 
-        BUY_SELECT_VOLUME: [
-            CallbackQueryHandler(buy_select_volume, pattern="^buy_vol_")
+        states={
+            BUY_SELECT_PLAN: [
+                CallbackQueryHandler(buy_select_plan, pattern="^buy_VIP$")
+            ],
+
+            BUY_SELECT_VOLUME: [
+                CallbackQueryHandler(buy_select_volume, pattern="^buy_vol_")
+            ],
+
+            BUY_GET_COUNT: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, buy_get_count)
+            ],
+
+            BUY_CONFIRM_RULES: [
+                CallbackQueryHandler(buy_confirm_rules, pattern="^accept_rules$")
+            ],
+
+            GET_RECEIPT: [
+                MessageHandler(filters.PHOTO, buy_receipt)
+            ],
+        },
+
+        fallbacks=[
+            CallbackQueryHandler(cancel_callback, pattern="^cancel$"),
         ],
 
-        BUY_GET_COUNT: [
-            MessageHandler(filters.TEXT & ~filters.COMMAND, buy_get_count)
-        ],
-
-        BUY_CONFIRM_RULES: [
-            CallbackQueryHandler(buy_confirm_rules, pattern="^accept_rules$")
-        ],
-
-        GET_RECEIPT: [
-            MessageHandler(filters.PHOTO, buy_receipt)
-        ],
-    },
-    fallbacks=[
-        CallbackQueryHandler(cancel_callback, pattern="^back_")
-    ],
-    per_chat=True,
-    per_user=True
+        allow_reentry=True
+    )
 )
 
-app.add_handler(buy_conv)
+    # ---------------- ADMIN CONVERSATION ----------------
+    app.add_handler(
+        ConversationHandler(
+            entry_points=[
+                CallbackQueryHandler(admin_callback_handler, pattern="^adm_"),
+                CallbackQueryHandler(admin_add_plan, pattern="^admin_add_plan$"),
+                CallbackQueryHandler(admin_broadcast_start, pattern="^admin_broadcast$"),
+                CallbackQueryHandler(admin_dm_start, pattern="^admin_dm$"),
+                CallbackQueryHandler(admin_del_channel_prompt, pattern="^del_ch$"),
+                CallbackQueryHandler(admin_set_test_start, pattern="^admin_set_test$"),
+                CallbackQueryHandler(profile_info, pattern="profile_info"),
+                CallbackQueryHandler(admin_server_stats, pattern="admin_server_stats"),
+                CallbackQueryHandler(admin_receipts, pattern="admin_receipts"),
+                CallbackQueryHandler(approve_receipt, pattern="^approve_receipt_"),
+                CallbackQueryHandler(reject_receipt, pattern="^reject_receipt_"),
+                CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
+                CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
+                CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
+                CallbackQueryHandler(show_pending_receipts,pattern="^receipts_pending$"),
+                CallbackQueryHandler(show_archive_receipts,pattern="^receipts_archive$"),     
+            ],
+            states={
+                ADD_CHANNEL_USER: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_channel_user)
+                ],
+                ADD_CHANNEL_LINK: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_channel_link)
+                ],                
 
+                TEST_SERVER_STATE: [
 
-# ---------------- ADMIN CONVERSATION ----------------
-admin_conv = ConversationHandler(
-    entry_points=[
-        CallbackQueryHandler(admin_callback_handler, pattern="^adm_"),
-        CallbackQueryHandler(admin_add_plan, pattern="^admin_add_plan$"),
-        CallbackQueryHandler(admin_broadcast_start, pattern="^admin_broadcast$"),
-        CallbackQueryHandler(admin_dm_start, pattern="^admin_dm$"),
-        CallbackQueryHandler(admin_del_channel_prompt, pattern="^del_ch$"),
-        CallbackQueryHandler(admin_set_test_start, pattern="^admin_set_test$"),
-        CallbackQueryHandler(profile_info, pattern="profile_info"),
-        CallbackQueryHandler(admin_server_stats, pattern="admin_server_stats"),
-        CallbackQueryHandler(admin_receipts, pattern="admin_receipts"),
-        CallbackQueryHandler(approve_receipt, pattern="^approve_receipt_"),
-        CallbackQueryHandler(reject_receipt, pattern="^reject_receipt_"),
-        CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
-        CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
-        CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
-        CallbackQueryHandler(show_pending_receipts, pattern="^receipts_pending$"),
-        CallbackQueryHandler(show_archive_receipts, pattern="^receipts_archive$"),
-    ],
-    states={
-        ADD_CHANNEL_USER: [
-            MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_channel_user)
-        ],
-        ADD_CHANNEL_LINK: [
-            MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_channel_link)
-        ],
+                    MessageHandler(
+                        filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
+                        admin_test_server_input
+                    ),
 
-        TEST_SERVER_STATE: [
-            MessageHandler(
-                filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
-                admin_test_server_input
-            ),
-            CallbackQueryHandler(
-                finish_test_servers,
-                pattern="^finish_test_servers$"
-            ),
-        ],
+                    CallbackQueryHandler(
+                        finish_test_servers,
+                        pattern="^finish_test_servers$"
+                    ),
 
-        SET_SERVER: [
-            MessageHandler(
-                filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
-                admin_add_server_start
-            ),
-        ],
-    },
-    fallbacks=[
-        CallbackQueryHandler(admin_start, pattern="^back_admin$")
-    ],
-    allow_reentry=True
-)
+                ],
 
-app.add_handler(admin_conv)
-    
+                SET_SERVER: [
+                    MessageHandler(
+                        filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
+                        admin_add_server_start
+                    ),
+                ],
+              
+            },
+            fallbacks=[
+              CallbackQueryHandler(admin_start, pattern="^back_admin$")
+            ],
+            allow_reentry=True
+        )
+    )
 
 import asyncio
 
