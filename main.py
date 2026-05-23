@@ -2059,8 +2059,10 @@ async def admin_save_server(update, context):
     config = update.message.text.strip()
     volume = context.user_data.get("server_volume")
 
-    if not volume:
-        await update.message.reply_text("ابتدا حجم را انتخاب کنید.")
+    if "volume" not in context.user_data:
+        await update.message.reply_text(
+            "ابتدا حجم را انتخاب کنید."
+        )
         return ConversationHandler.END
 
     db = load_db()
@@ -2253,35 +2255,40 @@ if __name__ == "__main__":
 
     # ---------------- BUY CONVERSATION ----------------
     app.add_handler(
-        ConversationHandler(
-            entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
-            states={
-                ADD_SERVER_CONFIGS: [
-    # حتماً فیلتر ادمین (filters.User(ADMIN_IDS)) به انتهای این خط اضافه شود:
-    MessageHandler(filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS), admin_save_server),
-    CallbackQueryHandler(finish_add_server, pattern="^finish_add_server$")
-],
-                BUY_SELECT_PLAN: [
-                CallbackQueryHandler(buy_select_plan, pattern="^buy_VIP$")
-                ],
-                BUY_SELECT_VOLUME: [
-                    # این الگو باعث می‌شود تمام دکمه‌های حجم که با buy_vol_ شروع می‌شوند به تابع هدایت شوند
-                    CallbackQueryHandler(buy_select_volume, pattern="^buy_vol_")
-                ],
-                BUY_GET_COUNT: [
-                    # گرفتن تعداد که کاربر به صورت متن یا عدد ارسال میکند
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, buy_get_count)
-                ],
-                BUY_CONFIRM_RULES: [
-                    CallbackQueryHandler(buy_confirm_rules, pattern="^accept_rules$")
-                ],
-                GET_RECEIPT: [
-                    MessageHandler(filters.PHOTO, buy_receipt)
-                ],
-            },
-            fallbacks=[CallbackQueryHandler(cancel_callback, pattern="^back_")],
-            allow_reentry=True
-        )
+        buy_conv = ConversationHandler(
+    entry_points=[
+        CallbackQueryHandler(buy_start, pattern="^menu_buy$")
+    ],
+    states={
+
+        BUY_SELECT_PLAN: [
+            CallbackQueryHandler(buy_select_plan, pattern="^buy_VIP$")
+        ],
+
+        BUY_SELECT_VOLUME: [
+            CallbackQueryHandler(buy_select_volume, pattern="^buy_vol_")
+        ],
+
+        BUY_GET_COUNT: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, buy_get_count)
+        ],
+
+        BUY_CONFIRM_RULES: [
+            CallbackQueryHandler(buy_confirm_rules, pattern="^accept_rules$")
+        ],
+
+        GET_RECEIPT: [
+            MessageHandler(filters.PHOTO, buy_receipt)
+        ],
+    },
+
+    fallbacks=[
+        CallbackQueryHandler(cancel_callback, pattern="^back_")
+    ],
+
+    per_chat=True,
+    per_user=True
+)
     )
 
     # ---------------- ADMIN CONVERSATION ----------------
