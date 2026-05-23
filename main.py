@@ -686,20 +686,24 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "buy_vol_5": ("5گیگ بخر 7 گیگ ببر", 1350000),
     }
 
-    volume, price = volume_map.get(query.data, ("نامشخص", 0))
-
-    context.user_data["volume"] = volume
-    context.user_data["price"] = price
-    context.user_data["count"] = None
+    # مطمئن می‌شویم دیتای دکمه در مپ وجود دارد
+    if query.data in volume_map:
+        volume, price = volume_map[query.data]
+        context.user_data["volume"] = volume
+        context.user_data["price"] = price
+        context.user_data["count"] = None
+    else:
+        await query.message.edit_text("خطایی رخ داد. لطفا مجددا تلاش کنید.", reply_markup=back_kb())
+        return ConversationHandler.END
 
     await query.message.edit_text(
-    f"{te('box')} حجم انتخاب شد: {volume}\n\n"
-    f"{te('money')} قیمت هر عدد: {price:,} تومان\n\n"
-    f"{te('NUMBER')} تعداد اکانت مورد نظر را وارد کنید:",
-    parse_mode="HTML",
-    reply_markup=back_kb()
-)
-    return BUY_GET_COUNT    
+        f"{te('box')} حجم انتخاب شد: {volume}\n\n"
+        f"{te('money')} قیمت هر عدد: {price:,} تومان\n\n"
+        f"{te('NUMBER')} تعداد اکانت مورد نظر را وارد کنید:",
+        parse_mode="HTML",
+        reply_markup=back_kb()
+    )
+    return BUY_GET_COUNT
 
 async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -2294,7 +2298,7 @@ if __name__ == "__main__":
             entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
             states={
                 BUY_SELECT_PLAN: [
-                    CallbackQueryHandler(buy_select_plan, pattern="^buy_VIP$")
+                    CallbackQueryHandler(buy_select_plan, pattern="^buy_")
                 ],
                 BUY_SELECT_VOLUME: [
                     CallbackQueryHandler(buy_select_volume, pattern="^buy_vol_")
