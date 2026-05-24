@@ -2072,26 +2072,48 @@ async def admin_add_server_configs(update, context):
     )
 
     return ADD_SERVER_CONFIGS
+ 
+async def admin_save_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
 
+    if "server_configs" not in context.user_data:
+        context.user_data["server_configs"] = []
 
-async def save_server_configs(update, context):
+    context.user_data["server_configs"].append(text)
 
-    volume = context.user_data.get("server_volume")
+    count = len(context.user_data["server_configs"])
 
-    if not volume:
-        await update.message.reply_text("خطا در حجم")
+    keyboard = [
+        [InlineKeyboardButton("اتمام فرایند", callback_data="finish_add_server")]
+    ]
+
+    await update.message.reply_text(
+        f"✅ سرور ذخیره شد\n"
+        f"تعداد سرور های ثبت شده: {count}\n\n"
+        f"سرور بعدی را ارسال کنید یا اتمام فرایند را بزنید.",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+    return ADD_SERVER_CONFIGS
+
+async def finish_add_server(update, context):
+
+    query = update.callback_query
+    await query.answer()
+
+    configs = context.user_data.get("server_configs", [])
+
+    if not configs:
+        await query.message.reply_text("❌ هیچ سروری ثبت نشده")
         return ConversationHandler.END
-
-    configs = update.message.text.splitlines()
 
     db = load_db()
 
+    db["settings"].setdefault("servers", [])
+
+    volume = context.user_data.get("server_volume")
+
     for cfg in configs:
-
-        cfg = cfg.strip()
-
-        if not cfg:
-            continue
 
         db["settings"]["servers"].append({
 
@@ -2105,64 +2127,16 @@ async def save_server_configs(update, context):
 
     save_db(db)
 
-    await update.message.reply_text(
-        "✅ سرورها ذخیره شدند.",
-        reply_markup=admin_menu_kb()
+    count = len(configs)
+
+    context.user_data["server_configs"] = []
+
+    await query.message.reply_text(
+        f"✅ فرایند افزودن کامل شد\n"
+        f"{count} سرور ذخیره شد."
     )
 
-    return ConversationHandler.END    
-
-async def admin_save_server(update, context):
-    user_id = update.effective_user.id
-    
-    # شرط امنیتی: اگر کاربر ادمین نبود، تابع هیچ کاری نکند و خارج شود
-    if user_id not in ADMIN_IDS:
-        return ConversationHandler.END
-
-    config = update.message.text.strip()
-    volume = context.user_data.get("server_volume")
-
-    if not volume:
-        await update.message.reply_text("ابتدا حجم را انتخاب کنید.")
-        return ConversationHandler.END
-
-    db = load_db()
-    db["settings"].setdefault("servers", [])
-    server_id = f"srv_{random.randint(100000,999999)}"
-
-    db["settings"]["servers"].append({
-        "id": server_id,
-        "volume": volume,
-        "config": config
-    })
-    save_db(db)
-
-    count = len([
-        s for s in db["settings"]["servers"]
-        if s["volume"] == volume
-    ])
-
-    await update.message.reply_text(
-        f"✅ سرور ذخیره شد\n\n"
-        f"📦 حجم: {volume}GB\n"
-        f"📊 موجودی این مخزن: {count}"
-    )
-
-    return ADD_SERVER_CONFIGS
-
-async def finish_add_server(update, context):
-
-    query = update.callback_query
-    await query.answer()
-
-    context.user_data.pop("server_volume", None)
-
-    await query.message.edit_text(
-        "✅ افزودن سرورها پایان یافت.",
-        reply_markup=admin_menu_kb()
-    )
-
-    return ConversationHandler.END            
+    return ConversationHandler.END
 
 async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -2367,27 +2341,58 @@ if __name__ == "__main__":
             CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
             CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
             CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
-            
+            CallbackQueryHandler(admin_add_server_configs, pattern="^addsrv_"),
         ],
 
         states={
+
+            ADD_SERVER_CONFIGS: [
+
+                MessageHandler(
+                    filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
+                    admin_save_server
+                ),
+
+                CallbackQueryHandler(
+                    finish_add_server,
+                    pattern="^finish_add_server$"
+                )
+
+            ],
+
             ADD_NAME: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_plan_name)
+                MessageHandler(
+                    filters.TEXT & ~filters.COMMAND,
+                    admin_save_plan_name
+                )
             ],
+
             ADD_PRICE: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_plan_price)
+                MessageHandler(
+                    filters.TEXT & ~filters.COMMAND,
+                    admin_save_plan_price
+                )
             ],
+
             ADD_CHANNEL_USER: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_channel_user)
+                MessageHandler(
+                    filters.TEXT & ~filters.COMMAND,
+                    admin_save_channel_user
+                )
             ],
+
             ADD_CHANNEL_LINK: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_channel_link)
+                MessageHandler(
+                    filters.TEXT & ~filters.COMMAND,
+                    admin_save_channel_link
+                )
             ],
+
             TEST_SERVER_STATE: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_test_server_input)
-            ],
-            ADD_SERVER_CONFIGS: [ 
-                MessageHandler(filters.TEXT & ~filters.COMMAND,save_server_configs)
+                MessageHandler(
+                    filters.TEXT & ~filters.COMMAND,
+                    admin_test_server_input
+                )
             ],
 
         },
