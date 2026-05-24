@@ -1754,18 +1754,14 @@ async def save_server_configs(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     db["settings"]["servers"].setdefault(volume, [])
 
-    added = 0
-
-    # FIX: count correctly
+    adadded = 0
 
     for config in configs:
-
         config = config.strip()
 
-        if config not in db["settings"]["servers"][volume]:
-
+        if config and config not in db["settings"]["servers"][volume]:
             db["settings"]["servers"][volume].append(config)
-        added += 1
+            added += 1
 
     save_db(db)
 
@@ -1779,13 +1775,16 @@ async def save_server_configs(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def add_server_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     query = update.callback_query
-    await query.answer()
-
+    await query.message.edit_text(
+        f"سرورهای {volume} گیگ را ارسال کنید.\n\nهر سرور در یک خط.",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("✅ اتمام فرایند", callback_data="finish_add_servers")],
+            [InlineKeyboardButton("❌ لغو", callback_data="back_admin")]
+        ])
+    )
     volume = query.data.replace("addsrv_", "")
-    InlineKeyboardMarkup([
-    [InlineKeyboardButton("✅ اتمام فرایند", callback_data="finish_add_servers")],
-    [InlineKeyboardButton("❌ لغو", callback_data="back_admin")]
-])
+
+   
 
     context.user_data["server_volume"] = volume
 
@@ -1802,6 +1801,8 @@ async def finish_add_servers(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     context.user_data["server_upload_mode"] = False
     context.user_data["server_volume"] = None
+    context.user_data.pop("server_volume", None)
+
 
     await query.message.edit_text(
         "✅ عملیات افزودن سرورها پایان یافت.",
@@ -2110,7 +2111,7 @@ if __name__ == "__main__":
     #app.add_handler(CallbackQueryHandler(add_server_handler, pattern="^addsrv_"))
     #app.add_handler(CallbackQueryHandler(finish_server_handler, pattern="^finish_server_"))
     app.add_handler(CallbackQueryHandler(admin_add_server,pattern="^admin_add_server$"))
-    # removed duplicate handler (handled by ConversationHandler)
+    app.add_handler(CallbackQueryHandler(add_server_volume,pattern="^addsrv_"))
 
     # ---------------- BUY CONVERSATION ----------------
     buy_conv = ConversationHandler(
@@ -2144,6 +2145,7 @@ if __name__ == "__main__":
     app.add_handler(buy_conv)
     add_server_conv = ConversationHandler(
     entry_points=[
+        
         CallbackQueryHandler(
             admin_add_server,
             pattern="^admin_add_server$"
