@@ -2036,7 +2036,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(approve_receipt, pattern="approve_receipt_"))
     app.add_handler(CallbackQueryHandler(reject_receipt, pattern="reject_receipt_"))
     app.add_handler(CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"))
-    app.add_handler(CallbackQueryHandler(add_server_handler, pattern="^add_server_"))
+    app.add_handler(CallbackQueryHandler(add_server_handler, pattern="^addsrv_"))
     app.add_handler(CallbackQueryHandler(finish_server_handler, pattern="^finish_server_"))
 
     # ---------------- BUY CONVERSATION ----------------
