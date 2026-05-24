@@ -191,11 +191,11 @@ def load_db():
                 "channels": [],
                 "test_servers": [],
                 "servers": [
-                    {"id": "srv1", "volume": 1, "config": "vless://server1"},
-                    {"id": "srv2", "volume": 2, "config": "vless://server2"},
-                    {"id": "srv3", "volume": 3, "config": "vless://server3"},
-                    {"id": "srv4", "volume": 5, "config": "vless://server5"},
-                    {"id": "srv5", "volume": 10,"config": "vless://server10"}
+                        "1": [],
+                        "2": [],
+                        "3": [],
+                        "5": [],
+                        "10": []
                 ],
                 "server_session": {}
             },
@@ -213,7 +213,13 @@ def load_db():
             db.setdefault("receipts", [])
             db.setdefault("settings", {"channels": [], "test_server": ""})
             db["settings"].setdefault("test_servers", [])
-            db["settings"].setdefault("servers", [])
+            db["settings"].setdefault("servers", [
+                    "1": [],
+                    "2": [],
+                    "3": [],
+                    "5": [],
+    ض               "10": []
+            ])
             if "gift_volume" in db["settings"]: del db["settings"]["gift_volume"]
             db.setdefault("plans", [])
             db.setdefault("users", {})
@@ -231,23 +237,24 @@ def allocate_servers(volume, count):
 
     db = load_db()
 
-    servers = db["settings"].get("servers", [])
+    buckets = db["settings"].get("server", {})
 
-    matched = [
-        s for s in servers
-        if normalize_volume(s["volume"]) == normalize_volume(volume)
-    ]
+    volume_key = str(volume)
 
-    if len(matched) < count:
+    if volume_key not in buckets:
         return None
 
-    allocated = matched[:count]
+    bucket = buckets[volume_key]
 
-    # حذف از مخزن
-    for srv in allocated:
-        servers.remove(srv)
+    if len(bucket) < count:
+        return None
 
-    db["settings"]["servers"] = servers
+    allocated = bucket[:count]
+
+    buckets[volume_key] = bucket[count:]
+
+    db["settings"]["server"] = buckets
+
     save_db(db)
 
     return allocated
@@ -908,7 +915,7 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [
             InlineKeyboardButton(
                 "تایید و ارسال سرور",
-                callback_data=f"adm_approve_{uid}_new",
+                callback_data=f"approve_receipt_{len(db['receipts']) - 1}",
                 style="success",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["success_btn"]
             )
@@ -916,7 +923,7 @@ async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [
             InlineKeyboardButton(
                 "رد سفارش",
-                callback_data=f"adm_reject_{uid}",
+                callback_data=f"reject_receipt_{len(db['receipts']) - 1}",
                 style="danger",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["del_item"]
             )
@@ -1619,234 +1626,34 @@ async def admin_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 async def admin_server_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     query = update.callback_query
     await query.answer()
 
     db = load_db()
 
-    remaining = len(db["settings"].get("servers", []))
+    buckets = db["settings"].get("server", {})
 
-    sent = 0
-    for uid, user in db["users"].items():
-        services = user.get("services", [])
-        for s in services:
-            if isinstance(s, dict):
-                sent += 1
+    text = "📊 آمار مخازن سرورها\n\n"
 
-    text = f"""
-📊 آمار سرورها
+    total = 0
 
-🟢 ارسال شده: {sent}
+    for volume, items in buckets.items():
 
-📦 باقی مانده در لیست: {remaining}
+        count = len(items)
 
-📊 مجموع کل:
-{sent + remaining}
-"""
+        total += count
+
+        text += f"📦 {volume}GB : {count} سرور\n"
+
+    text += f"\n🔥 مجموع کل: {total}"
 
     await query.message.edit_text(
         text,
         reply_markup=back_kb("admin")
-    )    
+    )
 
-async def admin_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    if update.effective_user.id not in ADMIN_IDS:
-        return
-
-    query = update.callback_query
-    await query.answer()
-
-    db = load_db()
-
-    data = query.data.split("_")
-
-    if len(data) < 3:
-        await context.bot.send_message(
-            query.from_user.id,
-            "داده callback نامعتبر است"
-        )
-        return
-
-    action = data[1]
-    uid = data[2]
-
-    if uid not in db["users"]:
-        await context.bot.send_message(
-            query.from_user.id,
-            "کاربر یافت نشد"
-        )
-        return
-
-    # ---------------- REJECT ----------------
-
-    if action == "reject":
-
-        db["users"][uid]["pending_order"] = None
-        save_db(db)
-
-        await context.bot.send_message(
-            chat_id=uid,
-            text=f"{te('error')} سفارش شما رد شد.",
-            parse_mode="HTML"
-        )
-
-        try:
-            await query.edit_message_caption(
-                caption=(query.message.caption or "") + f"\n\n{te('error')} رد شد.",
-                parse_mode="HTML"
-            )
-        except:
-            pass
-
-        return
-
-    # ---------------- APPROVE ----------------
-
-    if action == "approve":
-
-        pending = db["users"][uid].get("pending_order")
-
-        if not pending:
-            await context.bot.send_message(
-                uid,
-                "سفارش پیدا نشد"
-            )
-            return
-
-        # ---------------- VOLUME MAP ----------------
-
-        volume_map = {
-            "1GB": 1,
-            "2GB": 2,
-            "3GB": 3,
-            "5گیگ بخر 7 گیگ ببر": 5,
-            "10GB": 10
-        }
-
-        raw_volume = volume_map.get(
-            pending.get("volume")
-        )
-
-        if raw_volume is None:
-
-            await context.bot.send_message(
-                uid,
-                "حجم نامعتبر است"
-            )
-
-            return
-
-        volume = normalize_volume(raw_volume)
-
-        count = int(
-            pending.get("count", 1)
-        )
-
-        # ---------------- ALLOCATE ----------------
-
-        allocated = allocate_servers(
-            db,
-            volume,
-            count
-        )
-
-        if not allocated:
-
-            await context.bot.send_message(
-                uid,
-                "سرور کافی نیست"
-            )
-
-            return
-
-        if len(allocated) < count:
-
-            await context.bot.send_message(
-                uid,
-                "تعداد سرور کافی نیست"
-            )
-
-            return
-
-        # ---------------- ADD SERVICES ----------------
-
-        now = datetime.now().timestamp()
-
-        user_services = db["users"][uid].setdefault(
-            "services",
-            []
-        )
-
-        for srv in allocated:
-
-            user_services.append({
-
-                "sub_id": srv["id"],
-
-                "volume": srv["volume"],
-
-                "name": pending.get("plan"),
-
-                "config": srv.get("config", ""),
-
-                "start_ts": now,
-
-                "expiry_ts": now + 30 * 86400
-
-            })
-
-        # ---------------- CLEAR ORDER ----------------
-
-        db["users"][uid]["pending_order"] = None
-
-        save_db(db)
-
-        # ---------------- SEND CONFIGS ----------------
-
-        text = (
-            f"{te('success')} "
-            f"<b>پرداخت تایید شد و سرویس شما فعال شد</b>\n\n"
-        )
-
-        for srv in allocated:
-
-            config = srv.get("config")
-
-            if not config:
-                continue
-
-            text += (
-                f"📦 حجم: {srv['volume']}GB\n"
-                f"<code>{config}</code>\n\n"
-            )
-
-        if text.strip() == f"{te('success')} <b>پرداخت تایید شد و سرویس شما فعال شد</b>":
-
-            text += "⚠️ کانفیگی برای ارسال پیدا نشد."
-
-        await context.bot.send_message(
-            chat_id=uid,
-            text=text,
-            parse_mode="HTML"
-        )
-
-        # ---------------- EDIT ADMIN MESSAGE ----------------
-
-        try:
-
-            await query.edit_message_caption(
-                caption=(
-                    (query.message.caption or "")
-                    + "\n\n✅ ارسال شد"
-                ),
-                parse_mode="HTML"
-            )
-
-        except:
-            pass
-
-        return
 
 async def admin_add_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -2275,7 +2082,6 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_referral_panel, pattern="^admin_referrals$"))
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
     app.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST, channel_post_handler))
-    app.add_handler(CallbackQueryHandler(admin_callback_handler, pattern="^adm_"))
     app.add_handler(CallbackQueryHandler(admin_add_server_configs,pattern="^addsrv_"))
     app.add_handler(CallbackQueryHandler(approve_receipt, pattern="approve_receipt_"))
     app.add_handler(CallbackQueryHandler(reject_receipt, pattern="reject_receipt_"))
