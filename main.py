@@ -213,13 +213,14 @@ def load_db():
             db.setdefault("receipts", [])
             db.setdefault("settings", {"channels": [], "test_server": ""})
             db["settings"].setdefault("test_servers", [])
-            db["settings"].setdefault("servers", [
+            db["settings"].setdefault("servers",{
                     "1": [],
                     "2": [],
                     "3": [],
                     "5": [],
-    ض               "10": []
-            ])
+                   "10": []
+            
+            })
             if "gift_volume" in db["settings"]: del db["settings"]["gift_volume"]
             db.setdefault("plans", [])
             db.setdefault("users", {})
