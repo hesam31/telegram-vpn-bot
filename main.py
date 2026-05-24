@@ -2056,6 +2056,62 @@ async def admin_select_server_volume(update, context):
 
     return ADD_SERVER_CONFIGS
 
+async def admin_add_server_configs(update, context):
+
+    query = update.callback_query
+    await query.answer()
+
+    volume = int(query.data.split("_")[1])
+
+    context.user_data["server_volume"] = volume
+
+    await query.message.edit_text(
+        f"کانفیگ های {volume}GB را ارسال کنید.\n\n"
+        f"هر کانفیگ را در یک خط جدا بفرست.",
+        reply_markup=back_kb("admin")
+    )
+
+    return ADD_SERVER_CONFIGS
+
+
+async def save_server_configs(update, context):
+
+    volume = context.user_data.get("server_volume")
+
+    if not volume:
+        await update.message.reply_text("خطا در حجم")
+        return ConversationHandler.END
+
+    configs = update.message.text.splitlines()
+
+    db = load_db()
+
+    for cfg in configs:
+
+        cfg = cfg.strip()
+
+        if not cfg:
+            continue
+
+        db["settings"]["servers"].append({
+
+            "id": f"srv_{random.randint(100000,999999)}",
+
+            "volume": volume,
+
+            "config": cfg
+
+        })
+
+    save_db(db)
+
+    await update.message.reply_text(
+        "✅ سرورها ذخیره شدند.",
+        reply_markup=admin_menu_kb()
+    )
+
+    return ConversationHandler.END    
+
 async def admin_save_server(update, context):
     user_id = update.effective_user.id
     
@@ -2333,6 +2389,7 @@ if __name__ == "__main__":
             ADD_SERVER_CONFIGS: [ 
                 MessageHandler(filters.TEXT & ~filters.COMMAND,save_server_configs)
             ],
+
         },
 
         fallbacks=[
