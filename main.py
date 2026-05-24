@@ -1155,69 +1155,157 @@ async def view_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     query = update.callback_query
     await query.answer()
 
-    index = int(query.data.replace("approve_receipt_", ""))
+    index = int(
+        query.data.replace(
+            "approve_receipt_",
+            ""
+        )
+    )
 
     db = load_db()
 
+    # بررسی معتبر بودن رسید
     if index >= len(db["receipts"]):
-        await query.message.reply_text("❌ رسید پیدا نشد")
+
+        await query.message.reply_text(
+            "❌ رسید پیدا نشد"
+        )
+
         return
 
     receipt = db["receipts"][index]
 
+    # جلوگیری از تایید دوباره
     if receipt.get("status") != "pending":
-        await query.answer("این رسید قبلاً بررسی شده", show_alert=True)
+
+        await query.answer(
+            "این رسید قبلاً بررسی شده",
+            show_alert=True
+        )
+
         return
 
     uid = str(receipt["user_id"])
 
+    # بررسی وجود کاربر
     if uid not in db["users"]:
-        await query.message.reply_text("❌ کاربر پیدا نشد")
+
+        await query.message.reply_text(
+            "❌ کاربر پیدا نشد"
+        )
+
         return
 
-    pending = db["users"][uid].get("pending_order")
+    pending = db["users"][uid].get(
+        "pending_order"
+    )
 
+    # بررسی سفارش
     if not pending:
-        await query.message.reply_text("❌ سفارش پیدا نشد")
+
+        await query.message.reply_text(
+            "❌ سفارش پیدا نشد"
+        )
+
         return
 
-    # ذخیره session برای ارسال سرور توسط ادمین
-    volume_map = {
-        "1GB": 1,
-        "2GB": 2,
-        "3GB": 3,
-        "5گیگ بخر 7 گیگ ببر": 5,
-        "10GB": 10
-    }
-
-    volume = volume_map.get(pending.get("volume"))
+    # حجم سفارش
+    volume = normalize_volume(
+        pending.get("volume")
+    )
 
     if not volume:
-        await query.message.reply_text("❌ حجم نامعتبر")
+
+        await query.message.reply_text(
+            "❌ حجم نامعتبر"
+        )
+
         return
 
-    db["settings"]["server_session"] = {
-        "uid": uid,
-        "volume": volume,
-        "count": int(pending.get("count", 1)),
-        "receipt_index": index,
-        "servers": []
-    }
+    # تعداد سفارش
+    count = int(
+        pending.get("count", 1)
+    )
 
+    # گرفتن سرورها از مخزن
+    servers = allocate_servers(
+        volume,
+        count
+    )
+
+    # اگر موجودی کافی نبود
+    if not servers:
+
+        await query.message.reply_text(
+            f"❌ موجودی سرور {volume}GB کافی نیست"
+        )
+
+        return
+
+    # متن ارسال به کاربر
+    text = (
+        "✅ پرداخت شما تایید شد\n\n"
+        "🔥 سرورهای شما:\n\n"
+    )
+
+    for server in servers:
+
+        text += (
+            f"<code>{server}</code>\n\n"
+        )
+
+    # ذخیره داخل سرویس های کاربر
+    db["users"][uid].setdefault(
+        "services",
+        []
+    )
+
+    for server in servers:
+
+        db["users"][uid]["services"].append({
+
+            "sub_id": server,
+
+            "name": f"{volume}GB VIP",
+
+            "date": str(datetime.now())
+
+        })
+
+    # تغییر وضعیت رسید
+    receipt["status"] = "approved"
+
+    # حذف سفارش pending
+    db["users"][uid]["pending_order"] = None
+
+    # ذخیره دیتابیس
     save_db(db)
 
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("➕ افزودن سرور", callback_data=f"add_server_{uid}")],
-        [InlineKeyboardButton("✅ اتمام فرایند", callback_data=f"finish_server_{uid}")]
-    ])
-
-    await query.message.reply_text(
-        "🟡 حالا سرورها را برای کاربر ارسال کن:",
-        reply_markup=keyboard
+    # ارسال سرورها برای کاربر
+    await context.bot.send_message(
+        chat_id=int(uid),
+        text=text,
+        parse_mode="HTML"
     )
+
+    # پیام برای ادمین
+    await query.message.reply_text(
+        "✅ سرورها با موفقیت ارسال شدند"
+    )
+
+    # ادیت پیام رسید
+    try:
+
+        await query.message.edit_caption(
+            "✅ تایید شد و سرورها ارسال شدند"
+        )
+
+    except:
+        pass
 async def reject_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -1621,6 +1709,87 @@ async def admin_server_stats(update: Update, context: ContextTypes.DEFAULT_TYPE)
         text,
         reply_markup=back_kb("admin")
     )
+async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    query = update.callback_query
+    await query.answer()
+
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("1GB", callback_data="addsrv_1"),
+            InlineKeyboardButton("2GB", callback_data="addsrv_2"),
+        ],
+        [
+            InlineKeyboardButton("3GB", callback_data="addsrv_3"),
+            InlineKeyboardButton("5GB", callback_data="addsrv_5"),
+        ],
+        [
+            InlineKeyboardButton("10GB", callback_data="addsrv_10"),
+        ],
+        [
+            InlineKeyboardButton("بازگشت", callback_data="back_admin")
+        ]
+    ])
+
+    await query.message.edit_text(
+        "حجم مورد نظر را انتخاب کنید:",
+        reply_markup=keyboard
+    )
+
+    return ADD_SERVER_VOLUME
+
+async def save_server_configs(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    volume = context.user_data.get("server_volume")
+
+    if not volume:
+        await update.message.reply_text("خطا در تشخیص حجم")
+        return ConversationHandler.END
+
+    configs = update.message.text.splitlines()
+
+    db = load_db()
+
+    db["settings"].setdefault("servers", {})
+
+    db["settings"]["servers"].setdefault(volume, [])
+
+    added = 0
+
+    for config in configs:
+
+        config = config.strip()
+
+        if config:
+
+            db["settings"]["servers"][volume].append(config)
+
+            added += 1
+
+    save_db(db)
+
+    await update.message.reply_text(
+        f"✅ تعداد {added} سرور به مخزن {volume}GB اضافه شد.",
+        reply_markup=admin_menu_kb()
+    )
+
+    return ConversationHandler.END    
+
+async def add_server_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    query = update.callback_query
+    await query.answer()
+
+    volume = query.data.replace("addsrv_", "")
+
+    context.user_data["server_volume"] = volume
+
+    await query.message.edit_text(
+        f"سرورهای {volume} گیگ را ارسال کنید.\n\n"
+        f"هر سرور در یک خط."
+    )
+
+    return ADD_SERVER_CONFIGS        
 
 
 
@@ -2038,6 +2207,8 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_add_server_start, pattern="^admin_add_server$"))
     #app.add_handler(CallbackQueryHandler(add_server_handler, pattern="^addsrv_"))
     #app.add_handler(CallbackQueryHandler(finish_server_handler, pattern="^finish_server_"))
+    app.add_handler(CallbackQueryHandler(admin_add_server,pattern="^admin_add_server$"))
+    app.add_handler(CallbackQueryHandler(add_server_volume,pattern="^addsrv_"))
 
     # ---------------- BUY CONVERSATION ----------------
     buy_conv = ConversationHandler(
@@ -2069,6 +2240,33 @@ if __name__ == "__main__":
     )
 
     app.add_handler(buy_conv)
+    add_server_conv = ConversationHandler(
+    entry_points=[
+        CallbackQueryHandler(
+            admin_add_server,
+            pattern="^admin_add_server$"
+        )
+    ],
+
+    states={
+
+        ADD_SERVER_VOLUME: [
+            CallbackQueryHandler(
+                add_server_volume,
+                pattern="^addsrv_"
+            )
+        ],
+
+        ADD_SERVER_CONFIGS: [
+            MessageHandler(
+                filters.TEXT & ~filters.COMMAND,
+                save_server_configs
+            )
+        ],
+    },
+
+    fallbacks=[]
+)
 
     # ---------------- ADMIN CONVERSATION ----------------
     admin_conv = ConversationHandler(
@@ -2139,6 +2337,7 @@ if __name__ == "__main__":
     )
 
     app.add_handler(admin_conv)
+    app.add_handler(add_server_conv)
 
     print("--- Premium UI Bot Started ---")
     app.run_polling()
