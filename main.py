@@ -1162,32 +1162,29 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     db = load_db()
 
-    # بررسی رسید
     if index >= len(db["receipts"]):
         await query.message.reply_text("❌ رسید پیدا نشد")
         return
 
     receipt = db["receipts"][index]
 
-    # جلوگیری از دوباره‌کاری
     if receipt.get("status") != "pending":
         await query.answer("این رسید قبلاً بررسی شده", show_alert=True)
         return
 
     uid = str(receipt["user_id"])
-    user = db["users"].get(uid)
 
-    if not user:
+    if uid not in db["users"]:
         await query.message.reply_text("❌ کاربر پیدا نشد")
         return
 
-    pending = user.get("pending_order")
+    pending = db["users"][uid].get("pending_order")
 
     if not pending:
-        await query.message.reply_text("❌ سفارش فعال پیدا نشد")
+        await query.message.reply_text("❌ سفارش پیدا نشد")
         return
 
-    # ---------------- حجم ----------------
+    # ذخیره session برای ارسال سرور توسط ادمین
     volume_map = {
         "1GB": 1,
         "2GB": 2,
@@ -1199,57 +1196,28 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     volume = volume_map.get(pending.get("volume"))
 
     if not volume:
-        await query.message.reply_text("❌ حجم نامعتبر است")
+        await query.message.reply_text("❌ حجم نامعتبر")
         return
 
-    count = int(pending.get("count", 1))
-
-    # ---------------- گرفتن سرور ----------------
-    allocated = allocate_servers(volume, count)
-
-    if not allocated:
-        await query.message.reply_text("❌ موجودی سرور کافی نیست")
-        return
-
-    # ---------------- ذخیره سرویس ----------------
-    now = datetime.now().timestamp()
-
-    for srv in allocated:
-        user.setdefault("services", []).append({
-            "sub_id": srv["id"],
-            "volume": srv["volume"],
-            "config": srv["config"],
-            "name": pending.get("plan", "VIP"),
-            "start_ts": now,
-            "expiry_ts": now + 30 * 86400
-        })
-
-    # ---------------- پاکسازی سفارش ----------------
-    user["pending_order"] = None
-    receipt["status"] = "approved"
+    db["settings"]["server_session"] = {
+        "uid": uid,
+        "volume": volume,
+        "count": int(pending.get("count", 1)),
+        "receipt_index": index,
+        "servers": []
+    }
 
     save_db(db)
 
-    # ---------------- ارسال به کاربر ----------------
-    text = "✅ سرویس شما فعال شد\n\n"
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("➕ افزودن سرور", callback_data=f"add_server_{uid}")],
+        [InlineKeyboardButton("✅ اتمام فرایند", callback_data=f"finish_server_{uid}")]
+    ])
 
-    for srv in allocated:
-        text += (
-            f"حجم: {srv['volume']}GB\n"
-            f"<code>{srv['config']}</code>\n\n"
-        )
-
-    await context.bot.send_message(
-        chat_id=uid,
-        text=text,
-        parse_mode="HTML"
+    await query.message.reply_text(
+        "🟡 حالا سرورها را برای کاربر ارسال کن:",
+        reply_markup=keyboard
     )
-
-    # ---------------- آپدیت پیام ادمین ----------------
-    try:
-        await query.message.edit_caption("✅ تایید شد و ارسال انجام شد")
-    except:
-        pass
 async def reject_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
