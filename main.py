@@ -190,13 +190,13 @@ def load_db():
             "settings": {
                 "channels": [],
                 "test_servers": [],
-                "servers": [
+                "servers": {
                         "1": [],
                         "2": [],
                         "3": [],
                         "5": [],
                         "10": []
-                ],
+                },
                 "server_session": {}
             },
             "users": {},
