@@ -596,7 +596,7 @@ async def test_server_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
         return
     test_servers = db["settings"].get("test_servers", [])
     if not test_servers:
-        await query.message.edit_text(f"{te('warning')} <b>سرور تست در حال حاضر در دسترس نیست.</b>\n\nلطفاً بعداً مراجعه کنید یا با پشتیبانی تماس بگیرید.", parse_mode="HTML", reply_markup=back_kb())
+        await query.message.edit_text(f"{te('warning')} <b>سرور تست در حال حاضر در دسترس نیست.</b>\n\nلطفاً بعداً مراجعه کنید یا با پشتیبانی ارتباط بگیرید.", parse_mode="HTML", reply_markup=back_kb())
         return
 
     config = test_servers.pop(0) 
@@ -1754,13 +1754,16 @@ async def save_server_configs(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     db["settings"]["servers"].setdefault(volume, [])
 
-    adadded = 0
+    added = 0
 
     for config in configs:
+
         config = config.strip()
 
         if config and config not in db["settings"]["servers"][volume]:
+
             db["settings"]["servers"][volume].append(config)
+
             added += 1
 
     save_db(db)
@@ -1770,7 +1773,7 @@ async def save_server_configs(update: Update, context: ContextTypes.DEFAULT_TYPE
         reply_markup=admin_menu_kb()
     )
 
-    return ConversationHandler.END    
+    return ConversationHandler.END
 
 async def add_server_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -2232,15 +2235,8 @@ if __name__ == "__main__":
 
             ADD_SERVER_CONFIGS: [
 
-                MessageHandler(
-                    filters.TEXT & ~filters.COMMAND,
-                    save_server_configs
-                ),
-
-                CallbackQueryHandler(
-                    finish_add_servers,
-                    pattern="^finish_add_servers$"
-                )
+                MessageHandler(filters.TEXT & ~filters.COMMAND, save_server_configs)
+                CallbackQueryHandler(finish_add_servers,pattern="^finish_add_servers$")
 
             ],
 
