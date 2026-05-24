@@ -1746,20 +1746,11 @@ async def save_server_configs(update: Update, context: ContextTypes.DEFAULT_TYPE
         await update.message.reply_text("❌ حجم انتخاب نشده")
         return ConversationHandler.END
 
-    raw_configs = update.message.text.splitlines()
+    # کل پیام = یک سرور
+    config = update.message.text.strip()
 
-    # پاکسازی کامل
-    configs = []
-
-    for c in raw_configs:
-
-        c = c.strip()
-
-        if c:
-            configs.append(c)
-
-    if not configs:
-        await update.message.reply_text("❌ کانفیگ معتبری ارسال نشد")
+    if not config:
+        await update.message.reply_text("❌ کانفیگ خالیه")
         return ADD_SERVER_CONFIGS
 
     db = load_db()
@@ -1769,16 +1760,14 @@ async def save_server_configs(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     added = 0
 
-    for config in configs:
+    # جلوگیری از تکراری
+    if config not in db["settings"]["servers"][volume]:
 
-        # جلوگیری از ذخیره تکراری
-        if config not in db["settings"]["servers"][volume]:
+        db["settings"]["servers"][volume].append(config)
 
-            db["settings"]["servers"][volume].append(config)
+        added = 1
 
-            added += 1
-
-    save_db(db)
+        save_db(db)
 
     await update.message.reply_text(
         f"✅ تعداد {added} سرور به مخزن {volume}GB اضافه شد.",
