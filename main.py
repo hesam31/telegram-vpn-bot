@@ -1775,28 +1775,34 @@ async def save_server_configs(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def add_server_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     query = update.callback_query
-    keyboard = InlineKeyboardMarkup([
-    [InlineKeyboardButton("✅ اتمام فرایند", callback_data="finish_add_servers")],
-    [InlineKeyboardButton("❌ لغو", callback_data="back_admin")]
-])
+    await query.answer()
 
-await query.message.edit_text(
-    f"سرورهای {volume} گیگ را ارسال کنید.\n\n"
-    f"هر سرور در یک خط.",
-    reply_markup=keyboard
-)
     volume = query.data.replace("addsrv_", "")
-
-   
 
     context.user_data["server_volume"] = volume
 
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "✅ اتمام فرایند",
+                callback_data="finish_add_servers"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "❌ بازگشت",
+                callback_data="back_admin"
+            )
+        ]
+    ])
+
     await query.message.edit_text(
-        f"سرورهای {volume} گیگ را ارسال کنید.\n\n"
-        f"هر سرور در یک خط."
+        f"📦 سرورهای {volume}GB را ارسال کنید.\n\n"
+        f"هر کانفیگ را در یک خط جداگانه بفرست.",
+        reply_markup=keyboard
     )
 
-    return ADD_SERVER_CONFIGS        
+    return ADD_SERVER_CONFIGS    
 
 async def finish_add_servers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
