@@ -1756,6 +1756,8 @@ async def save_server_configs(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     added = 0
 
+    # FIX: count correctly
+
     for config in configs:
 
         config = config.strip()
@@ -1763,6 +1765,7 @@ async def save_server_configs(update: Update, context: ContextTypes.DEFAULT_TYPE
         if config not in db["settings"]["servers"][volume]:
 
             db["settings"]["servers"][volume].append(config)
+        added += 1
 
     save_db(db)
 
@@ -2107,7 +2110,7 @@ if __name__ == "__main__":
     #app.add_handler(CallbackQueryHandler(add_server_handler, pattern="^addsrv_"))
     #app.add_handler(CallbackQueryHandler(finish_server_handler, pattern="^finish_server_"))
     app.add_handler(CallbackQueryHandler(admin_add_server,pattern="^admin_add_server$"))
-    app.add_handler(CallbackQueryHandler(add_server_volume,pattern="^addsrv_"))
+    # removed duplicate handler (handled by ConversationHandler)
 
     # ---------------- BUY CONVERSATION ----------------
     buy_conv = ConversationHandler(
