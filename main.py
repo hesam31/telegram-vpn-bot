@@ -1775,13 +1775,16 @@ async def save_server_configs(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def add_server_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     query = update.callback_query
-    await query.message.edit_text(
-        f"سرورهای {volume} گیگ را ارسال کنید.\n\nهر سرور در یک خط.",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("✅ اتمام فرایند", callback_data="finish_add_servers")],
-            [InlineKeyboardButton("❌ لغو", callback_data="back_admin")]
-        ])
-    )
+    keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("✅ اتمام فرایند", callback_data="finish_add_servers")],
+    [InlineKeyboardButton("❌ لغو", callback_data="back_admin")]
+])
+
+await query.message.edit_text(
+    f"سرورهای {volume} گیگ را ارسال کنید.\n\n"
+    f"هر سرور در یک خط.",
+    reply_markup=keyboard
+)
     volume = query.data.replace("addsrv_", "")
 
    
@@ -2070,7 +2073,7 @@ if __name__ == "__main__":
     import asyncio
 
     async def post_init(app):
-        # job queue safe init
+
         if app.job_queue:
             app.job_queue.run_repeating(
                 check_expirations,
@@ -2081,6 +2084,7 @@ if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).post_init(post_init).build()
 
     # ---------------- BASIC HANDLERS ----------------
+
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("admin", admin_start))
 
@@ -2092,103 +2096,230 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(profile_menu, pattern="^menu_profile$"))
     app.add_handler(CallbackQueryHandler(show_channels_text, pattern="^menu_news$"))
     app.add_handler(CallbackQueryHandler(test_server_handler, pattern="^menu_test$"))
+
     app.add_handler(CallbackQueryHandler(list_users, pattern="^admin_users$"))
     app.add_handler(CallbackQueryHandler(list_plans, pattern="^admin_products$"))
+
     app.add_handler(CallbackQueryHandler(del_plan_prompt, pattern="^admin_del_plan$"))
     app.add_handler(CallbackQueryHandler(perform_del_plan, pattern="^delp_"))
+
     app.add_handler(CallbackQueryHandler(admin_manage_channels, pattern="^admin_channels$"))
+
     app.add_handler(CallbackQueryHandler(profile_info, pattern="^profile_info$"))
     app.add_handler(CallbackQueryHandler(profile_referral, pattern="^profile_referral$"))
     app.add_handler(CallbackQueryHandler(profile_orders, pattern="^profile_orders$"))
     app.add_handler(CallbackQueryHandler(profile_servers, pattern="^profile_servers$"))
+
     app.add_handler(CallbackQueryHandler(support_handler, pattern="^menu_support$"))
+
     app.add_handler(CallbackQueryHandler(admin_receipts, pattern="^admin_receipts$"))
+
     app.add_handler(CallbackQueryHandler(admin_referral_panel, pattern="^admin_referrals$"))
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
-    app.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST, channel_post_handler))
-    app.add_handler(CallbackQueryHandler(approve_receipt, pattern="approve_receipt_"))
-    app.add_handler(CallbackQueryHandler(reject_receipt, pattern="reject_receipt_"))
-    #app.add_handler(CallbackQueryHandler(add_server_handler, pattern="^addsrv_"))
-    #app.add_handler(CallbackQueryHandler(finish_server_handler, pattern="^finish_server_"))
-    app.add_handler(CallbackQueryHandler(admin_add_server,pattern="^admin_add_server$"))
-    app.add_handler(CallbackQueryHandler(add_server_volume,pattern="^addsrv_"))
+
+    app.add_handler(
+        MessageHandler(
+            filters.UpdateType.CHANNEL_POST,
+            channel_post_handler
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            approve_receipt,
+            pattern="^approve_receipt_"
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            reject_receipt,
+            pattern="^reject_receipt_"
+        )
+    )
 
     # ---------------- BUY CONVERSATION ----------------
+
     buy_conv = ConversationHandler(
-        entry_points=[CallbackQueryHandler(buy_start, pattern="^menu_buy$")],
+
+        entry_points=[
+            CallbackQueryHandler(
+                buy_start,
+                pattern="^menu_buy$"
+            )
+        ],
 
         states={
+
             BUY_SELECT_PLAN: [
-                CallbackQueryHandler(buy_select_plan, pattern="^buy_")
+                CallbackQueryHandler(
+                    buy_select_plan,
+                    pattern="^buy_"
+                )
             ],
+
             BUY_SELECT_VOLUME: [
-                CallbackQueryHandler(buy_select_volume, pattern="^buy_vol_")
+                CallbackQueryHandler(
+                    buy_select_volume,
+                    pattern="^buy_vol_"
+                )
             ],
+
             BUY_GET_COUNT: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, buy_get_count)
+                MessageHandler(
+                    filters.TEXT & ~filters.COMMAND,
+                    buy_get_count
+                )
             ],
+
             BUY_CONFIRM_RULES: [
-                CallbackQueryHandler(buy_confirm_rules, pattern="^accept_rules$")
+                CallbackQueryHandler(
+                    buy_confirm_rules,
+                    pattern="^accept_rules$"
+                )
             ],
+
             GET_RECEIPT: [
-                MessageHandler(filters.PHOTO, buy_receipt)
+                MessageHandler(
+                    filters.PHOTO,
+                    buy_receipt
+                )
             ],
+
         },
 
         fallbacks=[
-            CallbackQueryHandler(cancel_callback, pattern="^cancel$")
+            CallbackQueryHandler(
+                cancel_callback,
+                pattern="^cancel$"
+            )
         ],
 
         allow_reentry=True,
     )
 
     app.add_handler(buy_conv)
+
+    # ---------------- ADD SERVER CONVERSATION ----------------
+
     add_server_conv = ConversationHandler(
-    entry_points=[
-        
-        CallbackQueryHandler(
-            admin_add_server,
-            pattern="^admin_add_server$"
-        )
-    ],
 
-    states={
-
-        ADD_SERVER_VOLUME: [
-            CallbackQueryHandler(
-                add_server_volume,
-                pattern="^addsrv_"
-            )
-        ],
-
-        ADD_SERVER_CONFIGS: [
-            MessageHandler(
-                filters.TEXT & ~filters.COMMAND,
-                save_server_configs
-            )
-        ],
-    },
-
-    fallbacks=[]
-)
-
-    # ---------------- ADMIN CONVERSATION ----------------
-    admin_conv = ConversationHandler(
         entry_points=[
-            CallbackQueryHandler(admin_add_plan, pattern="^admin_add_plan$"),
-            CallbackQueryHandler(admin_broadcast_start, pattern="^admin_broadcast$"),
-            CallbackQueryHandler(admin_dm_start, pattern="^admin_dm$"),
-            CallbackQueryHandler(admin_del_channel_prompt, pattern="^del_ch$"),
-            CallbackQueryHandler(admin_set_test_start, pattern="^admin_set_test$"),
-            CallbackQueryHandler(admin_server_stats, pattern="^admin_server_stats$"),
-            CallbackQueryHandler(show_pending_receipts, pattern="^receipts_pending.*"),
-            CallbackQueryHandler(show_archive_receipts, pattern="^receipts_archive.*"),
-            CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
-            CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
-            CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
+
+            CallbackQueryHandler(
+                admin_add_server,
+                pattern="^admin_add_server$"
+            )
+
         ],
 
         states={
+
+            ADD_SERVER_VOLUME: [
+
+                CallbackQueryHandler(
+                    add_server_volume,
+                    pattern="^addsrv_"
+                )
+
+            ],
+
+            ADD_SERVER_CONFIGS: [
+
+                MessageHandler(
+                    filters.TEXT & ~filters.COMMAND,
+                    save_server_configs
+                ),
+
+                CallbackQueryHandler(
+                    finish_add_servers,
+                    pattern="^finish_add_servers$"
+                )
+
+            ],
+
+        },
+
+        fallbacks=[
+
+            CallbackQueryHandler(
+                admin_start,
+                pattern="^back_admin$"
+            )
+
+        ],
+
+        allow_reentry=True,
+
+    )
+
+    app.add_handler(add_server_conv)
+
+    # ---------------- ADMIN CONVERSATION ----------------
+
+    admin_conv = ConversationHandler(
+
+        entry_points=[
+
+            CallbackQueryHandler(
+                admin_add_plan,
+                pattern="^admin_add_plan$"
+            ),
+
+            CallbackQueryHandler(
+                admin_broadcast_start,
+                pattern="^admin_broadcast$"
+            ),
+
+            CallbackQueryHandler(
+                admin_dm_start,
+                pattern="^admin_dm$"
+            ),
+
+            CallbackQueryHandler(
+                admin_del_channel_prompt,
+                pattern="^del_ch$"
+            ),
+
+            CallbackQueryHandler(
+                admin_set_test_start,
+                pattern="^admin_set_test$"
+            ),
+
+            CallbackQueryHandler(
+                admin_server_stats,
+                pattern="^admin_server_stats$"
+            ),
+
+            CallbackQueryHandler(
+                show_pending_receipts,
+                pattern="^receipts_pending.*"
+            ),
+
+            CallbackQueryHandler(
+                show_archive_receipts,
+                pattern="^receipts_archive.*"
+            ),
+
+            CallbackQueryHandler(
+                view_receipt,
+                pattern="^view_receipt_"
+            ),
+
+            CallbackQueryHandler(
+                finish_test_servers,
+                pattern="^finish_test_servers$"
+            ),
+
+            CallbackQueryHandler(
+                admin_add_channel_user,
+                pattern="^add_ch$"
+            ),
+
+        ],
+
+        states={
+
             ADD_NAME: [
                 MessageHandler(
                     filters.TEXT & ~filters.COMMAND,
@@ -2227,14 +2358,20 @@ if __name__ == "__main__":
         },
 
         fallbacks=[
-            CallbackQueryHandler(admin_start, pattern="^back_admin$")
+
+            CallbackQueryHandler(
+                admin_start,
+                pattern="^back_admin$"
+            )
+
         ],
 
         allow_reentry=True,
+
     )
 
     app.add_handler(admin_conv)
-    app.add_handler(add_server_conv)
 
     print("--- Premium UI Bot Started ---")
+
     app.run_polling()
