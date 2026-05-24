@@ -1154,28 +1154,29 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     db = load_db()
 
-    # بررسی وجود رسید
+    # بررسی رسید
     if index >= len(db["receipts"]):
-        await query.message.reply_text("رسید پیدا نشد")
+        await query.message.reply_text("❌ رسید پیدا نشد")
         return
 
     receipt = db["receipts"][index]
 
-    # جلوگیری از پردازش دوباره
+    # جلوگیری از دوباره‌کاری
     if receipt.get("status") != "pending":
         await query.answer("این رسید قبلاً بررسی شده", show_alert=True)
         return
 
     uid = str(receipt["user_id"])
-
     user = db["users"].get(uid)
+
     if not user:
-        await query.message.reply_text("کاربر پیدا نشد")
+        await query.message.reply_text("❌ کاربر پیدا نشد")
         return
 
     pending = user.get("pending_order")
+
     if not pending:
-        await query.message.reply_text("pending_order وجود ندارد")
+        await query.message.reply_text("❌ سفارش فعال پیدا نشد")
         return
 
     # ---------------- حجم ----------------
@@ -1183,47 +1184,50 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "1GB": 1,
         "2GB": 2,
         "3GB": 3,
-        "10GB": 10,
-        "5گیگ بخر 7 گیگ ببر": 5
+        "5گیگ بخر 7 گیگ ببر": 5,
+        "10GB": 10
     }
 
-    raw_volume = volume_map.get(pending.get("volume"))
+    volume = volume_map.get(pending.get("volume"))
 
-    if raw_volume is None:
-        await query.message.reply_text("حجم نامعتبر است")
-        return
-
-    volume = normalize_volume(raw_volume)
     if not volume:
-        await query.message.reply_text("حجم نامعتبر است")
+        await query.message.reply_text("❌ حجم نامعتبر است")
         return
 
     count = int(pending.get("count", 1))
 
-    # ---------------- تخصیص سرور ----------------
-    allocated = allocate_servers(db, volume, count)
+    # ---------------- گرفتن سرور ----------------
+    allocated = allocate_servers(volume, count)
 
     if not allocated:
-        await query.message.reply_text("موجودی کافی نیست")
+        await query.message.reply_text("❌ موجودی سرور کافی نیست")
         return
 
-    # ---------------- ذخیره سرویس‌ها ----------------
+    # ---------------- ذخیره سرویس ----------------
+    now = datetime.now().timestamp()
+
     for srv in allocated:
         user.setdefault("services", []).append({
             "sub_id": srv["id"],
             "volume": srv["volume"],
             "config": srv["config"],
-            "name": pending.get("plan", "unknown"),
-            "start_ts": datetime.now().timestamp(),
-            "expiry_ts": datetime.now().timestamp() + 30 * 86400
+            "name": pending.get("plan", "VIP"),
+            "start_ts": now,
+            "expiry_ts": now + 30 * 86400
         })
 
-    # ---------------- ارسال کانفیگ برای کاربر ----------------
-    text = "✅ سرویس‌های شما:\n\n"
+    # ---------------- پاکسازی سفارش ----------------
+    user["pending_order"] = None
+    receipt["status"] = "approved"
+
+    save_db(db)
+
+    # ---------------- ارسال به کاربر ----------------
+    text = "✅ سرویس شما فعال شد\n\n"
 
     for srv in allocated:
         text += (
-            f"📦 حجم: {srv['volume']}GB\n"
+            f"حجم: {srv['volume']}GB\n"
             f"<code>{srv['config']}</code>\n\n"
         )
 
@@ -1233,22 +1237,16 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="HTML"
     )
 
-    # ---------------- پاکسازی ----------------
-    user["pending_order"] = None
-    db["receipts"][index]["status"] = "approved"
-
-    save_db(db)
-
     # ---------------- آپدیت پیام ادمین ----------------
     try:
-        await query.message.edit_caption("✅ ارسال شد")
+        await query.message.edit_caption("✅ تایید شد و ارسال انجام شد")
     except:
         pass
 async def reject_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    index = int(query.data.split("_")[-1])
+    index = int(query.data.replace("reject_receipt_", ""))
 
     db = load_db()
 
@@ -1256,11 +1254,24 @@ async def reject_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer("رسید نامعتبر است", show_alert=True)
         return
 
-    db["receipts"][index]["status"] = "rejected"
+    receipt = db["receipts"][index]
+
+    if receipt.get("status") != "pending":
+        await query.answer("قبلاً بررسی شده", show_alert=True)
+        return
+
+    receipt["status"] = "rejected"
     save_db(db)
 
-    await query.message.edit_caption("❌ رسید رد شد")
+    await context.bot.send_message(
+        chat_id=receipt["user_id"],
+        text="❌ پرداخت شما رد شد"
+    )
 
+    try:
+        await query.message.edit_caption("❌ رد شد")
+    except:
+        pass
 
 async def profile_menu(update, context):
     query = update.callback_query
@@ -2266,6 +2277,8 @@ if __name__ == "__main__":
     app.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST, channel_post_handler))
     app.add_handler(CallbackQueryHandler(admin_callback_handler, pattern="^adm_"))
     app.add_handler(CallbackQueryHandler(admin_add_server_configs,pattern="^addsrv_"))
+    app.add_handler(CallbackQueryHandler(approve_receipt, pattern="approve_receipt_"))
+    app.add_handler(CallbackQueryHandler(reject_receipt, pattern="reject_receipt_"))
 
     # ---------------- BUY CONVERSATION ----------------
     buy_conv = ConversationHandler(
@@ -2313,8 +2326,6 @@ if __name__ == "__main__":
             CallbackQueryHandler(admin_server_stats, pattern="^admin_server_stats$"),
             CallbackQueryHandler(show_pending_receipts, pattern="^receipts_pending.*"),
             CallbackQueryHandler(show_archive_receipts, pattern="^receipts_archive.*"),
-            CallbackQueryHandler(approve_receipt, pattern="^approve_receipt_"),
-            CallbackQueryHandler(reject_receipt, pattern="^reject_receipt_"),
             CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
             CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
             CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
