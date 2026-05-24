@@ -2258,6 +2258,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
     app.add_handler(MessageHandler(filters.UpdateType.CHANNEL_POST, channel_post_handler))
     app.add_handler(CallbackQueryHandler(admin_callback_handler, pattern="^adm_"))
+    app.add_handler(CallbackQueryHandler(admin_add_server_configs,pattern="^addsrv_"))
 
     # ---------------- BUY CONVERSATION ----------------
     buy_conv = ConversationHandler(
@@ -2310,6 +2311,7 @@ if __name__ == "__main__":
             CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
             CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
             CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
+            
         ],
 
         states={
@@ -2327,6 +2329,9 @@ if __name__ == "__main__":
             ],
             TEST_SERVER_STATE: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, admin_test_server_input)
+            ],
+            ADD_SERVER_CONFIGS: [ 
+                MessageHandler(filters.TEXT & ~filters.COMMAND,save_server_configs)
             ],
         },
 
