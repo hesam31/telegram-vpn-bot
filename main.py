@@ -2092,19 +2092,10 @@ if __name__ == "__main__":
 
         states={
 
-            ADD_SERVER_CONFIGS: [
-
-                MessageHandler(
-                    filters.TEXT & ~filters.COMMAND & filters.User(ADMIN_IDS),
-                    admin_save_server
-                ),
-
-                CallbackQueryHandler(
-                    finish_add_server,
-                    pattern="^finish_add_server$"
-                )
-
-            ],
+             ADD_SERVER_CONFIGS: [
+        MessageHandler(filters.TEXT & ~filters.COMMAND, admin_add_server_configs),
+        CallbackQueryHandler(finish_add_server, pattern="^finish_add_server$")
+    ],
 
             ADD_NAME: [
                 MessageHandler(
