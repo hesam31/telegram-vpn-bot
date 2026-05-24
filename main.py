@@ -1248,14 +1248,14 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # متن ارسال به کاربر
     text = (
-        "✅ پرداخت شما تایید شد\n\n"
-        "🔥 سرورهای شما:\n\n"
-    )
+    f"{te('taeid')} <b>پرداخت شما تایید شد</b>\n\n"
+    f"{te('servers')} سرورهای شما:\n\n"
+)
 
     for server in servers:
 
         text += (
-            f"<code>{server}</code>\n\n"
+            f"{server}\n\n"
         )
 
     # ذخیره داخل سرویس های کاربر
