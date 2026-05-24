@@ -1743,24 +1743,36 @@ async def save_server_configs(update: Update, context: ContextTypes.DEFAULT_TYPE
     volume = context.user_data.get("server_volume")
 
     if not volume:
-        await update.message.reply_text("خطا در تشخیص حجم")
+        await update.message.reply_text("❌ حجم انتخاب نشده")
         return ConversationHandler.END
 
-    configs = update.message.text.splitlines()
+    raw_configs = update.message.text.splitlines()
+
+    # پاکسازی کامل
+    configs = []
+
+    for c in raw_configs:
+
+        c = c.strip()
+
+        if c:
+            configs.append(c)
+
+    if not configs:
+        await update.message.reply_text("❌ کانفیگ معتبری ارسال نشد")
+        return ADD_SERVER_CONFIGS
 
     db = load_db()
 
     db["settings"].setdefault("servers", {})
-
     db["settings"]["servers"].setdefault(volume, [])
 
     added = 0
 
     for config in configs:
 
-        config = config.strip()
-
-        if config and config not in db["settings"]["servers"][volume]:
+        # جلوگیری از ذخیره تکراری
+        if config not in db["settings"]["servers"][volume]:
 
             db["settings"]["servers"][volume].append(config)
 
