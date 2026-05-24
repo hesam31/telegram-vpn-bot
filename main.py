@@ -2044,21 +2044,17 @@ if __name__ == "__main__":
 
         states={
             BUY_SELECT_PLAN: [
-                CallbackQueryHandler(buy_select_plan, pattern="^buy_VIP$")
+                CallbackQueryHandler(buy_select_plan, pattern="^buy_")
             ],
-
             BUY_SELECT_VOLUME: [
                 CallbackQueryHandler(buy_select_volume, pattern="^buy_vol_")
             ],
-
             BUY_GET_COUNT: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, buy_get_count)
             ],
-
             BUY_CONFIRM_RULES: [
                 CallbackQueryHandler(buy_confirm_rules, pattern="^accept_rules$")
             ],
-
             GET_RECEIPT: [
                 MessageHandler(filters.PHOTO, buy_receipt)
             ],
