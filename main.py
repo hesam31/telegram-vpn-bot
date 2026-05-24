@@ -2235,7 +2235,7 @@ if __name__ == "__main__":
 
             ADD_SERVER_CONFIGS: [
 
-                MessageHandler(filters.TEXT & ~filters.COMMAND, save_server_configs)
+                MessageHandler(filters.TEXT & ~filters.COMMAND, save_server_configs),
                 CallbackQueryHandler(finish_add_servers,pattern="^finish_add_servers$")
 
             ],
