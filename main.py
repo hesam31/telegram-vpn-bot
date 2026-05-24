@@ -227,15 +227,15 @@ def save_db(data):
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
 
-def allocate_servers(db, volume, count):
+def allocate_servers(volume, count):
+
+    db = load_db()
 
     servers = db["settings"].get("servers", [])
 
     matched = [
-
         s for s in servers
-        if int(s["volume"]) == int(volume)
-
+        if normalize_volume(s["volume"]) == normalize_volume(volume)
     ]
 
     if len(matched) < count:
@@ -243,23 +243,16 @@ def allocate_servers(db, volume, count):
 
     allocated = matched[:count]
 
-    allocated_ids = [
+    # حذف از مخزن
+    for srv in allocated:
+        servers.remove(srv)
 
-        s["id"]
-        for s in allocated
-
-    ]
-
-    db["settings"]["servers"] = [
-
-        s for s in servers
-        if s["id"] not in allocated_ids
-
-    ]
-
+    db["settings"]["servers"] = servers
     save_db(db)
 
     return allocated
+
+
 def create_btn(config_key, callback_data=None, url=None):
     cfg = BTN_CFG[config_key]
     kwargs = {"text": cfg["text"], "style": cfg.get("style", "primary")}
@@ -368,9 +361,18 @@ def extract_number(text: str):
 
     cleaned = re.sub(r"[^\d]", "", text)
 
-    return int(cleaned) if cleaned else None    
+    return int(cleaned) if cleaned else None   
 
+def normalize_volume(volume):
+    try:
+        # اگر متن بود مثل "2GB"
+        if isinstance(volume, str):
+            volume = volume.replace("GB", "").replace("gb", "").strip()
 
+        return int(volume)
+
+    except:
+        return None     
 
 async def channel_post_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -1145,7 +1147,6 @@ async def view_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     query = update.callback_query
     await query.answer()
 
@@ -1153,12 +1154,14 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     db = load_db()
 
+    # بررسی وجود رسید
     if index >= len(db["receipts"]):
         await query.message.reply_text("رسید پیدا نشد")
         return
 
     receipt = db["receipts"][index]
 
+    # جلوگیری از پردازش دوباره
     if receipt.get("status") != "pending":
         await query.answer("این رسید قبلاً بررسی شده", show_alert=True)
         return
@@ -1166,17 +1169,16 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = str(receipt["user_id"])
 
     user = db["users"].get(uid)
-
     if not user:
         await query.message.reply_text("کاربر پیدا نشد")
         return
 
     pending = user.get("pending_order")
-
     if not pending:
         await query.message.reply_text("pending_order وجود ندارد")
         return
 
+    # ---------------- حجم ----------------
     volume_map = {
         "1GB": 1,
         "2GB": 2,
@@ -1185,66 +1187,43 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "5گیگ بخر 7 گیگ ببر": 5
     }
 
-    raw_volume = volume_map.get(
-        pending.get("volume")
-    )
+    raw_volume = volume_map.get(pending.get("volume"))
 
     if raw_volume is None:
         await query.message.reply_text("حجم نامعتبر است")
         return
 
     volume = normalize_volume(raw_volume)
-
     if not volume:
         await query.message.reply_text("حجم نامعتبر است")
         return
 
-    count = pending.get("count", 1)
+    count = int(pending.get("count", 1))
 
-    allocated = allocate_servers(
-        db,
-        volume,
-        count
-    )
+    # ---------------- تخصیص سرور ----------------
+    allocated = allocate_servers(db, volume, count)
 
     if not allocated:
         await query.message.reply_text("موجودی کافی نیست")
         return
 
-    # ذخیره سرویس ها
-
+    # ---------------- ذخیره سرویس‌ها ----------------
     for srv in allocated:
-
         user.setdefault("services", []).append({
-
             "sub_id": srv["id"],
-
             "volume": srv["volume"],
-
             "config": srv["config"],
-
-            "name": pending.get(
-                "plan",
-                "unknown"
-            ),
-
+            "name": pending.get("plan", "unknown"),
             "start_ts": datetime.now().timestamp(),
-
-            "expiry_ts": (
-                datetime.now().timestamp()
-                + 30 * 86400
-            )
-
+            "expiry_ts": datetime.now().timestamp() + 30 * 86400
         })
 
-    # ارسال کانفیگ ها
-
+    # ---------------- ارسال کانفیگ برای کاربر ----------------
     text = "✅ سرویس‌های شما:\n\n"
 
     for srv in allocated:
-
         text += (
-            f"📦 {srv['volume']}GB\n"
+            f"📦 حجم: {srv['volume']}GB\n"
             f"<code>{srv['config']}</code>\n\n"
         )
 
@@ -1254,19 +1233,17 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="HTML"
     )
 
-    # پاک کردن pending
-
+    # ---------------- پاکسازی ----------------
     user["pending_order"] = None
-
     db["receipts"][index]["status"] = "approved"
 
     save_db(db)
 
-    await query.message.edit_caption(
-        "✅ ارسال شد"
-    )
-
-
+    # ---------------- آپدیت پیام ادمین ----------------
+    try:
+        await query.message.edit_caption("✅ ارسال شد")
+    except:
+        pass
 async def reject_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
