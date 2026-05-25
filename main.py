@@ -634,7 +634,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons = [
         [
             InlineKeyboardButton(
-                "1GB - 290,000",
+                "1GB - 245,000",
                 callback_data="buy_vol_1",
                 style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -642,7 +642,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "2GB - 560,000",
+                "2GB - 480,000",
                 callback_data="buy_vol_2",
                 style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -650,7 +650,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "3GB - 840,000",
+                "3GB - 700,000",
                 callback_data="buy_vol_3",
                 style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -658,7 +658,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "5 گیگ بخر 7 گیگ ببر - 1,350,000",
+                "5 گیگ بخر 7 گیگ ببر - 1,150,000",
                 callback_data="buy_vol_5",
 
                 style="success",
@@ -667,7 +667,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "10GB - 2,500,00",
+                "10GB - 2,200,00",
                 callback_data="buy_vol_10",
                 style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -691,11 +691,11 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     callback_data = query.data
 
     volume_map = {
-        "buy_vol_1": ("1GB", 290000),
-        "buy_vol_2": ("2GB", 560000),
-        "buy_vol_3": ("3GB", 840000),
-        "buy_vol_5": ("5گیگ بخر 7 گیگ ببر", 1350000),
-        "buy_vol_10": ("10GB", 2500000),
+        "buy_vol_1": ("1GB", 240000),
+        "buy_vol_2": ("2GB", 480000),
+        "buy_vol_3": ("3GB", 700000),
+        "buy_vol_5": ("5گیگ بخر 7 گیگ ببر", 1150000),
+        "buy_vol_10": ("10GB", 2200000),
     }
 
     # ❌ اگر دکمه اشتباه بود
