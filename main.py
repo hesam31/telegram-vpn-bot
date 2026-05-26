@@ -613,46 +613,67 @@ async def check_join_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = load_db()
     uid = str(update.effective_user.id)
-     if not await check_bot_enabled(update, context):
+
+    if not await check_bot_enabled(update, context):
         return ConversationHandler.END
+
+    inviter = None
     if context.args:
         ref = context.args[0]
         if ref.startswith("ref_"):
             inviter = ref.split("_")[1]
+
     if uid not in db["users"]:
-
-        inviter = None
-
-        if context.args:
-            ref = context.args[0]
-            if ref.startswith("ref_"):
-                inviter = ref.split("_")[1]
-
         db["users"][uid] = {
-    "name": update.effective_user.first_name,
-    "username": update.effective_user.username,
-    "services": [],
-    "pending_order": None,
-    "has_test": False,
-    "inviter": inviter,
-    "is_active": True
-}
+            "name": update.effective_user.first_name,
+            "username": update.effective_user.username,
+            "services": [],
+            "pending_order": None,
+            "has_test": False,
+            "inviter": inviter,
+            "is_active": True
+        }
 
         save_db(db)
-    if not await check_force_join(update, context): return ConversationHandler.END
-    msg = f"{te('welcome')} <b>به صدورا بات خوش آمدید</b>\n\n{te('bullet')}برای ادامه گزینه مورد نظر را انتخاب کنید"
+
+    if not await check_force_join(update, context):
+        return ConversationHandler.END
+
+    msg = (
+        f"{te('welcome')} <b>به صدورا بات خوش آمدید</b>\n\n"
+        f"{te('bullet')}برای ادامه گزینه مورد نظر را انتخاب کنید"
+    )
+
     last_id = context.user_data.get("last_menu_msg_id")
+
     if last_id and update.message:
-        try: await context.bot.delete_message(update.effective_chat.id, last_id)
-        except: pass
+        try:
+            await context.bot.delete_message(update.effective_chat.id, last_id)
+        except:
+            pass
+
     if update.message:
-        try: await update.message.delete()
-        except: pass
-        sent = await context.bot.send_message(update.effective_chat.id, msg, reply_markup=main_menu_kb(), parse_mode="HTML")
+        try:
+            await update.message.delete()
+        except:
+            pass
+
+        sent = await context.bot.send_message(
+            update.effective_chat.id,
+            msg,
+            reply_markup=main_menu_kb(),
+            parse_mode="HTML"
+        )
         context.user_data["last_menu_msg_id"] = sent.message_id
+
     elif update.callback_query:
-        await update.callback_query.message.edit_text(msg, reply_markup=main_menu_kb(), parse_mode="HTML")
+        await update.callback_query.message.edit_text(
+            msg,
+            reply_markup=main_menu_kb(),
+            parse_mode="HTML"
+        )
         context.user_data["last_menu_msg_id"] = update.callback_query.message.message_id
+
     return ConversationHandler.END
 
 async def support_handler(update, context):
