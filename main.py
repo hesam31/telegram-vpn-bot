@@ -2401,6 +2401,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
     app.add_handler(CallbackQueryHandler(admin_toggle_bot, pattern="admin_bot_toggle"))
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
+    app.add_handler(CallbackQueryHandler(admin_view_user, pattern="^admin_view_user_")),
 
     app.add_handler(
         MessageHandler(
