@@ -1864,7 +1864,7 @@ async def admin_referral_user(update: Update, context: ContextTypes.DEFAULT_TYPE
     query = update.callback_query
     await query.answer()
 
-    inviter_id = query.data.split("_")[2]
+    inviter_id = query.data.replace("ref_user_", "")
     db = load_db()
 
     invited = []
@@ -2400,6 +2400,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_referral_panel, pattern="^admin_referrals$"))
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
     app.add_handler(CallbackQueryHandler(admin_toggle_bot, pattern="admin_bot_toggle"))
+    app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
 
     app.add_handler(
         MessageHandler(
