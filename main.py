@@ -136,6 +136,11 @@ BTN_CFG = {
     "admin_referrals": {"text": "سیستم رفرال","style": "primary","emoji_id": "5350790271627968474"},
     "CHANNEL_POST_BUTTON": {"text": "خرید فوری سرور از صدورا بات","style": "success","emoji_id": "6073335669260819751"},
     "admin_bot_toggle": {"text": "🔘 خاموش/روشن بات","style": "primary","emoji_id": "4956368164817470478"},
+    "admin_search_user": {
+    "text": "جستجوی کاربر",
+    "style": "primary",
+    "emoji_id": "5974235702701853774"
+},
 
 }
 
@@ -475,6 +480,7 @@ def admin_menu_kb():
         [create_btn("admin_receipts", "admin_receipts")],
         [create_btn("admin_referrals", "admin_referrals")],
         [create_btn("admin_bot_toggle", "admin_bot_toggle")],
+        [create_btn("admin_search_user", "admin_search_user")],
     ])
 
 def back_kb(target="main"):
@@ -550,6 +556,68 @@ async def set_menu_button(app):
     await app.bot.set_chat_menu_button(
         menu_button=MenuButtonCommands()
     )
+
+async def admin_search_user_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    await query.message.edit_text(
+        "🔍 لطفاً ID عددی کاربر را وارد کنید:",
+        reply_markup=back_kb("admin")
+    )
+
+    return GET_DM_USER_ID
+
+
+async def admin_search_user_result(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.text.strip()
+
+    db = load_db()
+    user = db["users"].get(user_id)
+
+    if not user:
+        await update.message.reply_text(
+            "❌ کاربر پیدا نشد",
+            reply_markup=admin_menu_kb()
+        )
+        return ConversationHandler.END
+
+    invited_count = get_real_invited_count(int(user_id))
+    buy_count = len(user.get("services", []))
+
+    text = f"""
+👤 پروفایل کاربر
+
+🆔 ID: <code>{user_id}</code>
+📛 نام: {user.get('name','---')}
+👤 یوزرنیم: @{user.get('username','---')}
+
+👥 دعوت‌شده‌ها: {invited_count}
+💰 تعداد خرید: {buy_count}
+"""
+
+    kb = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "📊 رفرال‌های این کاربر",
+                callback_data=f"ref_user_{user_id}"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "🔙 بازگشت",
+                callback_data="back_admin"
+            )
+        ]
+    ])
+
+    await update.message.reply_text(
+        text,
+        reply_markup=kb,
+        parse_mode="HTML"
+    )
+
+    return ConversationHandler.END        
     
 async def check_force_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     user_id = update.effective_user.id
@@ -1797,7 +1865,6 @@ async def admin_referral_user(update: Update, context: ContextTypes.DEFAULT_TYPE
     await query.answer()
 
     inviter_id = query.data.split("_")[2]
-
     db = load_db()
 
     invited = []
@@ -1806,25 +1873,71 @@ async def admin_referral_user(update: Update, context: ContextTypes.DEFAULT_TYPE
         if user.get("inviter") == inviter_id:
             invited.append(uid)
 
-    text = f"👤 کاربر: {inviter_id}\n\n📌 دعوت‌شده‌ها:\n"
+    keyboard = []
 
-    if not invited:
-        text += "هیچ زیرمجموعه‌ای ندارد."
-    else:
-        for u in invited:
-            name = db["users"].get(u, {}).get("name", "unknown")
-            text += f"• {name} (<code>{u}</code>)\n"
+    # 🔥 هر کاربر = یک دکمه قابل کلیک
+    for u in invited:
+        name = db["users"].get(u, {}).get("name", "unknown")
 
-    keyboard = [
-        [InlineKeyboardButton(" بازگشت",style="danger", callback_data="admin_referrals")]
-    ]
+        keyboard.append([
+            InlineKeyboardButton(
+                f"👤 {name} ({u})",
+                callback_data=f"admin_view_user_{u}"
+            )
+        ])
+
+    keyboard.append([
+        InlineKeyboardButton(
+            "🔙 بازگشت",
+            callback_data="admin_referrals"
+        )
+    ])
+
+    text = f"👤 کاربر: {inviter_id}\n\n📌 روی هر کاربر کلیک کنید برای مشاهده پروفایل:"
 
     await query.message.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode="HTML"
-    )        
+    )
 
+async def admin_view_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    user_id = query.data.replace("admin_view_user_", "")
+    db = load_db()
+
+    user = db["users"].get(user_id)
+
+    if not user:
+        await query.message.edit_text("کاربر پیدا نشد")
+        return
+
+    invited_count = get_real_invited_count(int(user_id))
+    buy_count = len(user.get("services", []))
+
+    text = f"""
+👤 پروفایل کاربر
+
+🆔 ID: <code>{user_id}</code>
+📛 نام: {user.get('name','---')}
+👤 یوزرنیم: @{user.get('username','---')}
+
+👥 دعوت‌شده‌ها: {invited_count}
+💰 تعداد خرید: {buy_count}
+"""
+
+    kb = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "🔙 بازگشت",
+                callback_data=f"ref_user_{user.get('inviter')}"
+            )
+        ]
+    ])
+
+    await query.message.edit_text(text, reply_markup=kb, parse_mode="HTML")    
 async def admin_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in ADMIN_IDS: return
     msg = f"{te('admin')} <b>پنل مدیریت</b>\n\nگزینه مورد نظر را انتخاب کنید:"
@@ -2424,6 +2537,19 @@ if __name__ == "__main__":
     admin_conv = ConversationHandler(
 
         entry_points=[
+
+
+            ConversationHandler(
+    entry_points=[
+        CallbackQueryHandler(admin_search_user_start, pattern="admin_search_user")
+    ],
+    states={
+        GET_DM_USER_ID: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, admin_search_user_result)
+        ]
+    },
+    fallbacks=[CallbackQueryHandler(admin_start, pattern="back_admin")]
+)
 
             CallbackQueryHandler(
                 admin_add_plan,
