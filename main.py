@@ -262,23 +262,17 @@ def load_db():
     init_db()
 
     conn = get_conn()
-
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    cur.execute(
-        "SELECT data FROM bot_data WHERE id = 1"
-    )
-
+    cur.execute("SELECT data FROM bot_data WHERE id = 1")
     row = cur.fetchone()
 
     cur.close()
     conn.close()
 
-    db["settings"].setdefault("bot_enabled", True)
-
+    # اگر دیتایی وجود نداشت
     if not row:
-
-        return {
+        db = {
             "settings": {
                 "channels": [],
                 "test_servers": [],
@@ -295,36 +289,32 @@ def load_db():
             "plans": [],
             "receipts": []
         }
+        db["settings"].setdefault("bot_enabled", True)
+        return db
 
+    # دیتا از دیتابیس
     db = row["data"]
 
+    # ایمن‌سازی ساختار
     db.setdefault("receipts", [])
-
     db.setdefault("settings", {})
 
+    db["settings"].setdefault("bot_enabled", True)
     db["settings"].setdefault("channels", [])
-
     db["settings"].setdefault("test_servers", [])
-
-    db["settings"].setdefault(
-        "servers",
-        {
-            "1": [],
-            "2": [],
-            "3": [],
-            "5": [],
-            "10": []
-        }
-    )
-
+    db["settings"].setdefault("servers", {
+        "1": [],
+        "2": [],
+        "3": [],
+        "5": [],
+        "10": []
+    })
     db["settings"].setdefault("server_session", {})
 
     db.setdefault("plans", [])
-
     db.setdefault("users", {})
 
     for uid, u_data in db["users"].items():
-
         u_data.setdefault("has_test", False)
 
     return db
