@@ -1,7 +1,10 @@
 import logging
-import json
-import os
+import sqlite3
 import random
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import os
+import json
 from datetime import datetime
 import re
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -40,8 +43,9 @@ InlineKeyboardButton.to_dict = _patched_to_dict
 
 BOT_TOKEN = "8878547383:AAEKAvalx3osK72rP2i7KqFLduBYdftGc_c"
 ADMIN_IDS = [81469723,1892655576]
-DB_FILE = "database.json"
-CARD_NUMBER = "6037697637334522"
+DB_FILE = "database.db"
+DATABASE_URL = os.getenv("DATABASE_URL")
+CARD_NUMBER = "6219861883718115"
 SUPPORT_ID = ["@hesamyaghoubii",
               "@puyaghsmi"]
 
@@ -131,6 +135,7 @@ BTN_CFG = {
     "admin_receipts":{"text": "رسید های واریزی","style": "primary","emoji_id": "5350697092184944245"},
     "admin_referrals": {"text": "سیستم رفرال","style": "primary","emoji_id": "5350790271627968474"},
     "CHANNEL_POST_BUTTON": {"text": "خرید فوری سرور از صدورا بات","style": "success","emoji_id": "6073335669260819751"},
+    "admin_bot_toggle": {"text": "🔘 خاموش/روشن بات","style": "primary","emoji_id": "4956368164817470478"},
 
 }
 
@@ -184,55 +189,168 @@ DURATION_MAP = {
     "prime": ("prime ", 60)
 }
 
-def load_db():
-    if not os.path.exists(DB_FILE):
+def get_conn():
+    return psycopg2.connect(DATABASE_URL, sslmode="require")
+
+
+def init_db():
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS bot_data (
+            id INTEGER PRIMARY KEY,
+            data JSONB
+        )
+    """)
+
+    cur.execute("SELECT id FROM bot_data WHERE id = 1")
+
+    exists = cur.fetchone()
+
+    if not exists:
+
         default_data = {
             "settings": {
                 "channels": [],
                 "test_servers": [],
                 "servers": {
-                        "1": [],
-                        "2": [],
-                        "3": [],
-                        "5": [],
-                        "10": []
-                },
-                "server_session": {}
-            },
-            "users": {},
-            "plans": [
-                {"name": "تست رایگان", "price": 0, "id": 1234}
-            ],
-            "receipts": []
-        }
-        return default_data
-        return default_data
-    with open(DB_FILE, "r", encoding="utf-8") as f:
-        try:
-            db = json.load(f)
-            db.setdefault("receipts", [])
-            db.setdefault("settings", {"channels": [], "test_server": ""})
-            db["settings"].setdefault("test_servers", [])
-            db["settings"].setdefault("servers",{
                     "1": [],
                     "2": [],
                     "3": [],
                     "5": [],
-                   "10": []
-            
-            })
-            if "gift_volume" in db["settings"]: del db["settings"]["gift_volume"]
-            db.setdefault("plans", [])
-            db.setdefault("users", {})
-            for uid, u_data in db["users"].items():
-                if "invited" in u_data: del u_data["invited"]
-                u_data.setdefault("has_test", False)
-            return db
-        except: return {"settings": {"channels": [], "test_server": ""}, "users": {}, "plans": []}
+                    "10": []
+                },
+                "server_session": {}
+            },
+            "users": {},
+            "bot_enabled": True,  
+            "plans": [
+                {
+                    "name": "تست رایگان",
+                    "price": 0,
+                    "id": 1234
+                }
+            ],
+            "receipts": []
+        }
+
+        cur.execute(
+            """
+            INSERT INTO bot_data (id, data)
+            VALUES (%s, %s)
+            """,
+            (
+                1,
+                json.dumps(default_data)
+            )
+        )
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+
+# =========================
+# LOAD DATABASE
+# =========================
+
+def load_db():
+
+    init_db()
+
+    conn = get_conn()
+
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    cur.execute(
+        "SELECT data FROM bot_data WHERE id = 1"
+    )
+
+    row = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    db["settings"].setdefault("bot_enabled", True)
+
+    if not row:
+
+        return {
+            "settings": {
+                "channels": [],
+                "test_servers": [],
+                "servers": {
+                    "1": [],
+                    "2": [],
+                    "3": [],
+                    "5": [],
+                    "10": []
+                },
+                "server_session": {}
+            },
+            "users": {},
+            "plans": [],
+            "receipts": []
+        }
+
+    db = row["data"]
+
+    db.setdefault("receipts", [])
+
+    db.setdefault("settings", {})
+
+    db["settings"].setdefault("channels", [])
+
+    db["settings"].setdefault("test_servers", [])
+
+    db["settings"].setdefault(
+        "servers",
+        {
+            "1": [],
+            "2": [],
+            "3": [],
+            "5": [],
+            "10": []
+        }
+    )
+
+    db["settings"].setdefault("server_session", {})
+
+    db.setdefault("plans", [])
+
+    db.setdefault("users", {})
+
+    for uid, u_data in db["users"].items():
+
+        u_data.setdefault("has_test", False)
+
+    return db
+
 
 def save_db(data):
-    with open(DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
+
+    conn = get_conn()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE bot_data
+        SET data = %s
+        WHERE id = 1
+        """,
+        (
+            json.dumps(data),
+        )
+    )
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
 
 def allocate_servers(volume, count):
 
@@ -260,6 +378,34 @@ def allocate_servers(volume, count):
 
     return allocated
 
+async def check_bot_enabled(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    db = load_db()
+    if db["settings"].get("bot_enabled", True):
+        return True
+
+    if update.message:
+        await update.message.reply_text("⛔️ ربات در حال حاضر خاموش است.")
+    elif update.callback_query:
+        await update.callback_query.answer("ربات خاموش است", show_alert=True)
+
+    return False  
+
+async def admin_toggle_bot(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    db = load_db()
+
+    current = db["settings"].get("bot_enabled", True)
+    db["settings"]["bot_enabled"] = not current
+    save_db(db)
+
+    status = "🟢 روشن شد" if db["settings"]["bot_enabled"] else "🔴 خاموش شد"
+
+    await query.message.edit_text(
+        f"وضعیت بات تغییر کرد:\n\n{status}",
+        reply_markup=admin_menu_kb()
+    )
 
 def create_btn(config_key, callback_data=None, url=None):
     cfg = BTN_CFG[config_key]
@@ -338,6 +484,7 @@ def admin_menu_kb():
         [create_btn("admin_server_stats", "admin_server_stats")],
         [create_btn("admin_receipts", "admin_receipts")],
         [create_btn("admin_referrals", "admin_referrals")],
+        [create_btn("admin_bot_toggle", "admin_bot_toggle")],
     ])
 
 def back_kb(target="main"):
@@ -466,6 +613,8 @@ async def check_join_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = load_db()
     uid = str(update.effective_user.id)
+     if not await check_bot_enabled(update, context):
+        return ConversationHandler.END
     if context.args:
         ref = context.args[0]
         if ref.startswith("ref_"):
@@ -2126,6 +2275,7 @@ if __name__ == "__main__":
 
     app.add_handler(CallbackQueryHandler(admin_referral_panel, pattern="^admin_referrals$"))
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
+    app.add_handler(CallbackQueryHandler(admin_toggle_bot, pattern="admin_bot_toggle"))
 
     app.add_handler(
         MessageHandler(
@@ -2376,5 +2526,5 @@ if __name__ == "__main__":
     app.add_handler(admin_conv)
 
     print("--- Premium UI Bot Started ---")
-
+    init_db()
     app.run_polling()
