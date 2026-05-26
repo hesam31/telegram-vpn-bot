@@ -2534,79 +2534,84 @@ if __name__ == "__main__":
 
     # ---------------- ADMIN CONVERSATION ----------------
 
-    admin_conv = ConversationHandler(
+   admin_conv = ConversationHandler(
 
-        entry_points=[
-
-
-            ConversationHandler(
     entry_points=[
-        CallbackQueryHandler(admin_search_user_start, pattern="admin_search_user")
+
+        CallbackQueryHandler(
+            admin_search_user_start,
+            pattern="^admin_search_user$"
+        ),
+
+        CallbackQueryHandler(
+            admin_add_plan,
+            pattern="^admin_add_plan$"
+        ),
+
+        CallbackQueryHandler(
+            admin_broadcast_start,
+            pattern="^admin_broadcast$"
+        ),
+
+        CallbackQueryHandler(
+            admin_dm_start,
+            pattern="^admin_dm$"
+        ),
+
+        CallbackQueryHandler(
+            admin_del_channel_prompt,
+            pattern="^del_ch$"
+        ),
+
+        CallbackQueryHandler(
+            admin_set_test_start,
+            pattern="^admin_set_test$"
+        ),
+
+        CallbackQueryHandler(
+            admin_server_stats,
+            pattern="^admin_server_stats$"
+        ),
+
+        CallbackQueryHandler(
+            show_pending_receipts,
+            pattern="^receipts_pending.*"
+        ),
+
+        CallbackQueryHandler(
+            show_archive_receipts,
+            pattern="^receipts_archive.*"
+        ),
+
+        CallbackQueryHandler(
+            view_receipt,
+            pattern="^view_receipt_"
+        ),
+
+        CallbackQueryHandler(
+            finish_test_servers,
+            pattern="^finish_test_servers$"
+        ),
+
+        CallbackQueryHandler(
+            admin_add_channel_user,
+            pattern="^add_ch$"
+        ),
     ],
+
     states={
         GET_DM_USER_ID: [
-            MessageHandler(filters.TEXT & ~filters.COMMAND, admin_search_user_result)
-        ]
-    },
-    fallbacks=[CallbackQueryHandler(admin_start, pattern="back_admin")]
-)
-
-            CallbackQueryHandler(
-                admin_add_plan,
-                pattern="^admin_add_plan$"
-            ),
-
-            CallbackQueryHandler(
-                admin_broadcast_start,
-                pattern="^admin_broadcast$"
-            ),
-
-            CallbackQueryHandler(
-                admin_dm_start,
-                pattern="^admin_dm$"
-            ),
-
-            CallbackQueryHandler(
-                admin_del_channel_prompt,
-                pattern="^del_ch$"
-            ),
-
-            CallbackQueryHandler(
-                admin_set_test_start,
-                pattern="^admin_set_test$"
-            ),
-
-            CallbackQueryHandler(
-                admin_server_stats,
-                pattern="^admin_server_stats$"
-            ),
-
-            CallbackQueryHandler(
-                show_pending_receipts,
-                pattern="^receipts_pending.*"
-            ),
-
-            CallbackQueryHandler(
-                show_archive_receipts,
-                pattern="^receipts_archive.*"
-            ),
-
-            CallbackQueryHandler(
-                view_receipt,
-                pattern="^view_receipt_"
-            ),
-
-            CallbackQueryHandler(
-                finish_test_servers,
-                pattern="^finish_test_servers$"
-            ),
-
-            CallbackQueryHandler(
-                admin_add_channel_user,
-                pattern="^add_ch$"
-            ),
-
+            MessageHandler(
+                filters.TEXT & ~filters.COMMAND,
+                admin_search_user_result
+            )
         ],
+    },
+
+    fallbacks=[
+        CallbackQueryHandler(admin_start, pattern="^back_admin$")
+    ],
+)
 
         states={
 
