@@ -41,7 +41,7 @@ def _patched_to_dict(self, *args, **kwargs):
 InlineKeyboardButton.__init__ = _patched_init
 InlineKeyboardButton.to_dict = _patched_to_dict
 
-BOT_TOKEN = "8878547383:AAGk4WFjfN0jd958Bd78kBshgxChuUSTjNQ"
+BOT_TOKEN = "8878547383:AAEKAvalx3osK72rP2i7KqFLduBYdftGc_c"
 ADMIN_IDS = [81469723,1892655576]
 DB_FILE = "database.db"
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -621,44 +621,86 @@ async def admin_search_user_result(update: Update, context: ContextTypes.DEFAULT
     
 async def check_force_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     user_id = update.effective_user.id
-    if user_id in ADMIN_IDS: return True
+
+    if user_id in ADMIN_IDS:
+        return True
+
     db = load_db()
-    channels = db["settings"].get("channels", [])
-    if not channels: return True
-    not_joined = False
+    channels = db["settings"].get("channels", [ "type": "channel",   # یا group
+  "username": "@mychannel",   # اگر دارد
+  "chat_id": -1001234567890,  # برای گروه‌ها
+  "link": "https://t.me/...."])
+
+    if not channels:
+        return True
+
     for ch in channels:
         try:
-            member = await context.bot.get_chat_member(ch["username"], user_id)
-            if member.status in ['left', 'kicked']: not_joined = True; break
-        except: not_joined = True; break
-    if not_joined:
-        markup_keys = []
-        for ch in channels:
-            markup_keys.append([InlineKeyboardButton(f"عضویت در {ch['username']}", url=ch['link'], style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["join"])])
-        markup_keys.append([InlineKeyboardButton("بررسی عضویت", callback_data="check_join_btn", style="success", icon_custom_emoji_id=DYN_BTN_EMOJIS["check_join"])])
-        msg = f"{te('gift')} برای استفاده از ربات، لطفاً ابتدا در تمامی کانال‌های زیر عضو شوید:"
-        if update.message: await update.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(markup_keys), parse_mode="HTML")
-        elif update.callback_query:
-            try: await update.callback_query.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(markup_keys), parse_mode="HTML")
-            except: pass
-        return False
-    db = load_db()
-    uid = str(user_id)
+            target = ch.get("chat_id")
 
+            if not target:
+                # اگر username داشت
+                target = ch.get("username")
+
+            if not target:
+                continue
+
+            member = await context.bot.get_chat_member(target, user_id)
+
+            if member.status in ["left", "kicked"]:
+                raise Exception("not joined")
+
+        except:
+            # not joined
+            markup = []
+
+            for ch in channels:
+                link = ch.get("link") or f"https://t.me/{ch.get('username','')}".strip()
+
+                markup.append([
+                    InlineKeyboardButton(
+                        f"عضویت در {ch.get('username','گروه')}",
+                        url=link
+                    )
+                ])
+
+            markup.append([
+                InlineKeyboardButton(
+                    "بررسی عضویت",
+                    callback_data="check_join_btn"
+                )
+            ])
+
+            msg = f"{te('gift')} برای استفاده از ربات، لطفاً عضو شوید:"
+
+            if update.message:
+                await update.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(markup), parse_mode="HTML")
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(markup), parse_mode="HTML")
+
+            return False
+
+    uid = str(user_id)
     if uid in db["users"]:
         db["users"][uid]["is_active"] = True
         save_db(db)
+
     return True
 
 async def check_join_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
     db = load_db()
-    channels = db["settings"].get("channels", [])
+    channels = db["settings"].get("channels", [ "type": "channel",   # یا group
+  "username": "@mychannel",   # اگر دارد
+  "chat_id": -1001234567890,  # برای گروه‌ها
+  "link": "https://t.me/...."])
     all_joined = True
     for ch in channels:
         try:
-            member = await context.bot.get_chat_member(ch["username"], user_id)
+            chat_id = ch.get("chat_id") or ch.get("username")
+
+            member = await context.bot.get_chat_member(chat_id, user_id)
             if member.status in ['left', 'kicked']: all_joined = False; break
         except: all_joined = False; break
     if not all_joined:
@@ -862,7 +904,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons = [
         [
             InlineKeyboardButton(
-                "1GB - 245,000",
+                "10GB - 199,000",
                 callback_data="buy_vol_1",
                 style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -870,7 +912,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "2GB - 480,000",
+                "30GB - 450,000",
                 callback_data="buy_vol_2",
                 style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -878,30 +920,12 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "3GB - 700,000",
+                "50GB - 598,000",
                 callback_data="buy_vol_3",
-                style="primary",
-                icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "5 گیگ بخر 7 گیگ ببر - 1,150,000",
-                callback_data="buy_vol_5",
-
                 style="success",
-                icon_custom_emoji_id=DYN_BTN_EMOJIS["special"]
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "10GB - 2,200,00",
-                callback_data="buy_vol_10",
-                style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
             )
-        ],        
-        [create_btn("back", "back_main")],
+        ],
     ]
 
     await query.message.edit_text(
@@ -919,11 +943,11 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     callback_data = query.data
 
     volume_map = {
-        "buy_vol_1": ("1GB", 240000),
-        "buy_vol_2": ("2GB", 480000),
-        "buy_vol_3": ("3GB", 700000),
-        "buy_vol_5": ("5گیگ بخر 7 گیگ ببر", 1150000),
-        "buy_vol_10": ("10GB", 2200000),
+        "buy_vol_1": ("10GB", 199000),
+        "buy_vol_2": ("30GB", 450000),
+        "buy_vol_3": ("50GB", 598000),
+        #"buy_vol_5": ("5گیگ بخر 7 گیگ ببر", 1150000),
+        #"buy_vol_10": ("10GB", 2200000),
     }
 
     # ❌ اگر دکمه اشتباه بود
@@ -2276,6 +2300,7 @@ async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYP
     return TEST_SERVER_STATE
 
 async def admin_test_server_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     admin_id = str(update.effective_user.id)
 
     db = load_db()
@@ -2283,6 +2308,7 @@ async def admin_test_server_input(update: Update, context: ContextTypes.DEFAULT_
     db["settings"].setdefault("test_server_session", {})
 
     if admin_id not in db["settings"]["test_server_session"]:
+
         db["settings"]["test_server_session"][admin_id] = {
             "active": True,
             "servers": []
@@ -2290,17 +2316,66 @@ async def admin_test_server_input(update: Update, context: ContextTypes.DEFAULT_
 
     session = db["settings"]["test_server_session"][admin_id]
 
-    server = update.message.text.strip()
+    configs = []
 
-    if not server:
+    # اگر فایل txt ارسال شد
+    if update.message.document:
+
+        file = await update.message.document.get_file()
+
+        path = f"test_servers_{admin_id}.txt"
+
+        await file.download_to_drive(path)
+
+        with open(path, "r", encoding="utf-8") as f:
+
+            configs = f.readlines()
+
+    # اگر متن عادی ارسال شد
+    elif update.message.text:
+
+        configs = update.message.text.splitlines()
+
+    else:
+
+        await update.message.reply_text(
+            "❌ فایل یا متن نامعتبره"
+        )
+
         return TEST_SERVER_STATE
 
-    session["servers"].append(server)
+    added = 0
+    skipped = 0
+
+    for server in configs:
+
+        server = server.strip()
+
+        if not server:
+            continue
+
+        # جلوگیری از تکراری
+        if server not in session["servers"]:
+
+            session["servers"].append(server)
+
+            added += 1
+
+        else:
+
+            skipped += 1
 
     save_db(db)
 
     await update.message.reply_text(
-        f"✅ سرور تست ذخیره شد\n📦 تعداد: {len(session['servers'])}"
+        f"""
+✅ تعداد {added} سرور تست ذخیره شد
+
+⚠️ تعداد {skipped} تکراری بود
+
+📦 مجموع فعلی:
+{len(session['servers'])}
+"""
     )
 
     return TEST_SERVER_STATE
@@ -2578,7 +2653,7 @@ admin_conv = ConversationHandler(
         ],
 
         TEST_SERVER_STATE: [
-            MessageHandler(filters.TEXT & ~filters.COMMAND, admin_test_server_input)
+            MessageHandler((filters.TEXT | filters.Document.TEXT) & ~filters.COMMAND,admin_test_server_input)
         ],
     },
 
