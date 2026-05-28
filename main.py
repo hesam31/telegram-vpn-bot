@@ -1970,16 +1970,9 @@ async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     keyboard = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("10GB", callback_data="addsrv_1"),
-            InlineKeyboardButton("30GB", callback_data="addsrv_2"),
-        ],
-        [
-            InlineKeyboardButton("50GB", callback_data="addsrv_3"),
-        ],
-        [
-            InlineKeyboardButton("بازگشت", callback_data="back_admin")
-        ]
+        InlineKeyboardButton("10GB", callback_data="addsrv_10"),
+        InlineKeyboardButton("30GB", callback_data="addsrv_30"),
+        InlineKeyboardButton("50GB", callback_data="addsrv_50"),
     ])
 
     await query.message.edit_text(
