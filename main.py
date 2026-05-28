@@ -216,28 +216,28 @@ def init_db():
 
     if not exists:
 
-        default_data = {
-            "settings": {
-                "channels": [],
-                "test_servers": [],
-                "servers": {
-                    "10": [],
-                    "30": [],
-                    "50": []
-                }
-                "server_session": {}
-            },
-            "users": {},
-            "bot_enabled": True,  
-            "plans": [
-                {
-                    "name": "تست رایگان",
-                    "price": 0,
-                    "id": 1234
-                }
-            ],
-            "receipts": []
+        ddefault_data = {
+    "settings": {
+        "channels": [],
+        "test_servers": [],
+        "servers": {
+            "10": [],
+            "30": [],
+            "50": []
+        },
+        "server_session": {}
+    },
+    "users": {},
+    "bot_enabled": True,
+    "plans": [
+        {
+            "name": "تست رایگان",
+            "price": 0,
+            "id": 1234
         }
+    ],
+    "receipts": []
+}
 
         cur.execute(
             """
