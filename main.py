@@ -628,85 +628,63 @@ async def check_force_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     db = load_db()
     channels = db["settings"].get("channels", [])
 
-    if not isinstance(channels, list) or len(channels) == 0:
+    if not channels:
         return True
-
-    not_joined = False
 
     for ch in channels:
         try:
-            chat_id = ch.get("chat_id")
-            username = ch.get("username")
+            target = ch.get("chat_id")
 
-            target = chat_id if chat_id is not None else username
+            if not target:
+                # اگر username داشت
+                target = ch.get("username")
 
             if not target:
                 continue
 
             member = await context.bot.get_chat_member(target, user_id)
 
-            if member.status in ("left", "kicked"):
-                not_joined = True
-                break
+            if member.status in ["left", "kicked"]:
+                raise Exception("not joined")
 
-        except Exception:
-            # فقط خطای واقعی مهمه، نه همه چیز
-            not_joined = True
-            break
+        except:
+            # not joined
+            markup = []
 
-    if not_joined:
+            for ch in channels:
+                link = ch.get("link") or f"https://t.me/{ch.get('username','')}".strip()
 
-        buttons = []
+                markup.append([
+                    InlineKeyboardButton(
+                        f"عضویت در {ch.get('username','گروه')}",
+                        url=link
+                    )
+                ])
 
-        for ch in channels:
-            link = ch.get("link")
-            title = ch.get("username") or ch.get("chat_id") or "کانال"
-
-            if not link:
-                continue
-
-            buttons.append([
+            markup.append([
                 InlineKeyboardButton(
-                    text=f"عضویت در {title}",
-                    url=link
+                    "بررسی عضویت",
+                    callback_data="check_join_btn"
                 )
             ])
 
-        buttons.append([
-            InlineKeyboardButton(
-                text="بررسی عضویت",
-                callback_data="check_join_btn"
-            )
-        ])
+            msg = f"{te('gift')} برای استفاده از ربات، لطفاً عضو شوید:"
 
-        msg = f"{te('gift')} برای استفاده از ربات، لطفاً در کانال‌ها عضو شوید:"
+            if update.message:
+                await update.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(markup), parse_mode="HTML")
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(markup), parse_mode="HTML")
 
-        markup = InlineKeyboardMarkup(buttons)
-
-        if update.message:
-            await update.message.reply_text(msg, reply_markup=markup, parse_mode="HTML")
-
-        elif update.callback_query:
-            try:
-                await update.callback_query.message.reply_text(
-                    msg,
-                    reply_markup=markup,
-                    parse_mode="HTML"
-                )
-            except:
-                pass
-
-        return False
+            return False
 
     uid = str(user_id)
-
     if uid in db["users"]:
         db["users"][uid]["is_active"] = True
         save_db(db)
 
     return True
 
-async def check_join_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+aasync def check_join_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
 
@@ -750,7 +728,73 @@ async def check_join_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
         text=f"{te('welcome')} <b>خوش آمدید</b>",
         reply_markup=main_menu_kb(),
         parse_mode="HTML"
-    )    
+    )
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    db = load_db()
+    uid = str(update.effective_user.id)
+
+    if not await check_bot_enabled(update, context):
+        return ConversationHandler.END
+
+    inviter = None
+    if context.args:
+        ref = context.args[0]
+        if ref.startswith("ref_"):
+            inviter = ref.split("_")[1]
+
+    if uid not in db["users"]:
+        db["users"][uid] = {
+            "name": update.effective_user.first_name,
+            "username": update.effective_user.username,
+            "services": [],
+            "pending_order": None,
+            "has_test": False,
+            "inviter": inviter,
+            "is_active": True
+        }
+
+        save_db(db)
+
+    if not await check_force_join(update, context):
+        return ConversationHandler.END
+
+    msg = (
+        f"{te('welcome')} <b>به صدورا بات خوش آمدید</b>\n\n"
+        f"{te('bullet')}برای ادامه گزینه مورد نظر را انتخاب کنید"
+    )
+
+    last_id = context.user_data.get("last_menu_msg_id")
+
+    if last_id and update.message:
+        try:
+            await context.bot.delete_message(update.effective_chat.id, last_id)
+        except:
+            pass
+
+    if update.message:
+        try:
+            await update.message.delete()
+        except:
+            pass
+
+        sent = await context.bot.send_message(
+            update.effective_chat.id,
+            msg,
+            reply_markup=main_menu_kb(),
+            parse_mode="HTML"
+        )
+        context.user_data["last_menu_msg_id"] = sent.message_id
+
+    elif update.callback_query:
+        await update.callback_query.message.edit_text(
+            msg,
+            reply_markup=main_menu_kb(),
+            parse_mode="HTML"
+        )
+        context.user_data["last_menu_msg_id"] = update.callback_query.message.message_id
+
+    return ConversationHandler.END
 
 async def support_handler(update, context):
     query = update.callback_query
@@ -902,6 +946,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
             )
         ],
+
     ]
 
     await query.message.edit_text(
@@ -2276,7 +2321,6 @@ async def admin_set_test_start(update: Update, context: ContextTypes.DEFAULT_TYP
     return TEST_SERVER_STATE
 
 async def admin_test_server_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     admin_id = str(update.effective_user.id)
 
     db = load_db()
@@ -2284,7 +2328,6 @@ async def admin_test_server_input(update: Update, context: ContextTypes.DEFAULT_
     db["settings"].setdefault("test_server_session", {})
 
     if admin_id not in db["settings"]["test_server_session"]:
-
         db["settings"]["test_server_session"][admin_id] = {
             "active": True,
             "servers": []
@@ -2292,66 +2335,17 @@ async def admin_test_server_input(update: Update, context: ContextTypes.DEFAULT_
 
     session = db["settings"]["test_server_session"][admin_id]
 
-    configs = []
+    server = update.message.text.strip()
 
-    # اگر فایل txt ارسال شد
-    if update.message.document:
-
-        file = await update.message.document.get_file()
-
-        path = f"test_servers_{admin_id}.txt"
-
-        await file.download_to_drive(path)
-
-        with open(path, "r", encoding="utf-8") as f:
-
-            configs = f.readlines()
-
-    # اگر متن عادی ارسال شد
-    elif update.message.text:
-
-        configs = update.message.text.splitlines()
-
-    else:
-
-        await update.message.reply_text(
-            "❌ فایل یا متن نامعتبره"
-        )
-
+    if not server:
         return TEST_SERVER_STATE
 
-    added = 0
-    skipped = 0
-
-    for server in configs:
-
-        server = server.strip()
-
-        if not server:
-            continue
-
-        # جلوگیری از تکراری
-        if server not in session["servers"]:
-
-            session["servers"].append(server)
-
-            added += 1
-
-        else:
-
-            skipped += 1
+    session["servers"].append(server)
 
     save_db(db)
 
     await update.message.reply_text(
-        f"""
-✅ تعداد {added} سرور تست ذخیره شد
-
-⚠️ تعداد {skipped} تکراری بود
-
-📦 مجموع فعلی:
-{len(session['servers'])}
-"""
+        f"✅ سرور تست ذخیره شد\n📦 تعداد: {len(session['servers'])}"
     )
 
     return TEST_SERVER_STATE
@@ -2629,7 +2623,7 @@ admin_conv = ConversationHandler(
         ],
 
         TEST_SERVER_STATE: [
-            MessageHandler((filters.TEXT | filters.Document.TEXT) & ~filters.COMMAND,admin_test_server_input)
+            MessageHandler(filters.TEXT & ~filters.COMMAND, admin_test_server_input)
         ],
     },
 
