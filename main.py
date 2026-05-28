@@ -1968,10 +1968,12 @@ async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     keyboard = InlineKeyboardMarkup([
+    [
         InlineKeyboardButton("10GB", callback_data="addsrv_10"),
         InlineKeyboardButton("30GB", callback_data="addsrv_30"),
         InlineKeyboardButton("50GB", callback_data="addsrv_50"),
-    ])
+    ]
+])
 
     await query.message.edit_text(
         "حجم مورد نظر را انتخاب کنید:",
