@@ -626,61 +626,80 @@ async def check_force_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         return True
 
     db = load_db()
-    channels = db["settings"].get("channels", [ "type": "channel",   # یا group
-  "username": "@mychannel",   # اگر دارد
-  "chat_id": -1001234567890,  # برای گروه‌ها
-  "link": "https://t.me/...."])
+    channels = db["settings"].get("channels", [])
 
-    if not channels:
+    if not isinstance(channels, list) or len(channels) == 0:
         return True
+
+    not_joined = False
 
     for ch in channels:
         try:
-            target = ch.get("chat_id")
+            chat_id = ch.get("chat_id")
+            username = ch.get("username")
 
-            if not target:
-                # اگر username داشت
-                target = ch.get("username")
+            target = chat_id if chat_id is not None else username
 
             if not target:
                 continue
 
             member = await context.bot.get_chat_member(target, user_id)
 
-            if member.status in ["left", "kicked"]:
-                raise Exception("not joined")
+            if member.status in ("left", "kicked"):
+                not_joined = True
+                break
 
-        except:
-            # not joined
-            markup = []
+        except Exception:
+            # فقط خطای واقعی مهمه، نه همه چیز
+            not_joined = True
+            break
 
-            for ch in channels:
-                link = ch.get("link") or f"https://t.me/{ch.get('username','')}".strip()
+    if not_joined:
 
-                markup.append([
-                    InlineKeyboardButton(
-                        f"عضویت در {ch.get('username','گروه')}",
-                        url=link
-                    )
-                ])
+        buttons = []
 
-            markup.append([
+        for ch in channels:
+            link = ch.get("link")
+            title = ch.get("username") or ch.get("chat_id") or "کانال"
+
+            if not link:
+                continue
+
+            buttons.append([
                 InlineKeyboardButton(
-                    "بررسی عضویت",
-                    callback_data="check_join_btn"
+                    text=f"عضویت در {title}",
+                    url=link
                 )
             ])
 
-            msg = f"{te('gift')} برای استفاده از ربات، لطفاً عضو شوید:"
+        buttons.append([
+            InlineKeyboardButton(
+                text="بررسی عضویت",
+                callback_data="check_join_btn"
+            )
+        ])
 
-            if update.message:
-                await update.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(markup), parse_mode="HTML")
-            elif update.callback_query:
-                await update.callback_query.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(markup), parse_mode="HTML")
+        msg = f"{te('gift')} برای استفاده از ربات، لطفاً در کانال‌ها عضو شوید:"
 
-            return False
+        markup = InlineKeyboardMarkup(buttons)
+
+        if update.message:
+            await update.message.reply_text(msg, reply_markup=markup, parse_mode="HTML")
+
+        elif update.callback_query:
+            try:
+                await update.callback_query.message.reply_text(
+                    msg,
+                    reply_markup=markup,
+                    parse_mode="HTML"
+                )
+            except:
+                pass
+
+        return False
 
     uid = str(user_id)
+
     if uid in db["users"]:
         db["users"][uid]["is_active"] = True
         save_db(db)
@@ -690,91 +709,48 @@ async def check_force_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 async def check_join_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
+
+    await query.answer()
+
     db = load_db()
-    channels = db["settings"].get("channels", [ "type": "channel",   # یا group
-  "username": "@mychannel",   # اگر دارد
-  "chat_id": -1001234567890,  # برای گروه‌ها
-  "link": "https://t.me/...."])
+    channels = db["settings"].get("channels", [])
+
     all_joined = True
+
     for ch in channels:
         try:
-            chat_id = ch.get("chat_id") or ch.get("username")
+            target = ch.get("chat_id") or ch.get("username")
 
-            member = await context.bot.get_chat_member(chat_id, user_id)
-            if member.status in ['left', 'kicked']: all_joined = False; break
-        except: all_joined = False; break
+            if not target:
+                continue
+
+            member = await context.bot.get_chat_member(target, user_id)
+
+            if member.status in ("left", "kicked"):
+                all_joined = False
+                break
+
+        except Exception:
+            all_joined = False
+            break
+
     if not all_joined:
-        await query.answer("هنوز در همه کانال‌ها عضو نشده‌اید!", show_alert=True)
-    else:
-        await query.answer("عضویت شما تایید شد!", show_alert=True)
+        await query.answer("هنوز عضو همه کانال‌ها نیستید!", show_alert=True)
+        return
+
+    await query.answer("تایید شد ✅", show_alert=True)
+
+    try:
         await query.message.delete()
-        await context.bot.send_message(user_id, f"{te('welcome')} <b>به صدورا بات خوش آمدید</b>\n\n{te('bullet')}برای ادامه گزینه مورد نظر خود را انتخاب کنید", reply_markup=main_menu_kb(), parse_mode="HTML")
+    except:
+        pass
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    db = load_db()
-    uid = str(update.effective_user.id)
-
-    if not await check_bot_enabled(update, context):
-        return ConversationHandler.END
-
-    inviter = None
-    if context.args:
-        ref = context.args[0]
-        if ref.startswith("ref_"):
-            inviter = ref.split("_")[1]
-
-    if uid not in db["users"]:
-        db["users"][uid] = {
-            "name": update.effective_user.first_name,
-            "username": update.effective_user.username,
-            "services": [],
-            "pending_order": None,
-            "has_test": False,
-            "inviter": inviter,
-            "is_active": True
-        }
-
-        save_db(db)
-
-    if not await check_force_join(update, context):
-        return ConversationHandler.END
-
-    msg = (
-        f"{te('welcome')} <b>به صدورا بات خوش آمدید</b>\n\n"
-        f"{te('bullet')}برای ادامه گزینه مورد نظر را انتخاب کنید"
-    )
-
-    last_id = context.user_data.get("last_menu_msg_id")
-
-    if last_id and update.message:
-        try:
-            await context.bot.delete_message(update.effective_chat.id, last_id)
-        except:
-            pass
-
-    if update.message:
-        try:
-            await update.message.delete()
-        except:
-            pass
-
-        sent = await context.bot.send_message(
-            update.effective_chat.id,
-            msg,
-            reply_markup=main_menu_kb(),
-            parse_mode="HTML"
-        )
-        context.user_data["last_menu_msg_id"] = sent.message_id
-
-    elif update.callback_query:
-        await update.callback_query.message.edit_text(
-            msg,
-            reply_markup=main_menu_kb(),
-            parse_mode="HTML"
-        )
-        context.user_data["last_menu_msg_id"] = update.callback_query.message.message_id
-
-    return ConversationHandler.END
+    await context.bot.send_message(
+        chat_id=user_id,
+        text=f"{te('welcome')} <b>خوش آمدید</b>",
+        reply_markup=main_menu_kb(),
+        parse_mode="HTML"
+    )    
 
 async def support_handler(update, context):
     query = update.callback_query
