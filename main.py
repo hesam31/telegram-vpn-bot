@@ -134,7 +134,7 @@ BTN_CFG = {
     "admin_server_stats":{"text": "آمار سرورها","style": "primary", "emoji_id": "5409380072291316349"},
     "admin_receipts":{"text": "رسید های واریزی","style": "primary","emoji_id": "5350697092184944245"},
     "admin_referrals": {"text": "سیستم رفرال","style": "primary","emoji_id": "5350790271627968474"},
-    "CHANNEL_POST_BUTTON": {"text": "خرید فوری سرور از صدورا بات","style": "success","emoji_id": "6073335669260819751"},
+    "CHANNEL_POST_BUTTON": {"text": "خرید سرور گیگی 12 هزار تومن کلیک کنید","style": "success","emoji_id": "6073335669260819751"},
     "admin_bot_toggle": {"text": "🔘 خاموش/روشن بات","style": "primary","emoji_id": "4956368164817470478"},
     "admin_search_user": {
     "text": "جستجوی کاربر",
@@ -2126,6 +2126,27 @@ async def list_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text += "\n"
     await query.message.edit_text(text[:4000], parse_mode="HTML", reply_markup=back_kb("admin"))
 
+async def broadcast_send(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    db = load_db()
+    text = update.message.text
+
+    success = 0
+    fail = 0
+
+    for uid in db["users"].keys():
+        try:
+            await context.bot.send_message(chat_id=int(uid), text=text)
+            success += 1
+        except:
+            fail += 1
+            continue
+
+    await update.message.reply_text(
+        f"📢 ارسال شد\n\n✅ موفق: {success}\n❌ ناموفق: {fail}"
+    )
+
+    return ConversationHandler.END
+
 async def admin_broadcast_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -2574,6 +2595,7 @@ admin_conv = ConversationHandler(
         CallbackQueryHandler(view_receipt, pattern="^view_receipt_"),
         CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
         CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
+        CallbackQueryHandler(admin_broadcast_start, pattern="admin_broadcast"),
 
     ],
 
@@ -2581,6 +2603,9 @@ admin_conv = ConversationHandler(
 
         GET_DM_USER_ID: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, admin_search_user_result)
+        ],
+         BROADCAST_STATE: [
+            MessageHandler(filters.TEXT & ~filters.COMMAND, broadcast_send)
         ],
 
         ADD_NAME: [
