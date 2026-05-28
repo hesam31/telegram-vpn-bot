@@ -684,7 +684,7 @@ async def check_force_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     return True
 
-aasync def check_join_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def check_join_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
 
