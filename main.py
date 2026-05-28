@@ -881,7 +881,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "50GB - 598,000",
                 callback_data="buy_vol_3",
                 style="success",
-                icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["special"]
             )
         ],
     ]
