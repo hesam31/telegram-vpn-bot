@@ -1454,11 +1454,17 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         return
 
+    # 🔥 مهم: دوباره لود دیتابیس
+    # چون allocate_servers دیتابیس را ذخیره کرده
+    db = load_db()
+
+    receipt = db["receipts"][index]
+
     # متن ارسال به کاربر
     text = (
-    f"{te('taeid')} <b>پرداخت شما تایید شد</b>\n\n"
-    f"{te('servers')} سرورهای شما:\n\n"
-)
+        f"{te('taeid')} <b>پرداخت شما تایید شد</b>\n\n"
+        f"{te('servers')} سرورهای شما:\n\n"
+    )
 
     for server in servers:
 
