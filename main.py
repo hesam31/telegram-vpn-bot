@@ -834,7 +834,7 @@ async def show_channels_text(update: Update, context: ContextTypes.DEFAULT_TYPE)
     text = f"{te('book')} <b>کانال‌های ما:</b>\n\n"
     for ch in channels: text += f"{te('bullet')} <a href='{ch['link']}'>{ch['username']}</a>\n"
     await query.message.edit_text(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=back_kb())
-    
+
 
 async def test_server_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -997,7 +997,6 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"{te('box')} حجم انتخاب شد: <b>{volume}</b>\n\n"
         f"{te('money')} قیمت هر عدد: <b>{price:,} تومان</b>\n\n"
         f"{te('NUMBER')} تعداد اکانت مورد نظر را وارد کنید:",
-        f"(فقط عددی بین ۱ تا ۹ ارسال کنید)",
         parse_mode="HTML",
         reply_markup=back_kb()
     )
