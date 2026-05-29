@@ -834,35 +834,72 @@ async def show_channels_text(update: Update, context: ContextTypes.DEFAULT_TYPE)
     text = f"{te('book')} <b>کانال‌های ما:</b>\n\n"
     for ch in channels: text += f"{te('bullet')} <a href='{ch['link']}'>{ch['username']}</a>\n"
     await query.message.edit_text(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=back_kb())
+    
 
 async def test_server_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     query = update.callback_query
     await query.answer()
-    if not await check_force_join(update, context): return
+
+    if not await check_force_join(update, context):
+        return
+
     uid = str(query.from_user.id)
-    db = load_db(if not db["settings"].get("test_server_enabled", True):
 
-    await query.message.edit_text(
-        f"{te('warning')} <b>سرور تست در حال حاضر در دسترس نیست.</b>\n\n"
-        f"لطفاً بعداً مراجعه کنید یا با پشتیبانی ارتباط بگیرید.",
-        parse_mode="HTML",
-        reply_markup=back_kb()
-    )
+    db = load_db()
 
-    return)
+    # 🔥 اگر سرور تست خاموش بود
+    if not db["settings"].get("test_server_enabled", True):
+
+        await query.message.edit_text(
+            f"{te('warning')} <b>سرور تست در حال حاضر در دسترس نیست.</b>\n\n"
+            f"لطفاً بعداً مراجعه کنید یا با پشتیبانی ارتباط بگیرید.",
+            parse_mode="HTML",
+            reply_markup=back_kb()
+        )
+
+        return
+
+    # اگر قبلاً تست گرفته
     if db["users"].get(uid, {}).get("has_test"):
-        await query.message.edit_text(f"{te('error')} <b>شما قبلاً سرور تست دریافت کرده‌اید.</b>\n\nهر کاربر فقط یک بار می‌تواند سرور تست رایگان دریافت کند.", parse_mode="HTML", reply_markup=back_kb())
-        return
-    test_servers = db["settings"].get("test_servers", [])
-    if not test_servers:
-        await query.message.edit_text(f"{te('warning')} <b>سرور تست در حال حاضر در دسترس نیست.</b>\n\nلطفاً بعداً مراجعه کنید یا با پشتیبانی ارتباط بگیرید.", parse_mode="HTML", reply_markup=back_kb())
+
+        await query.message.edit_text(
+            f"{te('error')} <b>شما قبلاً سرور تست دریافت کرده‌اید.</b>\n\n"
+            f"هر کاربر فقط یک بار می‌تواند سرور تست رایگان دریافت کند.",
+            parse_mode="HTML",
+            reply_markup=back_kb()
+        )
+
         return
 
-    config = test_servers.pop(0) 
+    # گرفتن لیست سرور تست
+    test_servers = db["settings"].get("test_servers", [])
+
+    # اگر موجود نبود
+    if not test_servers:
+
+        await query.message.edit_text(
+            f"{te('warning')} <b>سرور تست در حال حاضر در دسترس نیست.</b>\n\n"
+            f"لطفاً بعداً مراجعه کنید یا با پشتیبانی ارتباط بگیرید.",
+            parse_mode="HTML",
+            reply_markup=back_kb()
+        )
+
+        return
+
+    # گرفتن اولین سرور
+    config = test_servers.pop(0)
+
+    # ثبت اینکه کاربر تست گرفته
     db["users"][uid]["has_test"] = True
+
     save_db(db)
+
+    # ارسال سرور
     await query.message.edit_text(
-        f"{te('test')} <b>سرور تست رایگان شما:</b>\n\n<code>{config}</code>\n\n{te('warning')} این سرور فقط برای تست است و دارای محدودیت می‌باشد.",
+        f"{te('test')} <b>سرور تست رایگان شما:</b>\n\n"
+        f"<code>{config}</code>\n\n"
+        f"{te('warning')} این سرور فقط برای تست است و دارای محدودیت می‌باشد.",
         parse_mode="HTML",
         reply_markup=back_kb()
     )
