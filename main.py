@@ -134,7 +134,7 @@ BTN_CFG = {
     "admin_server_stats":{"text": "آمار سرورها","style": "primary", "emoji_id": "5409380072291316349"},
     "admin_receipts":{"text": "رسید های واریزی","style": "primary","emoji_id": "5350697092184944245"},
     "admin_referrals": {"text": "سیستم رفرال","style": "primary","emoji_id": "5350790271627968474"},
-    "CHANNEL_POST_BUTTON": {"text": "برای دریافت سرور تست رایگان کلیک کنید","style": "danger","emoji_id": "6073335669260819751"},
+    "CHANNEL_POST_BUTTON": {"text": "خرید سرور گیگی 12 هزار تومن کلیک کنید","style": "success","emoji_id": "6073335669260819751"},
     "admin_bot_toggle": {"text": "🔘 خاموش/روشن بات","style": "primary","emoji_id": "4956368164817470478"},
     "admin_search_user": {"text": "جستجوی کاربر","style": "primary","emoji_id": "5974235702701853774"},
     "admin_toggle_test_server": {"text": "🎁 خاموش/روشن سرور تست","style": "primary","emoji_id": "4958725487682650920"},
