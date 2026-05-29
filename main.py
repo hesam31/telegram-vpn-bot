@@ -136,11 +136,8 @@ BTN_CFG = {
     "admin_referrals": {"text": "سیستم رفرال","style": "primary","emoji_id": "5350790271627968474"},
     "CHANNEL_POST_BUTTON": {"text": "خرید سرور گیگی 12 هزار تومن کلیک کنید","style": "success","emoji_id": "6073335669260819751"},
     "admin_bot_toggle": {"text": "🔘 خاموش/روشن بات","style": "primary","emoji_id": "4956368164817470478"},
-    "admin_search_user": {
-    "text": "جستجوی کاربر",
-    "style": "primary",
-    "emoji_id": "5974235702701853774"
-},
+    "admin_search_user": {"text": "جستجوی کاربر","style": "primary","emoji_id": "5974235702701853774"},
+    "admin_toggle_test_server": {"text": "🎁 خاموش/روشن سرور تست","style": "primary","emoji_id": "4958725487682650920"},
 
 }
 
@@ -220,6 +217,7 @@ def init_db():
     "settings": {
         "channels": [],
         "test_servers": [],
+        "test_server_enabled": True,
         "servers": {
             "10": [],
             "30": [],
@@ -305,6 +303,7 @@ def load_db():
     db["settings"].setdefault("bot_enabled", True)
     db["settings"].setdefault("channels", [])
     db["settings"].setdefault("test_servers", [])
+    db["settings"].setdefault("test_server_enabled", True)
     db["settings"].setdefault("servers", {
         "1": [],
         "2": [],
@@ -473,6 +472,7 @@ def admin_menu_kb():
         [create_btn("admin_users", "admin_users"), create_btn("admin_products", "admin_products")],
         [create_btn("admin_broadcast", "admin_broadcast"), create_btn("admin_dm", "admin_dm")],
         [create_btn("admin_channels", "admin_channels"), create_btn("admin_set_test", "admin_set_test")],
+        [create_btn("admin_toggle_test_server", "admin_toggle_test_server")],
         [create_btn("admin_add_server", "admin_add_server")],
         [create_btn("admin_server_stats", "admin_server_stats")],
         [create_btn("admin_receipts", "admin_receipts")],
@@ -549,6 +549,30 @@ async def channel_post_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         await post.edit_reply_markup(reply_markup=keyboard)
     except Exception as e:
         print("CHANNEL BUTTON ERROR:", e)
+
+async def admin_toggle_test_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    query = update.callback_query
+    await query.answer()
+
+    db = load_db()
+
+    current = db["settings"].get("test_server_enabled", True)
+
+    db["settings"]["test_server_enabled"] = not current
+
+    save_db(db)
+
+    status = (
+        "🟢 ارسال سرور تست فعال شد"
+        if db["settings"]["test_server_enabled"]
+        else "🔴 ارسال سرور تست غیرفعال شد"
+    )
+
+    await query.message.edit_text(
+        status,
+        reply_markup=admin_menu_kb()
+    )        
     
 async def set_menu_button(app):
     await app.bot.set_chat_menu_button(
@@ -816,7 +840,16 @@ async def test_server_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
     await query.answer()
     if not await check_force_join(update, context): return
     uid = str(query.from_user.id)
-    db = load_db()
+    db = load_db(if not db["settings"].get("test_server_enabled", True):
+
+    await query.message.edit_text(
+        f"{te('warning')} <b>سرور تست در حال حاضر در دسترس نیست.</b>\n\n"
+        f"لطفاً بعداً مراجعه کنید یا با پشتیبانی ارتباط بگیرید.",
+        parse_mode="HTML",
+        reply_markup=back_kb()
+    )
+
+    return)
     if db["users"].get(uid, {}).get("has_test"):
         await query.message.edit_text(f"{te('error')} <b>شما قبلاً سرور تست دریافت کرده‌اید.</b>\n\nهر کاربر فقط یک بار می‌تواند سرور تست رایگان دریافت کند.", parse_mode="HTML", reply_markup=back_kb())
         return
@@ -927,6 +960,7 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"{te('box')} حجم انتخاب شد: <b>{volume}</b>\n\n"
         f"{te('money')} قیمت هر عدد: <b>{price:,} تومان</b>\n\n"
         f"{te('NUMBER')} تعداد اکانت مورد نظر را وارد کنید:",
+        f"(فقط عددی بین ۱ تا ۹ ارسال کنید)",
         parse_mode="HTML",
         reply_markup=back_kb()
     )
@@ -971,13 +1005,13 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         f"{te('rules')} در صورت نارضایتی مشتری، تا ۲۴ ساعت بعد از خرید حجم مصرفی محاسبه شده و مبلغ باقی‌مانده به شما بازگردانده می‌شود یا سرور جایگزین ارسال می‌شود.\n\n"
 
-        f"{te('rules')} فقط در صورت حادثه یا خاموشی دیتاسنتر حاصل از جنگ سرورهای ما قطع می‌شود و مسئولیت آن با ما نیست.\n\n"
+        f"{te('rules')} سرویس‌ها برای استفاده یک کاربر طراحی شده‌اند و حداکثر استفاده همزمان برای ۲ نفر مجاز می‌باشد.\n\n"
 
-        f"{te('rules')} احتمال قطعی کم وجود دارد، سرور های ما پایدار هستند ، ولی قطعی‌ها بسیار کم و سریع رفع می‌شوند.\n\n"
+        f"{te('rules')} سرویس‌ها در شرایط عادی و آزاد بودن اینترنت پایدار هستند و قطعی‌ها در سریع‌ترین زمان ممکن رفع می‌شوند.\n\n"
+
+        f"{te('rules')} در شرایط خاص مانند اختلالات سراسری، جنگ یا محدودیت‌های شدید اینترنت، ممکن است سرویس‌ها با سرورهای متفاوت و قیمت‌های متفاوت ارائه شوند.\n\n"
 
         f"{te('rules')} سرور دارای ساب‌لینک است؛ بعد از ارسال سرور، مسئولیت مصرف حجم و نحوه استفاده بر عهده مشتری می‌باشد.\n\n"
-
-        f"{te('rules')} سرویس‌ها بدون محدودیت زمانی و بدون محدودیت کاربر ارائه می‌شوند.\n\n"
 
         f"{te('support')} پشتیبانی به‌صورت ۲۴ ساعته در خدمت شماست."
     )
@@ -2450,7 +2484,8 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
     app.add_handler(CallbackQueryHandler(admin_toggle_bot, pattern="admin_bot_toggle"))
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
-    app.add_handler(CallbackQueryHandler(admin_view_user, pattern="^admin_view_user_")),
+    app.add_handler(CallbackQueryHandler(admin_view_user, pattern="^admin_view_user_"))
+    app.add_handler(CallbackQueryHandler(admin_toggle_test_server,pattern="^admin_toggle_test_server$"))
 
     app.add_handler(
         MessageHandler(
