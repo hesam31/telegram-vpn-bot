@@ -1538,8 +1538,9 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # متن ارسال به کاربر
     text = (
         f"{te('taeid')} <b>پرداخت شما تایید شد</b>\n\n"
-        f"{te('servers')} سرورهای شما:\n\n"
-         f"{te('warning')} <b>نکات مهم:</b>\n\n"
+        f"{te('servers')} سرور شما:\n\n"
+
+        f"{te('warning')} <b>نکات مهم:</b>\n\n"
         f"{te('nv')}{te('v2box')} تا حد امکان از برنامه‌های <b>NapsternetV</b> و <b>V2Box</b> استفاده کنید.\n\n"
         f" قبل از وارد کردن ساب‌لینک، ابتدا از اتصال صحیح سرور اطمینان حاصل کنید.\n\n"
         f" پس از اتصال به سرور، ساب‌لینک را در برنامه وارد یا آپدیت نمایید.\n\n"
@@ -1552,6 +1553,14 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text += (
             f"{server}\n\n"
         )
+
+    text += (
+        f"{te('warning')} <b>نکات مهم:</b>\n\n"
+        f"{te('nv')}{te('v2box')} تا حد امکان از برنامه‌های <b>NapsternetV</b> و <b>V2Box</b> استفاده کنید.\n\n"
+        f"• قبل از وارد کردن ساب‌لینک، ابتدا از اتصال صحیح سرور اطمینان حاصل کنید.\n\n"
+        f"• پس از اتصال به سرور، ساب‌لینک را در برنامه وارد یا آپدیت نمایید.\n\n"
+        f"• در صورت بروز مشکل، با پشتیبانی در ارتباط باشید."
+)    
 
     # ذخیره داخل سرویس های کاربر
     db["users"][uid].setdefault(
