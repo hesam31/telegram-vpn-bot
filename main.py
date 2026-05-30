@@ -96,6 +96,10 @@ MSG_EMOJIS = {
     "taeid":  {"id":"6073335669260819751",  "char": "👍"},
     "rules":  {"id":"5987863552327684435",  "char": "🚫"},
     "rule":  {"id":"5956564630993114415",  "char": "💸"},
+    "nv":  {"id":"6050626661043411760",  "char": "💸"},
+    "v2box":  {"id":"5866266486942733691",  "char": "💸"},
+
+
 
 
 
@@ -134,7 +138,9 @@ BTN_CFG = {
     "admin_server_stats":{"text": "آمار سرورها","style": "primary", "emoji_id": "5409380072291316349"},
     "admin_receipts":{"text": "رسید های واریزی","style": "primary","emoji_id": "5350697092184944245"},
     "admin_referrals": {"text": "سیستم رفرال","style": "primary","emoji_id": "5350790271627968474"},
-    "CHANNEL_POST_BUTTON": {"text": "برای دریافت سرور تست رایگان کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},    "admin_bot_toggle": {"text": "🔘 خاموش/روشن بات","style": "primary","emoji_id": "4956368164817470478"},
+    #"CHANNEL_POST_BUTTON": {"text": "برای دریافت سرور تست رایگان کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
+    "CHANNEL_POST_BUTTON": {"text": "خرید سرور گیگی ۱۲ هزار تومن کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
+    "admin_bot_toggle": {"text": "🔘 خاموش/روشن بات","style": "primary","emoji_id": "4956368164817470478"},
     "admin_search_user": {"text": "جستجوی کاربر","style": "primary","emoji_id": "5974235702701853774"},
     "admin_toggle_test_server": {"text": "🎁 خاموش/روشن سرور تست","style": "primary","emoji_id": "4958725487682650920"},
 
@@ -995,7 +1001,7 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.edit_text(
         f"{te('box')} حجم انتخاب شد: <b>{volume}</b>\n\n"
         f"{te('money')} قیمت هر عدد: <b>{price:,} تومان</b>\n\n"
-        f"{te('NUMBER')} تعداد اکانت مورد نظر را وارد کنید:",
+        f"{te('NUMBER')}چند تا سرور میخوای بخری ازمون؟ (( بین ۱ تا ۹ یک عدد رو ارسال کن)):",
         parse_mode="HTML",
         reply_markup=back_kb()
     )
@@ -1533,6 +1539,12 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         f"{te('taeid')} <b>پرداخت شما تایید شد</b>\n\n"
         f"{te('servers')} سرورهای شما:\n\n"
+         f"{te('warning')} <b>نکات مهم:</b>\n\n"
+        f"{te('nv')}{te('v2box')} تا حد امکان از برنامه‌های <b>NapsternetV</b> و <b>V2Box</b> استفاده کنید.\n\n"
+        f" قبل از وارد کردن ساب‌لینک، ابتدا از اتصال صحیح سرور اطمینان حاصل کنید.\n\n"
+        f" پس از اتصال به سرور، ساب‌لینک را در برنامه وارد یا آپدیت نمایید.\n\n"
+        f" در صورت بروز مشکل، با پشتیبانی در ارتباط باشید."
+
     )
 
     for server in servers:
