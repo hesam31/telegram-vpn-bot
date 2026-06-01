@@ -9,6 +9,7 @@ from datetime import datetime
 import re
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import MenuButtonCommands
+from telegram import BotCommand, BotCommandScopeChat
 from telegram.ext import MessageHandler, filters
 from telegram.ext import (
     ApplicationBuilder,
@@ -574,7 +575,22 @@ async def set_menu_button(app):
     await app.bot.set_chat_menu_button(
         menu_button=MenuButtonCommands()
     )
+async def set_commands(app):
 
+    # کامندهای کاربران عادی
+    await app.bot.set_my_commands([
+        BotCommand("start", "شروع ربات")
+    ])
+
+    # کامندهای ادمین
+    for admin_id in ADMIN_IDS:
+        await app.bot.set_my_commands(
+            [
+                BotCommand("start", "شروع ربات"),
+                BotCommand("admin", "پنل مدیریت")
+            ],
+            scope=BotCommandScopeChat(admin_id)
+        )
 async def admin_search_user_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -992,9 +1008,8 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.edit_text(
         f"{te('box')} حجم انتخاب شد: <b>{volume}</b>\n\n"
         f"{te('money')} قیمت هر عدد: <b>{price:,} تومان</b>\n\n"
-        f"{te('NUMBER')}چند تا سرور میخوای بخری از ما \n"
-        f"{te('not')}   (لطفا بین 1 تا 9 یک عدد را انتخاب کنید) "
-,
+        f"{te('NUMBER')}چند تا سرور میخوای بخری از ما \n\n"
+        f"{te('not')}(لطفا بین 1 تا 9 یک عدد را انتخاب کنید)",
         parse_mode="HTML",
         reply_markup=back_kb()
     )
@@ -1083,7 +1098,10 @@ async def buy_confirm_rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"{te('card')} شماره کارت:\n\n"
         f"{te('card')} <code>{CARD_NUMBER}</code>\n\n"
         f"{te('stars')} پس از واریز عکس رسید را ارسال کنید:\n"
-        f"<b>(در مبلغ پرداختی دقت فرمایید؛ در صورت مغایرت با مبلغ اعلام‌شده، رسید شما تایید نخواهد شد.)</b>\n\n"        
+        f"<b>(در مبلغ پرداختی دقت فرمایید؛ در صورت مغایرت با مبلغ اعلام‌شده، رسید شما تایید نخواهد شد.)</b>\n\n"
+        f"{te('card')} در صورتی که در هنگام پرداخت با خطا مواجه شدید حتما با همراه بانک کارت خود امتحان کنید\n\n"
+
+
     )
 
     await query.message.edit_text(
@@ -2516,6 +2534,9 @@ if __name__ == "__main__":
     import asyncio
 
     async def post_init(app):
+        
+        await set_commands(app)
+
 
         if app.job_queue:
             app.job_queue.run_repeating(
