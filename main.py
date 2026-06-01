@@ -992,8 +992,8 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.edit_text(
         f"{te('box')} حجم انتخاب شد: <b>{volume}</b>\n\n"
         f"{te('money')} قیمت هر عدد: <b>{price:,} تومان</b>\n\n"
-        f"{te('NUMBER')}چند تا سرور میخوای بخری از ما "
-        f"{te('not')}   (لطفا بین 1 تا 9 یک عدد را انتخاب کنید) :"
+        f"{te('NUMBER')}چند تا سرور میخوای بخری از ما \n"
+        f"{te('not')}   (لطفا بین 1 تا 9 یک عدد را انتخاب کنید) "
 ,
         parse_mode="HTML",
         reply_markup=back_kb()
