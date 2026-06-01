@@ -99,17 +99,6 @@ MSG_EMOJIS = {
     "nv":  {"id":"6050626661043411760",  "char": "💸"},
     "v2box":  {"id":"5866266486942733691",  "char": "💸"},
     "ok":  {"id":"6102503234549586828",  "char": "✅"},
-
-
-
-
-
-
-
-
-
-
-
 }
 
 def te(key):
@@ -1003,7 +992,9 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.edit_text(
         f"{te('box')} حجم انتخاب شد: <b>{volume}</b>\n\n"
         f"{te('money')} قیمت هر عدد: <b>{price:,} تومان</b>\n\n"
-        f"{te('NUMBER')}چند تا سرور میخوای بخری ازمون؟ ( بین ۱ تا ۹ یک عدد رو ارسال کن):",
+        f"{te('NUMBER')}چند تا سرور میخوای بخری از ما "
+        f"{te('not')}   (لطفا بین 1 تا 9 یک عدد را انتخاب کنید) :"
+,
         parse_mode="HTML",
         reply_markup=back_kb()
     )
@@ -1013,9 +1004,18 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        count = int(update.message.text)
+        count = int(update.message.text.strip())
     except ValueError:
-        await update.message.reply_text("فقط عدد وارد کنید.")
+        await update.message.reply_text(
+            "❌ فقط یک عدد بین 1 تا 9 وارد کنید."
+        )
+        return BUY_GET_COUNT
+
+    # فقط اعداد 1 تا 9 مجاز هستند
+    if count < 1 or count > 9:
+        await update.message.reply_text(
+            "❌ تعداد سرور فقط می‌تواند بین 1 تا 9 باشد.\n\nلطفاً دوباره وارد کنید:"
+        )
         return BUY_GET_COUNT
 
     context.user_data["count"] = count
@@ -1045,17 +1045,11 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         f"{te('rule')} قبل از خرید قوانین را تایید کنید.\n\n"
-
         f"{te('rules')} در صورت نارضایتی مشتری، تا ۲۴ ساعت بعد از خرید حجم مصرفی محاسبه شده و مبلغ باقی‌مانده به شما بازگردانده می‌شود یا سرور جایگزین ارسال می‌شود.\n\n"
-
         f"{te('rules')} سرویس‌ها برای استفاده یک کاربر طراحی شده‌اند و حداکثر استفاده همزمان برای ۲ نفر مجاز می‌باشد.\n\n"
-
         f"{te('rules')} سرویس‌ها در شرایط عادی و آزاد بودن اینترنت پایدار هستند و قطعی‌ها در سریع‌ترین زمان ممکن رفع می‌شوند.\n\n"
-
         f"{te('rules')} در شرایط خاص مانند اختلالات سراسری، جنگ یا محدودیت‌های شدید اینترنت، ممکن است سرویس‌ها با سرورهای متفاوت و قیمت‌های متفاوت ارائه شوند.\n\n"
-
         f"{te('rules')} سرور دارای ساب‌لینک است؛ بعد از ارسال سرور، مسئولیت مصرف حجم و نحوه استفاده بر عهده مشتری می‌باشد.\n\n"
-
         f"{te('support')} پشتیبانی به‌صورت ۲۴ ساعته در خدمت شماست."
     )
 
@@ -1361,9 +1355,20 @@ async def show_archive_receipts(update, context):
         if r.get("status") in ["approved", "rejected"]
     ]
 
+    receipts.reverse()  # جدیدترین بالا
+
+    page = int(query.data.split("_")[-1]) if "page_" in query.data else 0
+
+    per_page = 10
+
+    start = page * per_page
+    end = start + per_page
+
+    page_items = receipts[start:end]
+
     kb = []
 
-    for i, r in receipts:
+    for i, r in page_items:
 
         status = "✅" if r["status"] == "approved" else "❌"
 
@@ -1374,6 +1379,27 @@ async def show_archive_receipts(update, context):
             )
         ])
 
+    nav = []
+
+    if page > 0:
+        nav.append(
+            InlineKeyboardButton(
+                "⬅️ قبلی",
+                callback_data=f"receipts_archive_page_{page-1}"
+            )
+        )
+
+    if end < len(receipts):
+        nav.append(
+            InlineKeyboardButton(
+                "➡️ بعدی",
+                callback_data=f"receipts_archive_page_{page+1}"
+            )
+        )
+
+    if nav:
+        kb.append(nav)
+
     kb.append([
         InlineKeyboardButton(
             "🔙 بازگشت",
@@ -1382,9 +1408,9 @@ async def show_archive_receipts(update, context):
     ])
 
     await query.message.edit_text(
-        "📁 آرشیو رسید ها:",
+        f"📁 آرشیو رسیدها\n\nصفحه {page + 1}",
         reply_markup=InlineKeyboardMarkup(kb)
-    )    
+    )
 
 async def view_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -2688,6 +2714,8 @@ admin_conv = ConversationHandler(
         CallbackQueryHandler(finish_test_servers, pattern="^finish_test_servers$"),
         CallbackQueryHandler(admin_add_channel_user, pattern="^add_ch$"),
         CallbackQueryHandler(admin_broadcast_start, pattern="admin_broadcast"),
+        CallbackQueryHandler(show_pending_receipts,pattern="^receipts_pending_page_"),
+        CallbackQueryHandler(show_archive_receipts,pattern="^receipts_archive_page_"),
 
     ],
 
