@@ -100,6 +100,9 @@ MSG_EMOJIS = {
     "nv":  {"id":"6050626661043411760",  "char": "💸"},
     "v2box":  {"id":"5866266486942733691",  "char": "💸"},
     "ok":  {"id":"6102503234549586828",  "char": "✅"},
+    "fire":  {"id":"6050610331577752836",  "char": "🔥"},
+
+
 }
 
 def te(key):
@@ -923,7 +926,7 @@ async def buy_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     buttons = [
-        [InlineKeyboardButton("VIP", callback_data="buy_VIP", style="success", icon_custom_emoji_id=DYN_BTN_EMOJIS["welcome"])],
+        [InlineKeyboardButton("VIP", callback_data="buy_VIP", style="success", icon_custom_emoji_id=DYN_BTN_EMOJIS["fire"])],
         [InlineKeyboardButton("PRIME",callback_data="buy_PRIME",style="primary",icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"])],
         [create_btn("back", "back_main")],
     ]
@@ -953,7 +956,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "30GB - 598,000(پر فروش ترین)",
+                "30GB - 598,000",
                 callback_data="buy_vol_2",
                 style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -975,6 +978,14 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["special"]
             )
         ],        
+        [
+        InlineKeyboardButton(
+            "بازگشت",
+            callback_data="back_buy_plans",
+            style="danger",
+            icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
+        )
+    ],
     ]
 
     await query.message.edit_text(
