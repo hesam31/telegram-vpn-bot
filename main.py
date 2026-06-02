@@ -41,6 +41,7 @@ def _patched_to_dict(self, *args, **kwargs):
 
 InlineKeyboardButton.__init__ = _patched_init
 InlineKeyboardButton.to_dict = _patched_to_dict
+
 BOT_TOKEN = "8878547383:AAHu5geWSlHo6VowuKhhSFl4tn0iFA84j1M"
 ADMIN_IDS = [81469723,1892655576]
 DB_FILE = "database.db"
@@ -130,10 +131,9 @@ BTN_CFG = {
     "admin_receipts":{"text": "رسید های واریزی","style": "primary","emoji_id": "5350697092184944245"},
     "admin_referrals": {"text": "سیستم رفرال","style": "primary","emoji_id": "5350790271627968474"},
     #"CHANNEL_POST_BUTTON": {"text": "برای دریافت سرور تست رایگان کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
-    #"CHANNEL_POST_BUTTON": {"text": "خرید سرور گیگی ۱۲ هزار تومن کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
-    "CHANNEL_POST_BUTTON": {"text": " برای خرید سرور نامحدود کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
-
-
+    "CHANNEL_POST_BUTTON": {"text": "خرید سرور گیگی ۱۲ هزار تومن کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
+    
+    #"CHANNEL_POST_BUTTON": {"text": " برای خرید سرور نامحدود کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
     "admin_bot_toggle": {"text": "🔘 خاموش/روشن بات","style": "primary","emoji_id": "4956368164817470478"},
     "admin_search_user": {"text": "جستجوی کاربر","style": "primary","emoji_id": "5974235702701853774"},
     "admin_toggle_test_server": {"text": "🎁 خاموش/روشن سرور تست","style": "primary","emoji_id": "4958725487682650920"},
@@ -220,7 +220,8 @@ def init_db():
         "servers": {
             "10": [],
             "30": [],
-            "50": []
+            "50": [],
+            "100":[]
         },
         "server_session": {}
     },
@@ -944,7 +945,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons = [
         [
             InlineKeyboardButton(
-                "10GB - 199,000",
+                "10GB - 245,000",
                 callback_data="buy_vol_1",
                 style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -952,7 +953,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "30GB - 450,000",
+                "30GB - 598,000",
                 callback_data="buy_vol_2",
                 style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -960,12 +961,20 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "50GB - 598,000",
+                "50GB - 750,000",
                 callback_data="buy_vol_3",
                 style="success",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["special"]
             )
         ],
+        [
+            InlineKeyboardButton(
+                "100GB - 1,299,000",
+                callback_data="buy_vol_3",
+                style="primary",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["special"]
+            )
+        ],        
     ]
 
     await query.message.edit_text(
