@@ -131,8 +131,7 @@ BTN_CFG = {
     "admin_receipts":{"text": "رسید های واریزی","style": "primary","emoji_id": "5350697092184944245"},
     "admin_referrals": {"text": "سیستم رفرال","style": "primary","emoji_id": "5350790271627968474"},
     #"CHANNEL_POST_BUTTON": {"text": "برای دریافت سرور تست رایگان کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
-    "CHANNEL_POST_BUTTON": {"text": "خرید سرور گیگی ۱۲ هزار تومن کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
-    
+    "CHANNEL_POST_BUTTON": {"text": "خرید سرور گیگی 13 هزار تومن کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
     #"CHANNEL_POST_BUTTON": {"text": " برای خرید سرور نامحدود کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
     "admin_bot_toggle": {"text": "🔘 خاموش/روشن بات","style": "primary","emoji_id": "4956368164817470478"},
     "admin_search_user": {"text": "جستجوی کاربر","style": "primary","emoji_id": "5974235702701853774"},
@@ -925,6 +924,7 @@ async def buy_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     buttons = [
         [InlineKeyboardButton("VIP", callback_data="buy_VIP", style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"])],
+        [InlineKeyboardButton("PRIME",callback_data="buy_PRIME",style="success",icon_custom_emoji_id=DYN_BTN_EMOJIS["special"])],
         [create_btn("back", "back_main")],
     ]
 
@@ -953,7 +953,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "30GB - 598,000",
+                "30GB - 598,000(پر فروش ترین)",
                 callback_data="buy_vol_2",
                 style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -963,15 +963,15 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
             InlineKeyboardButton(
                 "50GB - 750,000",
                 callback_data="buy_vol_3",
-                style="success",
-                icon_custom_emoji_id=DYN_BTN_EMOJIS["special"]
+                style="primary",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
             )
         ],
         [
             InlineKeyboardButton(
                 "100GB - 1,299,000",
-                callback_data="buy_vol_3",
-                style="primary",
+                callback_data="buy_vol_4",
+                style="success",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["special"]
             )
         ],        
@@ -992,11 +992,12 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     callback_data = query.data
 
     volume_map = {
-        "buy_vol_1": ("10GB", 199000),
-        "buy_vol_2": ("30GB", 450000),
-        "buy_vol_3": ("50GB", 598000),
-        #"buy_vol_5": ("5گیگ بخر 7 گیگ ببر", 1150000),
-        #"buy_vol_10": ("10GB", 2200000),
+        "buy_vol_1": ("10GB", 245000),
+        "buy_vol_2": ("30GB", 598000),
+        "buy_vol_3": ("50GB", 750000),
+        "buy_vol_4": ("100GB", 1299000),
+        "prime_vol_1": ("50GB", 450000),
+        "prime_vol_2": ("100GB", 750000),
     }
 
     # ❌ اگر دکمه اشتباه بود
@@ -1170,6 +1171,41 @@ async def buy_VIP(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     return GET_RECEIPT
+
+
+async def buy_PRIME(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    context.user_data["plan"] = "PRIME"
+
+    buttons = [
+        [
+            InlineKeyboardButton(
+                "50GB - 450,000",
+                callback_data="prime_vol_1",
+                style="primary",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "100GB - 750,000",
+                callback_data="prime_vol_2",
+                style="primary",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
+            )
+        ],
+    
+    ]
+
+    await query.message.edit_text(
+        f"{te('PRIME')} حجم پلن PRIME را انتخاب کنید:",
+        reply_markup=InlineKeyboardMarkup(buttons),
+        parse_mode="HTML"
+    )
+
+    return BUY_SELECT_VOLUME    
 
 async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -1624,7 +1660,7 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             "sub_id": server,
 
-            "name": f"{volume}GB VIP",
+            "name": f"{volume}GB {pending.get('plan','VIP')}",
 
             "date": str(datetime.now())
 
@@ -2595,6 +2631,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
     app.add_handler(CallbackQueryHandler(admin_view_user, pattern="^admin_view_user_"))
     app.add_handler(CallbackQueryHandler(admin_toggle_test_server,pattern="^admin_toggle_test_server$"))
+    app.add_handler(CallbackQueryHandler(buy_PRIME, pattern="^buy_PRIME$"))
 
     app.add_handler(
         MessageHandler(
