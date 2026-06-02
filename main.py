@@ -1230,6 +1230,40 @@ async def buy_PRIME(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return BUY_SELECT_VOLUME    
 
+async def back_to_buy_plans(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    buttons = [
+        [
+            InlineKeyboardButton(
+                "VIP",
+                callback_data="buy_VIP",
+                style="success",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["fire"]
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "PRIME",
+                callback_data="buy_PRIME",
+                style="primary",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
+            )
+        ],
+        [
+            create_btn("back", "back_main")
+        ]
+    ]
+
+    await query.message.edit_text(
+        f"{te('pin')} پلن مورد نظر را انتخاب کنید:",
+        reply_markup=InlineKeyboardMarkup(buttons),
+        parse_mode="HTML"
+    )
+
+    return BUY_SELECT_PLAN    
+
 async def buy_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not update.message.photo:
