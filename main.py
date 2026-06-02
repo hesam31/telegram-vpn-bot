@@ -923,8 +923,8 @@ async def buy_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     buttons = [
-        [InlineKeyboardButton("VIP", callback_data="buy_VIP", style="success", icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"])],
-        [InlineKeyboardButton("PRIME",callback_data="buy_PRIME",style="primary",icon_custom_emoji_id=DYN_BTN_EMOJIS["special"])],
+        [InlineKeyboardButton("VIP", callback_data="buy_VIP", style="success", icon_custom_emoji_id=DYN_BTN_EMOJIS["welcome"])],
+        [InlineKeyboardButton("PRIME",callback_data="buy_PRIME",style="primary",icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"])],
         [create_btn("back", "back_main")],
     ]
 
@@ -1192,7 +1192,7 @@ async def buy_PRIME(update: Update, context: ContextTypes.DEFAULT_TYPE):
             InlineKeyboardButton(
                 "100GB - 750,000",
                 callback_data="prime_vol_2",
-                style="primary",
+                style="success",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
             )
         ],
