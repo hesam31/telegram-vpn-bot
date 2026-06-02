@@ -133,7 +133,7 @@ BTN_CFG = {
     "admin_receipts":{"text": "رسید های واریزی","style": "primary","emoji_id": "5350697092184944245"},
     "admin_referrals": {"text": "سیستم رفرال","style": "primary","emoji_id": "5350790271627968474"},
     #"CHANNEL_POST_BUTTON": {"text": "برای دریافت سرور تست رایگان کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
-    "CHANNEL_POST_BUTTON": {"text": "خرید سرور گیگی 7 هزار تومن کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
+    "CHANNEL_POST_BUTTON": {"text": "خرید سرور گیگی 13 هزار تومن کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
     #"CHANNEL_POST_BUTTON": {"text": " برای خرید سرور نامحدود کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
     "admin_bot_toggle": {"text": "🔘 خاموش/روشن بات","style": "primary","emoji_id": "4956368164817470478"},
     "admin_search_user": {"text": "جستجوی کاربر","style": "primary","emoji_id": "5974235702701853774"},
@@ -944,7 +944,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    if query.data != "buy_VIP":
+    if query.data == "buy_VIP":
         context.user_data["plan"] = "VIP"
 
     buttons = [
@@ -1197,7 +1197,7 @@ async def buy_PRIME(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons = [
         [
             InlineKeyboardButton(
-                "50GB - 450,000",
+                "50GB - 444,000",
                 callback_data="prime_vol_1",
                 style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -1205,7 +1205,7 @@ async def buy_PRIME(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "100GB - 750,000",
+                "100GB - 777,000",
                 callback_data="prime_vol_2",
                 style="success",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
