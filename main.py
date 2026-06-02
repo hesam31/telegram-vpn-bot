@@ -1211,6 +1211,14 @@ async def buy_PRIME(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
             )
         ],
+        [
+        InlineKeyboardButton(
+            "بازگشت",
+            callback_data="back_buy_plans",
+            style="danger",
+            icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
+        )
+    ],
     
     ]
 
@@ -2647,6 +2655,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_view_user, pattern="^admin_view_user_"))
     app.add_handler(CallbackQueryHandler(admin_toggle_test_server,pattern="^admin_toggle_test_server$"))
     app.add_handler(CallbackQueryHandler(buy_PRIME, pattern="^buy_PRIME$"))
+    app.add_handler(CallbackQueryHandler(back_to_buy_plans, pattern="^back_buy_plans$"))
 
     app.add_handler(
         MessageHandler(
