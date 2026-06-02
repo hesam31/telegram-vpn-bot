@@ -100,7 +100,6 @@ MSG_EMOJIS = {
     "nv":  {"id":"6050626661043411760",  "char": "💸"},
     "v2box":  {"id":"5866266486942733691",  "char": "💸"},
     "ok":  {"id":"6102503234549586828",  "char": "✅"},
-    "fire":  {"id":"6050610331577752836",  "char": "🔥"},
 
 
 }
@@ -158,6 +157,8 @@ DYN_BTN_EMOJIS = {
     "accept":"5348404473129614535",
     "special":"5967337229310238293",
     "join":"5350835008007324644"
+    "fire":"id":"6050610331577752836",
+
 
 }
 
@@ -943,7 +944,8 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    context.user_data["plan"] = "VIP"
+    if query.data != "buy_VIP":
+        context.user_data["plan"] = "VIP"
 
     buttons = [
         [
@@ -995,6 +997,8 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     return BUY_SELECT_VOLUME
+
+    
 
 async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -2688,7 +2692,7 @@ if __name__ == "__main__":
             BUY_SELECT_VOLUME: [
                 CallbackQueryHandler(
                     buy_select_volume,
-                    pattern="^buy_vol_"
+                    pattern="^(buy_vol_|prime_vol_).*"
                 )
             ],
 
