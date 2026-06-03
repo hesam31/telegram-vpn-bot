@@ -2338,18 +2338,17 @@ async def list_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def broadcast_send(update: Update, context: ContextTypes.DEFAULT_TYPE):
     db = load_db()
-    text = update.message.text
 
     success = 0
     fail = 0
 
     for uid in db["users"].keys():
         try:
-            await context.bot.send_message(chat_id=int(uid), text=text)
+            await update.message.copy(chat_id=int(uid))
             success += 1
-        except:
+        except Exception as e:
+            print(f"Broadcast Error {uid}: {e}")
             fail += 1
-            continue
 
     await update.message.reply_text(
         f"📢 ارسال شد\n\n✅ موفق: {success}\n❌ ناموفق: {fail}"
@@ -2831,10 +2830,9 @@ admin_conv = ConversationHandler(
         GET_DM_USER_ID: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, admin_search_user_result)
         ],
-         BROADCAST_STATE: [
-            MessageHandler(filters.TEXT & ~filters.COMMAND, broadcast_send)
+        BROADCAST_STATE: [
+            MessageHandler(filters.ALL & ~filters.COMMAND,broadcast_send)
         ],
-
         ADD_NAME: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, admin_save_plan_name)
         ],
