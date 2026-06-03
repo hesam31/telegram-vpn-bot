@@ -2365,10 +2365,30 @@ async def admin_broadcast_start(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def admin_broadcast_send(update: Update, context: ContextTypes.DEFAULT_TYPE):
     count = 0
-    for uid in load_db()["users"]:
-        try: await update.message.copy(chat_id=uid); count += 1
-        except: pass
-    await update.message.reply_text(f"{te('success')} پیام به {count} نفر ارسال شد.", reply_markup=admin_menu_kb(), parse_mode="HTML")
+    failed = 0
+
+    db = load_db()
+    msg = update.message
+
+    for uid in db["users"]:
+        try:
+            await context.bot.copy_message(
+                chat_id=int(uid),
+                from_chat_id=msg.chat_id,
+                message_id=msg.message_id
+            )
+            count += 1
+        except:
+            failed += 1
+
+    await msg.reply_text(
+        f"{te('success')} پیام ارسال شد\n\n"
+        f"✅ موفق: {count}\n"
+        f"❌ ناموفق: {failed}",
+        reply_markup=admin_menu_kb(),
+        parse_mode="HTML"
+    )
+
     return ConversationHandler.END
 
 async def admin_dm_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
