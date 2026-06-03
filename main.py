@@ -2736,19 +2736,9 @@ if __name__ == "__main__":
 
         states={
 
-            BUY_SELECT_PLAN: [
-                CallbackQueryHandler(
-                    buy_select_plan,
-                    pattern="^buy_"
-                )
-            ],
+            BUY_SELECT_PLAN: [CallbackQueryHandler(buy_select_plan, pattern="^buy_(VIP|PRIME)$")],
 
-            BUY_SELECT_VOLUME: [
-                CallbackQueryHandler(
-                    buy_select_volume,
-                    pattern="^(buy_vol_|prime_vol_).*"
-                )
-            ],
+            BUY_SELECT_VOLUME: [CallbackQueryHandler(buy_select_volume, pattern="^(buy_vol_|prime_vol_).*")],
 
             BUY_GET_COUNT: [
                 MessageHandler(
