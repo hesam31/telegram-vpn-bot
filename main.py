@@ -946,40 +946,28 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if query.data == "buy_VIP":
         context.user_data["plan"] = "VIP"
+        
+    elif query.data == "buy_PRIME":
+    context.user_data["plan"] = "PRIME"    
 
-    buttons = [
+    if context.user_data["plan"] == "PRIME":
+         buttons = [
         [
             InlineKeyboardButton(
-                "10GB - 245,000",
-                callback_data="buy_vol_1",
+                "50GB - 444,000",
+                callback_data="prime_vol_1",
                 style="primary",
                 icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
             )
         ],
         [
             InlineKeyboardButton(
-                "30GB - 598,000",
-                callback_data="buy_vol_2",
-                style="primary",
-                icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "50GB - 750,000",
-                callback_data="buy_vol_3",
-                style="primary",
-                icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "100GB - 1,299,000",
-                callback_data="buy_vol_4",
+                "100GB - 777,000",
+                callback_data="prime_vol_2",
                 style="success",
-                icon_custom_emoji_id=DYN_BTN_EMOJIS["special"]
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
             )
-        ],        
+        ],
         [
         InlineKeyboardButton(
             "بازگشت",
@@ -988,7 +976,51 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
             icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
         )
     ],
+    
     ]
+    else:
+        buttons = [
+            [
+                InlineKeyboardButton(
+                    "10GB - 245,000",
+                    callback_data="buy_vol_1",
+                    style="primary",
+                    icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "30GB - 598,000",
+                    callback_data="buy_vol_2",
+                    style="primary",
+                    icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "50GB - 750,000",
+                    callback_data="buy_vol_3",
+                    style="primary",
+                    icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "100GB - 1,299,000",
+                    callback_data="buy_vol_4",
+                    style="success",
+                    icon_custom_emoji_id=DYN_BTN_EMOJIS["special"]
+                )
+            ],        
+            [
+            InlineKeyboardButton(
+                "بازگشت",
+                callback_data="back_buy_plans",
+                style="danger",
+                icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
+            )
+        ],
+        ]
 
     await query.message.edit_text(
         f"{te('box')} حجم مورد نظر را انتخاب کنید:",
