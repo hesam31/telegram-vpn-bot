@@ -2659,7 +2659,6 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_referral_user, pattern="^ref_user_"))
     app.add_handler(CallbackQueryHandler(admin_view_user, pattern="^admin_view_user_"))
     app.add_handler(CallbackQueryHandler(admin_toggle_test_server,pattern="^admin_toggle_test_server$"))
-    app.add_handler(CallbackQueryHandler(buy_PRIME, pattern="^buy_PRIME$"))
     app.add_handler(CallbackQueryHandler(buy_start, pattern="^back_buy_plans$"))
 
     app.add_handler(
