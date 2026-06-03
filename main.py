@@ -1199,47 +1199,7 @@ async def buy_VIP(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return GET_RECEIPT
 
 
-async def buy_PRIME(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
 
-    context.user_data["plan"] = "PRIME"
-
-    buttons = [
-        [
-            InlineKeyboardButton(
-                "50GB - 444,000",
-                callback_data="prime_vol_1",
-                style="primary",
-                icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "100GB - 777,000",
-                callback_data="prime_vol_2",
-                style="success",
-                icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
-            )
-        ],
-        [
-        InlineKeyboardButton(
-            "بازگشت",
-            callback_data="back_buy_plans",
-            style="danger",
-            icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
-        )
-    ],
-    
-    ]
-
-    await query.message.edit_text(
-        f"{te('PRIME')} حجم پلن PRIME را انتخاب کنید:",
-        reply_markup=InlineKeyboardMarkup(buttons),
-        parse_mode="HTML"
-    )
-
-    return BUY_SELECT_VOLUME    
 
 async def back_to_buy_plans(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
