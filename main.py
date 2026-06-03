@@ -1011,8 +1011,8 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "buy_vol_2": ("30GB", 598000),
         "buy_vol_3": ("50GB", 750000),
         "buy_vol_4": ("100GB", 1299000),
-        "prime_vol_1": ("50GB", 450000),
-        "prime_vol_2": ("100GB", 750000),
+        "prime_vol_1": ("50GB", 444000),
+        "prime_vol_2": ("100GB", 777000),
     }
 
     # ❌ اگر دکمه اشتباه بود
