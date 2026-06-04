@@ -2185,8 +2185,8 @@ async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = InlineKeyboardMarkup([
     [
         InlineKeyboardButton("10GB", callback_data="addsrv_10"),
+        InlineKeyboardButton("20GB", callback_data="addsrv_20"),
         InlineKeyboardButton("30GB", callback_data="addsrv_30"),
-        InlineKeyboardButton("50GB", callback_data="addsrv_50"),
     ]
 ])
 
