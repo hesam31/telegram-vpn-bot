@@ -137,6 +137,7 @@ BTN_CFG = {
     #"CHANNEL_POST_BUTTON": {"text": " برای خرید سرور نامحدود کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
     "admin_bot_toggle": {"text": "🔘 خاموش/روشن بات","style": "primary","emoji_id": "4956368164817470478"},
     "admin_search_user": {"text": "جستجوی کاربر","style": "primary","emoji_id": "5974235702701853774"},
+    "admin_stats": {"text": "آمار کلی ربات","style": "primary","emoji_id": "5990060518293901972"},
     "admin_toggle_test_server": {"text": "🎁 خاموش/روشن سرور تست","style": "primary","emoji_id": "4958725487682650920"},
 
 }
@@ -481,6 +482,7 @@ def admin_menu_kb():
         [create_btn("admin_referrals", "admin_referrals")],
         [create_btn("admin_bot_toggle", "admin_bot_toggle")],
         [create_btn("admin_search_user", "admin_search_user")],
+        [create_btn("admin_stats", "admin_stats")],
     ])
 
 def back_kb(target="main"):
@@ -673,7 +675,7 @@ async def check_force_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     if not_joined:
         markup_keys = []
         for ch in channels:
-            markup_keys.append([InlineKeyboardButton(f"عضویت در {ch['username']}", url=ch['link'], style="primary", icon_custom_emoji_id=DYN_BTN_EMOJIS["join"])])
+            markup_keys.append([InlineKeyboardButton(f"عضویت در {ch['username']}", url=ch['link'], style="success", icon_custom_emoji_id=DYN_BTN_EMOJIS["join"])])
         markup_keys.append([InlineKeyboardButton("بررسی عضویت", callback_data="check_join_btn", style="success", icon_custom_emoji_id=DYN_BTN_EMOJIS["check_join"])])
         msg = f"{te('gift')} برای استفاده از ربات، لطفاً ابتدا در تمامی کانال‌های زیر عضو شوید:"
         if update.message: await update.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(markup_keys), parse_mode="HTML")
@@ -1023,7 +1025,7 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     callback_data = query.data
 
     volume_map = {
-        "buy_vol_1": ("10GB", 199000),
+        "buy_vol_1": ("10GB", 245000),
         "buy_vol_2": ("20GB", 380000),
         "buy_vol_3": ("30GB", 540000),
         "prime_vol_1": ("50GB", 444000),
@@ -2133,6 +2135,45 @@ async def admin_view_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ])
 
     await query.message.edit_text(text, reply_markup=kb, parse_mode="HTML")    
+async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    db = load_db()
+
+    total_users = len(db["users"])
+
+    active_users = sum(1 for u in db["users"].values() if u.get("is_active", False))
+
+    total_purchases = sum(len(u.get("services", [])) for u in db["users"].values())
+
+    pending_receipts = sum(1 for r in db.get("receipts", []) if r.get("status") == "pending")
+
+    test_taken = sum(1 for u in db["users"].values() if u.get("has_test", False))
+
+    servers = db["settings"].get("servers", {})
+    total_servers = sum(len(v) for v in servers.values())
+
+    test_servers = len(db["settings"].get("test_servers", []))
+
+    text = (
+        f"{te('stats')} <b>آمار کلی ربات</b>\n\n"
+        f"{te('profile')} کل کاربران ربات: <b>{total_users}</b>\n"
+        f"{te('active')} کاربران فعال (جوین‌شده): <b>{active_users}</b>\n"
+        f"{te('box')} مجموع خریدها: <b>{total_purchases}</b>\n"
+        f"{te('time')} رسیدهای در انتظار: <b>{pending_receipts}</b>\n"
+        f"{te('test')} سرور تست گرفته‌اند: <b>{test_taken}</b>\n"
+        f"{te('servers')} سرور موجود در مخزن: <b>{total_servers}</b>\n"
+        f"{te('rocket')} سرور تست موجود: <b>{test_servers}</b>\n"
+    )
+
+    await query.message.edit_text(
+        text,
+        parse_mode="HTML",
+        reply_markup=back_kb("admin")
+    )
+
+
 async def admin_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in ADMIN_IDS: return
     msg = f"{te('admin')} <b>پنل مدیریت</b>\n\nگزینه مورد نظر را انتخاب کنید:"
@@ -2684,6 +2725,7 @@ if __name__ == "__main__":
     app.add_handler(CallbackQueryHandler(admin_view_user, pattern="^admin_view_user_"))
     app.add_handler(CallbackQueryHandler(admin_toggle_test_server,pattern="^admin_toggle_test_server$"))
     app.add_handler(CallbackQueryHandler(buy_start, pattern="^back_buy_plans$"))
+    app.add_handler(CallbackQueryHandler(admin_stats, pattern="^admin_stats$"))
 
     app.add_handler(
         MessageHandler(
