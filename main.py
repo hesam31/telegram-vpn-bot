@@ -963,7 +963,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ],
             [
                 InlineKeyboardButton(
-                    "75GB - 555,000",
+                    "100GB - 777,000",
                     callback_data="prime_vol_2",
                     style="primary",
                     icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -971,7 +971,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ],
             [
                 InlineKeyboardButton(
-                    "100GB - 777,000",
+                    "200GB - 1,350,000",
                     callback_data="prime_vol_3",
                     style="success",
                     icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -1029,8 +1029,8 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "buy_vol_2": ("20GB", 380000),
         "buy_vol_3": ("30GB", 540000),
         "prime_vol_1": ("50GB", 444000),
-        "prime_vol_2": ("755GB", 555000),
-        "prime_vol_3": ("100GB", 777000),
+        "prime_vol_2": ("100GB", 777000),
+        "prime_vol_3": ("200GB", 1350000),
     }
 
     # ❌ اگر دکمه اشتباه بود
