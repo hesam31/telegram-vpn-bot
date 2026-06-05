@@ -1025,7 +1025,7 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     callback_data = query.data
 
     volume_map = {
-        "buy_vol_1": ("10GB", 245000),
+        "buy_vol_1": ("10GB", 199000),
         "buy_vol_2": ("20GB", 380000),
         "buy_vol_3": ("30GB", 540000),
         "prime_vol_1": ("50GB", 444000),
