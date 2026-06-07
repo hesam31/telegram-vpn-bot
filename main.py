@@ -971,7 +971,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ],
             [
                 InlineKeyboardButton(
-                    "200GB - 1,350,000",
+                    "150GB - 1,050,000",
                     callback_data="prime_vol_3",
                     style="success",
                     icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -1030,7 +1030,7 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "buy_vol_3": ("30GB", 540000),
         "prime_vol_1": ("50GB", 444000),
         "prime_vol_2": ("100GB", 777000),
-        "prime_vol_3": ("200GB", 1350000),
+        "prime_vol_3": ("150GB", 1050000),
     }
 
     # ❌ اگر دکمه اشتباه بود
