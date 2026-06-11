@@ -134,12 +134,14 @@ BTN_CFG = {
     "admin_referrals": {"text": "سیستم رفرال","style": "primary","emoji_id": "5350790271627968474"},
     "CHANNEL_POST_BUTTONS": [
     {
-        "text": "خرید سرور از ربات",
+        "text": " برای خرید سرور از ربات کلیک کنید",
         "style": "success"
+        "emoji_id": "5841434338951959112"
     },
     {
-        "text": "دریافت سرور تست از ربات",
+        "text": " برای دریافت سرور تست رایگان کلیک کنید",
         "style": "primary"
+        "emoji_id": "5841434338951959112"
     }
 ],
     #"CHANNEL_POST_BUTTON": {"text": " برای خرید سرور نامحدود کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
