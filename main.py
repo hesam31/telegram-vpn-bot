@@ -133,7 +133,8 @@ BTN_CFG = {
     "admin_receipts":{"text": "رسید های واریزی","style": "primary","emoji_id": "5350697092184944245"},
     "admin_referrals": {"text": "سیستم رفرال","style": "primary","emoji_id": "5350790271627968474"},
     #"CHANNEL_POST_BUTTON": {"text": "برای دریافت سرور تست رایگان کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
-    "CHANNEL_POST_BUTTON": {"text": " خرید سرور از ربات کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
+    "CHANNEL_POST_BUTTON": {"text": " خرید سرور از ربات کلیک کنید", "style": "success"},  
+    "CHANNEL_POST_BUTTON": {"text": "دریافت سرور تست از ربات", "style": "primary"},  
     #"CHANNEL_POST_BUTTON": {"text": " برای خرید سرور نامحدود کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
     "admin_bot_toggle": {"text": "🔘 خاموش/روشن بات","style": "primary","emoji_id": "4956368164817470478"},
     "admin_search_user": {"text": "جستجوی کاربر","style": "primary","emoji_id": "5974235702701853774"},
@@ -221,10 +222,16 @@ def init_db():
         "channels": [],
         "test_servers": [],
         "test_server_enabled": True,
-        "servers": {
+        "vip_servers": {
             "10": [],
             "20": [],
-            "30": [],
+            "30": []
+        },
+
+        "prime_servers": {
+            "50": [],
+            "100": [],
+            "150": []
         },
         "server_session": {}
     },
@@ -280,19 +287,27 @@ def load_db():
             "settings": {
                 "channels": [],
                 "test_servers": [],
-                "servers": {
-                    "1": [],
-                    "2": [],
-                    "3": [],
-                    "5": [],
-                    "10": []
+                "test_server_enabled": True,
+
+                "vip_servers": {
+                    "10": [],
+                    "20": [],
+                    "30": []
                 },
+
+                "prime_servers": {
+                    "50": [],
+                    "100": [],
+                    "150": []
+                },
+
                 "server_session": {}
             },
             "users": {},
             "plans": [],
             "receipts": []
         }
+
         db["settings"].setdefault("bot_enabled", True)
         return db
 
@@ -307,13 +322,19 @@ def load_db():
     db["settings"].setdefault("channels", [])
     db["settings"].setdefault("test_servers", [])
     db["settings"].setdefault("test_server_enabled", True)
-    db["settings"].setdefault("servers", {
-        "1": [],
-        "2": [],
-        "3": [],
-        "5": [],
-        "10": []
+
+    db["settings"].setdefault("vip_servers", {
+        "10": [],
+        "20": [],
+        "30": []
     })
+
+    db["settings"].setdefault("prime_servers", {
+        "50": [],
+        "100": [],
+        "150": []
+    })
+
     db["settings"].setdefault("server_session", {})
 
     db.setdefault("plans", [])
@@ -323,35 +344,14 @@ def load_db():
         u_data.setdefault("has_test", False)
 
     return db
-
-
-def save_db(data):
-
-    conn = get_conn()
-
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        UPDATE bot_data
-        SET data = %s
-        WHERE id = 1
-        """,
-        (
-            json.dumps(data),
-        )
-    )
-
-    conn.commit()
-
-    cur.close()
-    conn.close()
-
-def allocate_servers(volume, count):
+def allocate_servers(plan, volume, count):
 
     db = load_db()
 
-    buckets = db["settings"].get("servers", {})
+    if str(plan).upper() == "PRIME":
+        buckets = db["settings"]["prime_servers"]
+    else:
+        buckets = db["settings"]["vip_servers"]
 
     volume_key = str(volume)
 
@@ -366,8 +366,6 @@ def allocate_servers(volume, count):
     allocated = bucket[:count]
 
     buckets[volume_key] = bucket[count:]
-
-    db["settings"]["servers"] = buckets
 
     save_db(db)
 
@@ -955,7 +953,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         buttons = [
             [
                 InlineKeyboardButton(
-                    "50GB - 444,000",
+                    "50GB - 399,000",
                     callback_data="prime_vol_1",
                     style="primary",
                     icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -963,7 +961,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ],
             [
                 InlineKeyboardButton(
-                    "100GB - 777,000",
+                    "100GB - 699,000",
                     callback_data="prime_vol_2",
                     style="primary",
                     icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -971,7 +969,7 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ],
             [
                 InlineKeyboardButton(
-                    "150GB - 1,050,000",
+                    "150GB - 999,000",
                     callback_data="prime_vol_3",
                     style="success",
                     icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"]
@@ -989,13 +987,13 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         buttons = [
             [
-                InlineKeyboardButton("10GB - 199,000", callback_data="buy_vol_1", style="primary")
+                InlineKeyboardButton("10GB - 149,000", callback_data="buy_vol_1", style="primary")
             ],
             [
-                InlineKeyboardButton("20GB - 380,000", callback_data="buy_vol_2", style="primary")
+                InlineKeyboardButton("20GB - 249,000", callback_data="buy_vol_2", style="primary")
             ],
             [
-                InlineKeyboardButton("30GB - 540,000", callback_data="buy_vol_3", style="primary")
+                InlineKeyboardButton("30GB - 299,000", callback_data="buy_vol_3", style="success")
             ],
             
             [
@@ -1025,12 +1023,12 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     callback_data = query.data
 
     volume_map = {
-        "buy_vol_1": ("10GB", 199000),
-        "buy_vol_2": ("20GB", 380000),
-        "buy_vol_3": ("30GB", 540000),
-        "prime_vol_1": ("50GB", 444000),
-        "prime_vol_2": ("100GB", 777000),
-        "prime_vol_3": ("150GB", 1050000),
+        "buy_vol_1": ("10GB", 149000),
+        "buy_vol_2": ("20GB", 249000),
+        "buy_vol_3": ("30GB", 299000),
+        "prime_vol_1": ("50GB", 399000),
+        "prime_vol_2": ("100GB", 699000),
+        "prime_vol_3": ("150GB", 999000),
     }
 
     # ❌ اگر دکمه اشتباه بود
@@ -1106,8 +1104,8 @@ async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         f"{te('rule')} قبل از خرید قوانین را تایید کنید.\n\n"
         f"{te('rules')} در صورت نارضایتی مشتری، تا ۲۴ ساعت بعد از خرید حجم مصرفی محاسبه شده و مبلغ باقی‌مانده به شما بازگردانده می‌شود یا سرور جایگزین ارسال می‌شود.\n\n"
-        f"{te('rules')} سرویس‌ها برای استفاده یک کاربر طراحی شده‌اند و حداکثر استفاده همزمان برای ۲ نفر مجاز می‌باشد.\n\n"
         f"{te('rules')} سرویس‌ها در شرایط عادی و آزاد بودن اینترنت پایدار هستند و قطعی‌ها در سریع‌ترین زمان ممکن رفع می‌شوند.\n\n"
+        f"{te('rules')} سرور های پلن VIP حتی در شرایط قطعی اینترنت هم پایدار هستند.\n\n"
         f"{te('rules')} در شرایط خاص مانند اختلالات سراسری، جنگ یا محدودیت‌های شدید اینترنت، ممکن است سرویس‌ها با سرورهای متفاوت و قیمت‌های متفاوت ارائه شوند.\n\n"
         f"{te('rules')} سرور دارای ساب‌لینک است؛ بعد از ارسال سرور، مسئولیت مصرف حجم و نحوه استفاده بر عهده مشتری می‌باشد.\n\n"
         f"{te('support')} پشتیبانی به‌صورت ۲۴ ساعته در خدمت شماست."
@@ -1644,6 +1642,7 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # گرفتن سرورها از مخزن
     servers = allocate_servers(
+        pending.get("plan"),
         volume,
         count
     )
@@ -1666,7 +1665,7 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # متن ارسال به کاربر
     text = (
         f"{te('taeid')} <b>پرداخت شما تایید شد</b>\n\n"
-        f"{te('servers')} سرور شما:\n\n"
+        f"{te('servers')} ساب لینک شما:\n\n"
     )
 
     for server in servers:
@@ -1678,8 +1677,7 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text += (
         f"{te('warning')} <b>نکات مهم:</b>\n\n"
         f"{te('nv')} {te('v2box')} تا حد امکان از برنامه‌های <b>NapsternetV</b> و <b>V2Box</b> استفاده کنید.\n\n"
-        f"{te('ok')} قبل از وارد شدن به ساب‌لینک، ابتدا به سرور متصل شوید   .\n\n"
-        f"{te('ok')} پس از اتصال به سرور، ساب‌لینک را در برنامه وارد کنید  .\n\n"
+        f"{te('ok')}قبل از وارد کردن ساب لینک به هیچ سروری متصل نباشید!.\n\n"
         f"{te('ok')} در صورت بروز مشکل، با پشتیبانی در ارتباط باشید."
 )    
 
@@ -2198,21 +2196,33 @@ async def admin_server_stats(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     db = load_db()
 
-    buckets = db["settings"].get("servers", {})
+    vip = db["settings"].get("vip_servers", {})
+    prime = db["settings"].get("prime_servers", {})
 
     text = "📊 آمار مخازن سرورها\n\n"
 
-    total = 0
+    vip_total = 0
 
-    for volume, items in buckets.items():
+    text += "👑 VIP\n"
 
+    for volume, items in vip.items():
         count = len(items)
-
-        total += count
-
+        vip_total += count
         text += f"📦 {volume}GB : {count} سرور\n"
 
-    text += f"\n🔥 مجموع کل: {total}"
+    text += f"🔥 مجموع VIP: {vip_total}\n\n"
+
+    prime_total = 0
+
+    text += "⚡ PRIME\n"
+
+    for volume, items in prime.items():
+        count = len(items)
+        prime_total += count
+        text += f"📦 {volume}GB : {count} سرور\n"
+
+    text += f"🔥 مجموع PRIME: {prime_total}\n\n"
+    text += f"✅ مجموع کل: {vip_total + prime_total}"
 
     await query.message.edit_text(
         text,
@@ -2224,15 +2234,22 @@ async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     keyboard = InlineKeyboardMarkup([
-    [
-        InlineKeyboardButton("10GB", callback_data="addsrv_10"),
-        InlineKeyboardButton("20GB", callback_data="addsrv_20"),
-        InlineKeyboardButton("30GB", callback_data="addsrv_30"),
-    ]
-])
+        [
+            InlineKeyboardButton(
+                "👑 VIP",
+                callback_data="addsrv_plan_VIP"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "⚡ PRIME",
+                callback_data="addsrv_plan_PRIME"
+            )
+        ]
+    ])
 
     await query.message.edit_text(
-        "حجم مورد نظر را انتخاب کنید:",
+        "پلن مورد نظر را انتخاب کنید:",
         reply_markup=keyboard
     )
 
@@ -2241,36 +2258,42 @@ async def admin_add_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def save_server_configs(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     volume = context.user_data.get("server_volume")
+    plan = context.user_data.get("server_plan")
 
-    if not volume:
-        await update.message.reply_text("❌ حجم انتخاب نشده")
+    if not volume or not plan:
+        await update.message.reply_text("❌ اطلاعات ناقص است")
         return ConversationHandler.END
 
-    # کل پیام = یک سرور
     config = update.message.text.strip()
-
-    if not config:
-        await update.message.reply_text("❌ کانفیگ خالیه")
-        return ADD_SERVER_CONFIGS
 
     db = load_db()
 
-    db["settings"].setdefault("servers", {})
-    db["settings"]["servers"].setdefault(volume, [])
+    if plan == "PRIME":
+
+        db["settings"].setdefault("prime_servers", {})
+        db["settings"]["prime_servers"].setdefault(volume, [])
+
+        bucket = db["settings"]["prime_servers"][volume]
+
+    else:
+
+        db["settings"].setdefault("vip_servers", {})
+        db["settings"]["vip_servers"].setdefault(volume, [])
+
+        bucket = db["settings"]["vip_servers"][volume]
 
     added = 0
 
-    # جلوگیری از تکراری
-    if config not in db["settings"]["servers"][volume]:
+    if config not in bucket:
 
-        db["settings"]["servers"][volume].append(config)
+        bucket.append(config)
 
         added = 1
 
         save_db(db)
 
     await update.message.reply_text(
-        f"✅ تعداد {added} سرور به مخزن {volume}GB اضافه شد.",
+        f"✅ تعداد {added} سرور به مخزن {plan} {volume}GB اضافه شد.",
         reply_markup=admin_menu_kb()
     )
 
@@ -2280,6 +2303,39 @@ async def add_server_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     query = update.callback_query
     await query.answer()
+
+    if query.data.startswith("addsrv_plan_"):
+
+        plan = query.data.replace("addsrv_plan_", "")
+
+        context.user_data["server_plan"] = plan
+
+        if plan == "VIP":
+
+            keyboard = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("10GB", callback_data="addsrv_10"),
+                    InlineKeyboardButton("20GB", callback_data="addsrv_20"),
+                    InlineKeyboardButton("30GB", callback_data="addsrv_30"),
+                ]
+            ])
+
+        else:
+
+            keyboard = InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton("50GB", callback_data="addsrv_50"),
+                    InlineKeyboardButton("100GB", callback_data="addsrv_100"),
+                    InlineKeyboardButton("150GB", callback_data="addsrv_150"),
+                ]
+            ])
+
+        await query.message.edit_text(
+            "حجم مورد نظر را انتخاب کنید:",
+            reply_markup=keyboard
+        )
+
+        return ADD_SERVER_VOLUME
 
     volume = query.data.replace("addsrv_", "")
 
@@ -2301,21 +2357,20 @@ async def add_server_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ])
 
     await query.message.edit_text(
-        f"📦 سرورهای {volume}GB را ارسال کنید.\n\n"
-        f"هر کانفیگ را در یک خط جداگانه بفرست.",
+        f"📦 سرورهای {volume}GB را ارسال کنید.",
         reply_markup=keyboard
     )
 
-    return ADD_SERVER_CONFIGS    
+    return ADD_SERVER_CONFIGS
 
 async def finish_add_servers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
     context.user_data["server_upload_mode"] = False
-    context.user_data["server_volume"] = None
-    context.user_data.pop("server_volume", None)
 
+    context.user_data.pop("server_plan", None)
+    context.user_data.pop("server_volume", None)
 
     await query.message.edit_text(
         "✅ عملیات افزودن سرورها پایان یافت.",
@@ -2819,7 +2874,7 @@ if __name__ == "__main__":
 
                 CallbackQueryHandler(
                     add_server_volume,
-                    pattern="^addsrv_"
+                    pattern="^(addsrv_|addsrv_plan_).*"
                 )
 
             ],
