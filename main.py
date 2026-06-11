@@ -543,30 +543,22 @@ async def channel_post_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
     bot_username = (await context.bot.get_me()).username
 
-    buttons = BTN_CFG["CHANNEL_POST_BUTTONS"]
-
     keyboard = InlineKeyboardMarkup([
-    [
-        InlineKeyboardButton(
-            text=buttons[0]["text"],
-            url=f"https://t.me/{bot_username}",
-            style=buttons[0].get("style", "success")
-        )
-    ],
-    [
-        InlineKeyboardButton(
-            text=buttons[1]["text"],
-            url=f"https://t.me/{bot_username}",
-            style=buttons[1].get("style", "primary")
-        )
-    ]
-])
+        [
+            InlineKeyboardButton(
+                text=btn["text"],
+                url=f"https://t.me/{bot_username}",
+                style=btn.get("style", "primary"),
+                icon_custom_emoji_id=btn.get("emoji_id")
+            )
+        ]
+        for btn in BTN_CFG["CHANNEL_POST_BUTTONS"]
+    ])
 
     try:
         await post.edit_reply_markup(reply_markup=keyboard)
     except Exception as e:
         print("CHANNEL BUTTON ERROR:", e)
-
 async def admin_toggle_test_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     query = update.callback_query
