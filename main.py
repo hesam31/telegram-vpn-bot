@@ -353,6 +353,29 @@ def load_db():
         u_data.setdefault("has_test", False)
 
     return db
+
+def save_db(data):
+
+    conn = get_conn()
+
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        UPDATE bot_data
+        SET data = %s
+        WHERE id = 1
+        """,
+        (
+            json.dumps(data),
+        )
+    )
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+    
 def allocate_servers(plan, volume, count):
 
     db = load_db()
