@@ -133,15 +133,15 @@ BTN_CFG = {
     "admin_receipts":{"text": "رسید های واریزی","style": "primary","emoji_id": "5350697092184944245"},
     "admin_referrals": {"text": "سیستم رفرال","style": "primary","emoji_id": "5350790271627968474"},
     "CHANNEL_POST_BUTTONS": [
-        {
-            "text": "خرید سرور از ربات کلیک کنید",
-            "style": "success"
-        },
-        {
-            "text": "دریافت سرور تست از ربات",
-            "style": "primary"
-        }
-    ],
+    {
+        "text": "خرید سرور از ربات",
+        "style": "success"
+    },
+    {
+        "text": "دریافت سرور تست از ربات",
+        "style": "primary"
+    }
+],
     #"CHANNEL_POST_BUTTON": {"text": " برای خرید سرور نامحدود کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
     "admin_bot_toggle": {"text": "🔘 خاموش/روشن بات","style": "primary","emoji_id": "4956368164817470478"},
     "admin_search_user": {"text": "جستجوی کاربر","style": "primary","emoji_id": "5974235702701853774"},
@@ -541,18 +541,24 @@ async def channel_post_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
     bot_username = (await context.bot.get_me()).username
 
-    btn_cfg = BTN_CFG["CHANNEL_POST_BUTTON"]
+    buttons = BTN_CFG["CHANNEL_POST_BUTTONS"]
 
     keyboard = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                text=btn_cfg["text"],
-                url=f"https://t.me/{bot_username}",
-                style="success",
-                icon_custom_emoji_id=btn_cfg.get("emoji_id")
-            )
-        ]
-    ])
+    [
+        InlineKeyboardButton(
+            text=buttons[0]["text"],
+            url=f"https://t.me/{bot_username}",
+            style=buttons[0].get("style", "success")
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            text=buttons[1]["text"],
+            url=f"https://t.me/{bot_username}",
+            style=buttons[1].get("style", "primary")
+        )
+    ]
+])
 
     try:
         await post.edit_reply_markup(reply_markup=keyboard)
