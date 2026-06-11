@@ -141,7 +141,7 @@ BTN_CFG = {
             "text": "دریافت سرور تست از ربات",
             "style": "primary"
         }
-    ]
+    ],
     #"CHANNEL_POST_BUTTON": {"text": " برای خرید سرور نامحدود کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
     "admin_bot_toggle": {"text": "🔘 خاموش/روشن بات","style": "primary","emoji_id": "4956368164817470478"},
     "admin_search_user": {"text": "جستجوی کاربر","style": "primary","emoji_id": "5974235702701853774"},
