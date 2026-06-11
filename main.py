@@ -135,12 +135,12 @@ BTN_CFG = {
     "CHANNEL_POST_BUTTONS": [
     {
         "text": " برای خرید سرور از ربات کلیک کنید",
-        "style": "success"
+        "style": "success",
         "emoji_id": "5841434338951959112"
     },
     {
         "text": " برای دریافت سرور تست رایگان کلیک کنید",
-        "style": "primary"
+        "style": "primary",
         "emoji_id": "5841434338951959112"
     }
 ],
