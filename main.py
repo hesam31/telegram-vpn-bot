@@ -137,11 +137,6 @@ BTN_CFG = {
         "text": " خرید سرور از ربات",
         "style": "success",
         "emoji_id": "5348270285466385224"
-    },
-    {
-        "text": "دریافت تست رایگان",
-        "style": "primary",
-        "emoji_id": "5348440533675031854"
     }
 ],
     #"CHANNEL_POST_BUTTON": {"text": " برای خرید سرور نامحدود کلیک کنید", "style": "danger", "emoji_id": "6073335669260819751"},  
@@ -957,7 +952,7 @@ async def buy_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     buttons = [
         [InlineKeyboardButton("VIP", callback_data="buy_VIP", style="success", icon_custom_emoji_id=DYN_BTN_EMOJIS["fire"])],
-        [InlineKeyboardButton("PRIME",callback_data="buy_PRIME",style="primary",icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"])],
+        #[InlineKeyboardButton("PRIME",callback_data="buy_PRIME",style="primary",icon_custom_emoji_id=DYN_BTN_EMOJIS["PRIME"])],
         [create_btn("back", "back_main")],
     ]
 
@@ -1017,14 +1012,21 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         buttons = [
             [
-                InlineKeyboardButton("10GB - 149,000", callback_data="buy_vol_1", style="primary")
+                InlineKeyboardButton("10GB - 100,000", callback_data="buy_vol_1", style="primary")
             ],
             [
-                InlineKeyboardButton("20GB - 249,000", callback_data="buy_vol_2", style="primary")
+                InlineKeyboardButton("20GB - 180,000", callback_data="buy_vol_2", style="primary")
             ],
             [
-                InlineKeyboardButton("30GB - 299,000", callback_data="buy_vol_3", style="success")
+                InlineKeyboardButton("30GB - 240,000", callback_data="buy_vol_3", style="primary")
             ],
+            [
+                InlineKeyboardButton("50GB - 350,000", callback_data="buy_vol_4", style="primary")
+            ],
+            [
+                InlineKeyboardButton("100GB - 599,000", callback_data="buy_vol_5", style="success")
+            ],
+
             
             [
                 InlineKeyboardButton(
@@ -1053,12 +1055,15 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     callback_data = query.data
 
     volume_map = {
-        "buy_vol_1": ("10GB", 149000),
-        "buy_vol_2": ("20GB", 249000),
-        "buy_vol_3": ("30GB", 299000),
-        "prime_vol_1": ("50GB", 399000),
-        "prime_vol_2": ("100GB", 699000),
-        "prime_vol_3": ("150GB", 999000),
+        "buy_vol_1": ("10GB", 100000),
+        "buy_vol_2": ("20GB", 180000),
+        "buy_vol_3": ("30GB", 240000),
+        "buy_vol_4": ("50GB", 350000),
+        "buy_vol_5": ("100GB", 599000),
+
+        #"prime_vol_1": ("50GB", 399000),
+        #"prime_vol_2": ("100GB", 699000),
+        #"prime_vol_3": ("150GB", 999000),
     }
 
     # ❌ اگر دکمه اشتباه بود
