@@ -227,9 +227,9 @@ def init_db():
         "test_servers": [],
         "test_server_enabled": True,
         "vip_servers": {
-            "10": [],
-            "20": [],
-            "30": []
+            "50": [],
+            "100": [],
+            "unlimited": []
         },
 
         "prime_servers": {
@@ -258,7 +258,7 @@ def init_db():
             """,
             (
                 1,
-                json.dumps(default_data)
+                json.dumps(ddefault_data)
             )
         )
 
@@ -294,9 +294,10 @@ def load_db():
                 "test_server_enabled": True,
 
                 "vip_servers": {
-                    "10": [],
-                    "20": [],
-                    "30": []
+                    "50GB": [],
+                    "100GB": [],
+                    "Unlimited-1": [],
+                    "Unlimited-2": []
                 },
 
                 "prime_servers": {
@@ -328,9 +329,10 @@ def load_db():
     db["settings"].setdefault("test_server_enabled", True)
 
     db["settings"].setdefault("vip_servers", {
-        "10": [],
-        "20": [],
-        "30": []
+        "50GB": [],
+        "100GB": [],
+        "Unlimited-1": [],
+        "Unlimited-2": []
     })
 
     db["settings"].setdefault("prime_servers", {
@@ -543,15 +545,27 @@ def extract_number(text: str):
 
 def normalize_volume(volume):
     try:
-        # اگر متن بود مثل "2GB"
-        if isinstance(volume, str):
-            volume = volume.replace("GB", "").replace("gb", "").strip()
 
-        return int(volume)
+        if not volume:
+            return None
+
+        volume = str(volume).strip()
+
+        # نامحدودها
+        if volume in [
+            "Unlimited-1",
+            "Unlimited-2"
+        ]:
+            return volume
+
+        # حجم‌های گیگابایتی
+        if "GB" not in volume.upper():
+            volume = f"{volume}GB"
+
+        return volume.upper()
 
     except:
-        return None     
-
+        return None
 async def channel_post_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not update.channel_post:
@@ -1009,25 +1023,30 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             ],
         ]
+
     else:
         buttons = [
             [
-                InlineKeyboardButton("10GB - 100,000", callback_data="buy_vol_1", style="primary")
+                InlineKeyboardButton(
+                    "50GB - 350,000",
+                    callback_data="buy_vol_50",
+                    style="primary"
+                )
             ],
             [
-                InlineKeyboardButton("20GB - 180,000", callback_data="buy_vol_2", style="primary")
+                InlineKeyboardButton(
+                    "100GB - 599,000",
+                    callback_data="buy_vol_100",
+                    style="success"
+                )
             ],
             [
-                InlineKeyboardButton("30GB - 240,000", callback_data="buy_vol_3", style="primary")
+                InlineKeyboardButton(
+                    "نامحدود",
+                    callback_data="buy_unlimited",
+                    style="primary"
+                )
             ],
-            [
-                InlineKeyboardButton("50GB - 350,000", callback_data="buy_vol_4", style="primary")
-            ],
-            [
-                InlineKeyboardButton("100GB - 599,000", callback_data="buy_vol_5", style="success")
-            ],
-
-            
             [
                 InlineKeyboardButton(
                     "بازگشت",
@@ -1054,45 +1073,87 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     callback_data = query.data
 
-    volume_map = {
-        "buy_vol_1": ("10GB", 100000),
-        "buy_vol_2": ("20GB", 180000),
-        "buy_vol_3": ("30GB", 240000),
-        "buy_vol_4": ("50GB", 350000),
-        "buy_vol_5": ("100GB", 599000),
+    # ==========================
+    # انتخاب سرویس نامحدود
+    # ==========================
+    if callback_data == "buy_unlimited":
+        buttons = [
+            [
+                InlineKeyboardButton(
+                    "یک ماهه | یک کاربر - 350,000 تومان",
+                    callback_data="unlimited_1user",
+                    style="primary"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "یک ماهه | دو کاربر - 400,000 تومان",
+                    callback_data="unlimited_2user",
+                    style="success"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "بازگشت",
+                    callback_data="back_buy_plans",
+                    style="danger",
+                    icon_custom_emoji_id=DYN_BTN_EMOJIS["back"]
+                )
+            ]
+        ]
 
-        #"prime_vol_1": ("50GB", 399000),
-        #"prime_vol_2": ("100GB", 699000),
-        #"prime_vol_3": ("150GB", 999000),
-    }
-
-    # ❌ اگر دکمه اشتباه بود
-    if callback_data not in volume_map:
         await query.message.edit_text(
-            "خطا در انتخاب حجم. لطفاً دوباره تلاش کنید.",
-            reply_markup=back_kb()
+            f"{te('box')} نوع سرویس نامحدود را انتخاب کنید:",
+            parse_mode="HTML",
+            reply_markup=InlineKeyboardMarkup(buttons)
         )
-        return ConversationHandler.END
 
-    volume, price = volume_map[callback_data]
+        return BUY_SELECT_VOLUME
 
-    # ✅ ذخیره درست و قطعی
+    # ==========================
+    # پلن‌های نامحدود
+    # ==========================
+    if callback_data == "unlimited_1user":
+        volume = "Unlimited-1"
+        price = 3500000
+
+    elif callback_data == "unlimited_2user":
+        volume = "Unlimited-2"
+        price = 400000
+
+    else:
+        volume_map = {
+            "buy_vol_50": ("50GB", 200000),
+            "buy_vol_100": ("100GB", 300000),
+        }
+
+        if callback_data not in volume_map:
+            await query.message.edit_text(
+                "خطا در انتخاب حجم. لطفاً دوباره تلاش کنید.",
+                reply_markup=back_kb()
+            )
+            return ConversationHandler.END
+
+        volume, price = volume_map[callback_data]
+
+    # ==========================
+    # ذخیره اطلاعات
+    # ==========================
     context.user_data["volume"] = volume
     context.user_data["price"] = price
 
-    # ❌ این خط اشتباه بود و باعث گم شدن state میشد
-    # context.user_data["count"] = None
-
+    # ==========================
+    # دریافت تعداد
+    # ==========================
     await query.message.edit_text(
-        f"{te('box')} حجم انتخاب شد: <b>{volume}</b>\n\n"
+        f"{te('box')} حجم انتخاب شده: <b>{volume}</b>\n\n"
         f"{te('money')} قیمت هر عدد: <b>{price:,} تومان</b>\n\n"
-        f"{te('NUMBER')}چند تا سرور میخوای بخری از ما \n\n"
-        f"{te('not')}(لطفا بین 1 تا 9 یک عدد را انتخاب کنید)",
+        f"{te('NUMBER')} چند تا سرور میخوای بخری از ما؟\n\n"
+        f"{te('not')} (لطفاً بین 1 تا 9 یک عدد را انتخاب کنید)",
         parse_mode="HTML",
         reply_markup=back_kb()
     )
 
-    # 🔥 مهم: حتما state برگرده
     return BUY_GET_COUNT
 
 async def buy_get_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1657,6 +1718,7 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         return
 
+
     # حجم سفارش
     volume = normalize_volume(
         pending.get("volume")
@@ -1670,10 +1732,12 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         return
 
-    # تعداد سفارش
+
+    # تعداد سرورها
     count = int(
         pending.get("count", 1)
     )
+
 
     # گرفتن سرورها از مخزن
     servers = allocate_servers(
@@ -1682,26 +1746,29 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
         count
     )
 
-    # اگر موجودی کافی نبود
+
+    # موجودی کافی نبود
     if not servers:
 
         await query.message.reply_text(
-            f"❌ موجودی سرور {volume}GB کافی نیست"
+            f"❌ موجودی سرور {volume} کافی نیست"
         )
 
         return
 
-    # 🔥 مهم: دوباره لود دیتابیس
-    # چون allocate_servers دیتابیس را ذخیره کرده
+
+    # دوباره لود دیتابیس
     db = load_db()
 
     receipt = db["receipts"][index]
 
-    # متن ارسال به کاربر
+
+    # پیام ارسال برای کاربر
     text = (
         f"{te('taeid')} <b>پرداخت شما تایید شد</b>\n\n"
         f"{te('servers')} ساب لینک شما:\n\n"
     )
+
 
     for server in servers:
 
@@ -1709,18 +1776,29 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"{server}\n\n"
         )
 
+
     text += (
         f"{te('warning')} <b>نکات مهم:</b>\n\n"
-        f"{te('nv')} {te('v2box')} تا حد امکان از برنامه‌های <b>NapsternetV</b> و <b>V2Box</b> استفاده کنید.\n\n"
-        f"{te('ok')}قبل از وارد کردن ساب لینک به هیچ سروری متصل نباشید!.\n\n"
+        f"{te('nv')} {te('v2box')} تا حد امکان از برنامه‌های "
+        f"<b>NapsternetV</b> و <b>V2Box</b> استفاده کنید.\n\n"
+        f"{te('ok')} قبل از وارد کردن ساب لینک به هیچ سروری متصل نباشید.\n\n"
         f"{te('ok')} در صورت بروز مشکل، با پشتیبانی در ارتباط باشید."
-)    
+    )
 
-    # ذخیره داخل سرویس های کاربر
+
+    # ذخیره سرویس کاربر
     db["users"][uid].setdefault(
         "services",
         []
     )
+
+
+    service_name = (
+        volume + " " + pending.get("plan", "VIP")
+        if volume.startswith("Unlimited")
+        else volume + " " + pending.get("plan", "VIP")
+    )
+
 
     for server in servers:
 
@@ -1728,34 +1806,38 @@ async def approve_receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             "sub_id": server,
 
-            "name": f"{volume}GB {pending.get('plan','VIP')}",
+            "name": service_name,
 
             "date": str(datetime.now())
 
         })
 
+
     # تغییر وضعیت رسید
     receipt["status"] = "approved"
 
-    # حذف سفارش pending
+
+    # حذف سفارش موقت
     db["users"][uid]["pending_order"] = None
 
-    # ذخیره دیتابیس
+
+    # ذخیره
     save_db(db)
 
-    # ارسال سرورها برای کاربر
+
+    # ارسال سرویس
     await context.bot.send_message(
         chat_id=int(uid),
         text=text,
         parse_mode="HTML"
     )
 
-    # پیام برای ادمین
+
     await query.message.reply_text(
         "✅ سرورها با موفقیت ارسال شدند"
     )
 
-    # ادیت پیام رسید
+
     try:
 
         await query.message.edit_caption(
@@ -2327,8 +2409,13 @@ async def save_server_configs(update: Update, context: ContextTypes.DEFAULT_TYPE
 
         save_db(db)
 
+    if volume.startswith("Unlimited"):
+        volume_text = volume.replace("-", " ")
+    else:
+        volume_text = volume
+
     await update.message.reply_text(
-        f"✅ تعداد {added} سرور به مخزن {plan} {volume}GB اضافه شد.",
+        f"✅ تعداد {added} سرور به مخزن {plan} {volume_text} اضافه شد.",
         reply_markup=admin_menu_kb()
     )
 
@@ -2349,9 +2436,12 @@ async def add_server_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             keyboard = InlineKeyboardMarkup([
                 [
-                    InlineKeyboardButton("10GB", callback_data="addsrv_10"),
-                    InlineKeyboardButton("20GB", callback_data="addsrv_20"),
-                    InlineKeyboardButton("30GB", callback_data="addsrv_30"),
+                    InlineKeyboardButton("50GB", callback_data="addsrv_50GB"),
+                    InlineKeyboardButton("100GB", callback_data="addsrv_100GB"),
+                ],
+                [
+                    InlineKeyboardButton("♾ یک کاربر", callback_data="addsrv_Unlimited-1"),
+                    InlineKeyboardButton("♾ دو کاربر", callback_data="addsrv_Unlimited-2"),
                 ]
             ])
 
@@ -2391,8 +2481,13 @@ async def add_server_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
     ])
 
+    if volume in ["Unlimited-1", "Unlimited-2"]:
+        text = f"📦 سرورهای {volume} را ارسال کنید."
+    else:
+        text = f"📦 سرورهای {volume} را ارسال کنید."
+
     await query.message.edit_text(
-        f"📦 سرورهای {volume}GB را ارسال کنید.",
+        text,
         reply_markup=keyboard
     )
 
