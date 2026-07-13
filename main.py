@@ -1028,14 +1028,14 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         buttons = [
             [
                 InlineKeyboardButton(
-                    "50GB - 350,000",
+                    "50GB - 200,000",
                     callback_data="buy_vol_50",
                     style="primary"
                 )
             ],
             [
                 InlineKeyboardButton(
-                    "100GB - 599,000",
+                    "100GB - 300,000",
                     callback_data="buy_vol_100",
                     style="success"
                 )
