@@ -46,7 +46,7 @@ InlineKeyboardButton.to_dict = _patched_to_dict
 BOT_TOKEN = os.getenv("8878547383:AAG1Sp5vEFHiEPECjfcRbgSnaeRx07mK3Ck")
 ADMIN_IDS = [81469723,1892655576]
 DB_FILE = "database.db"
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("postgresql://postgres:ZynYQgkOgOfYDhZGuUBAxCHdYpzVkDUT@postgres.railway.internal:5432/railway")
 CARD_NUMBER = "6219861883718115"
 SUPPORT_ID = ["@hesamyaghoubii",
               "@puyaghsmi"]
