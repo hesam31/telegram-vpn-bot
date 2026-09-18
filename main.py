@@ -43,7 +43,7 @@ def _patched_to_dict(self, *args, **kwargs):
 InlineKeyboardButton.__init__ = _patched_init
 InlineKeyboardButton.to_dict = _patched_to_dict
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = os.getenv("8878547383:AAG1Sp5vEFHiEPECjfcRbgSnaeRx07mK3Ck")
 ADMIN_IDS = [81469723,1892655576]
 DB_FILE = "database.db"
 DATABASE_URL = os.getenv("DATABASE_URL")
