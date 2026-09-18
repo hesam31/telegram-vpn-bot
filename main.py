@@ -43,10 +43,10 @@ def _patched_to_dict(self, *args, **kwargs):
 InlineKeyboardButton.__init__ = _patched_init
 InlineKeyboardButton.to_dict = _patched_to_dict
 
-BOT_TOKEN = os.getenv("8878547383:AAG1Sp5vEFHiEPECjfcRbgSnaeRx07mK3Ck")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_IDS = [81469723,1892655576]
 DB_FILE = "database.db"
-DATABASE_URL = os.getenv("postgresql://postgres:ZynYQgkOgOfYDhZGuUBAxCHdYpzVkDUT@postgres.railway.internal:5432/railway")
+DATABASE_URL = os.getenv("DATABASE_URL")
 CARD_NUMBER = "6219861883718115"
 SUPPORT_ID = ["@hesamyaghoubii",
               "@puyaghsmi"]
