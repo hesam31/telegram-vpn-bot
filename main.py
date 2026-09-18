@@ -29,7 +29,8 @@ def _patched_init(self, text, callback_data=None, url=None, style=None, icon_cus
     _orig_init(self, text=text, callback_data=callback_data, url=url, **kwargs)
     extra = {}
     if style: extra["style"] = style
-    if icon_custom_emoji_id: extra["icon_custom_emoji_id"] = icon_custom_emoji_id
+    # icon_custom_emoji_id غیرفعال شد: این ویژگی وابسته به تلگرام پرمیوم بود و
+    # باعث می‌شد آیکون دکمه‌ها برای کاربران غیرپرمیوم نمایش داده نشود.
     if copy_text: extra["copy_text"] = {"text": copy_text}
     if extra: _extras_store[id(self)] = extra
 
@@ -105,9 +106,10 @@ MSG_EMOJIS = {
 }
 
 def te(key):
+    # قبلاً این تابع اموجی‌ها را با تگ <tg-emoji> (اموجی پرمیوم تلگرام) نمایش می‌داد
+    # که فقط برای اکانت‌های پرمیوم درست نشان داده می‌شد. حالا فقط از خودِ
+    # کاراکتر اموجی معمولی استفاده می‌کنیم تا برای همه کاربران درست نمایش داده شود.
     e = MSG_EMOJIS.get(key)
-    if e and e["id"]:
-        return f'<tg-emoji emoji-id="{e["id"]}">{e["char"]}</tg-emoji>'
     return e["char"] if e else ""
 
 BTN_CFG = {
@@ -227,9 +229,11 @@ def init_db():
         "test_servers": [],
         "test_server_enabled": True,
         "vip_servers": {
-            "50": [],
-            "100": [],
-            "unlimited": []
+            "30GB": [],
+            "50GB": [],
+            "100GB": [],
+            "Unlimited-1": [],
+            "Unlimited-2": []
         },
 
         "prime_servers": {
@@ -294,6 +298,7 @@ def load_db():
                 "test_server_enabled": True,
 
                 "vip_servers": {
+                    "30GB": [],
                     "50GB": [],
                     "100GB": [],
                     "Unlimited-1": [],
@@ -329,11 +334,13 @@ def load_db():
     db["settings"].setdefault("test_server_enabled", True)
 
     db["settings"].setdefault("vip_servers", {
+        "30GB": [],
         "50GB": [],
         "100GB": [],
         "Unlimited-1": [],
         "Unlimited-2": []
     })
+    db["settings"]["vip_servers"].setdefault("30GB", [])
 
     db["settings"].setdefault("prime_servers", {
         "50": [],
@@ -1028,7 +1035,14 @@ async def buy_select_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
         buttons = [
             [
                 InlineKeyboardButton(
-                    "50GB - 200,000",
+                    "30GB - 200,000",
+                    callback_data="buy_vol_30",
+                    style="primary"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "50GB - 250,000",
                     callback_data="buy_vol_50",
                     style="primary"
                 )
@@ -1080,14 +1094,14 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
         buttons = [
             [
                 InlineKeyboardButton(
-                    "یک ماهه | یک کاربر - 350,000 تومان",
+                    "یک ماهه | یک کاربر - 400,000 تومان",
                     callback_data="unlimited_1user",
                     style="primary"
                 )
             ],
             [
                 InlineKeyboardButton(
-                    "یک ماهه | دو کاربر - 400,000 تومان",
+                    "یک ماهه | دو کاربر - 500,000 تومان",
                     callback_data="unlimited_2user",
                     style="success"
                 )
@@ -1115,15 +1129,16 @@ async def buy_select_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ==========================
     if callback_data == "unlimited_1user":
         volume = "Unlimited-1"
-        price = 3500000
+        price = 400000
 
     elif callback_data == "unlimited_2user":
         volume = "Unlimited-2"
-        price = 400000
+        price = 500000
 
     else:
         volume_map = {
-            "buy_vol_50": ("50GB", 200000),
+            "buy_vol_30": ("30GB", 200000),
+            "buy_vol_50": ("50GB", 250000),
             "buy_vol_100": ("100GB", 300000),
         }
 
@@ -2325,7 +2340,8 @@ async def admin_server_stats(update: Update, context: ContextTypes.DEFAULT_TYPE)
     for volume, items in vip.items():
         count = len(items)
         vip_total += count
-        text += f"📦 {volume}GB : {count} سرور\n"
+        label = volume.replace("-", " ") if volume.startswith("Unlimited") else volume
+        text += f"📦 {label} : {count} سرور\n"
 
     text += f"🔥 مجموع VIP: {vip_total}\n\n"
 
@@ -2436,6 +2452,7 @@ async def add_server_volume(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             keyboard = InlineKeyboardMarkup([
                 [
+                    InlineKeyboardButton("30GB", callback_data="addsrv_30GB"),
                     InlineKeyboardButton("50GB", callback_data="addsrv_50GB"),
                     InlineKeyboardButton("100GB", callback_data="addsrv_100GB"),
                 ],
